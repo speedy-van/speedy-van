@@ -190,12 +190,20 @@ export const GET = withApiHandler(async (request: NextRequest) => {
       todayEarnings: todayEarnings._sum.netAmountPence || 0,
       averageRating,
       totalJobs: driver.Assignment.length,
-      activeShifts: driver.shifts.length
+      activeShifts: driver.shifts.length,
+      availability: driver.availability?.status || 'offline'
     },
     availableJobs,
     claimedJob,
     documentAlerts,
-    availability: driver.availability,
-    shifts: driver.shifts
+    shifts: driver.shifts,
+    locationStatus: {
+      hasConsent: driver.availability?.locationConsent || false,
+      lastSeen: driver.availability?.lastSeenAt?.toISOString(),
+      coordinates: driver.availability?.lastLat && driver.availability?.lastLng ? {
+        lat: driver.availability.lastLat,
+        lng: driver.availability.lastLng
+      } : undefined
+    }
   });
 });

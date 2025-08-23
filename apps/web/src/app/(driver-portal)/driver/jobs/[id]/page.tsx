@@ -13,8 +13,8 @@ interface JobDetails {
   pickupAddress: string;
   dropoffAddress: string;
   preferredDate: string;
-  timeSlot: string;
-  vanSize: string;
+  timeSlot?: string; // Made optional as field removed from schema
+  vanSize?: string; // Made optional as field removed from schema
   amountPence: number;
   distance: number;
   estimatedDuration: number;

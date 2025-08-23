@@ -5,7 +5,7 @@ import { Box, Grid, GridItem, Heading, Text, Stat, StatLabel, StatNumber, StatHe
 import { useToast } from "@chakra-ui/react";
 import LocationTracker from "@/components/Driver/LocationTracker";
 import ClaimedJobHandler from "@/components/Driver/ClaimedJobHandler";
-import OfflineStatus from "@/components/Driver/OfflineStatus";
+import AvailabilityToggle from "@/components/Driver/AvailabilityToggle";
 import { queueAvailabilityUpdate, offlineFetch } from "@/lib/offline";
 
 interface DashboardData {
@@ -52,8 +52,8 @@ interface DashboardData {
     pickupAddress: string;
     dropoffAddress: string;
     scheduledAt: string;
-    timeSlot: string;
-    vanSize: string;
+    timeSlot?: string; // Made optional as field removed from schema
+    vanSize?: string; // Made optional as field removed from schema
     totalGBP: number;
   }>;
   claimedJob?: any;
@@ -62,7 +62,6 @@ interface DashboardData {
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updatingAvailability, setUpdatingAvailability] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -92,64 +91,17 @@ export default function DashboardPage() {
     }
   };
 
-  const updateAvailability = async (newStatus: string) => {
-    setUpdatingAvailability(true);
-    try {
-      // Get current location if available and consent is given
-      let locationData = null;
-      if (dashboardData?.locationStatus?.hasConsent) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 300000
-            });
-          });
-          locationData = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-        } catch (error) {
-          console.warn('Failed to get current location:', error);
-        }
-      }
-
-      const response = await fetch('/api/driver/availability', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: newStatus,
-          location: locationData
-        }),
-      });
-
-      if (response.ok) {
-        await fetchDashboardData(); // Refresh dashboard data
-        toast({
-          title: "Success",
-          description: `Status updated to ${newStatus}`,
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        throw new Error('Failed to update availability');
-      }
-    } catch (error) {
-      console.error('Error updating availability:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update availability status",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setUpdatingAvailability(false);
-    }
+  const handleStatusChange = async (newStatus: string) => {
+    // Refresh dashboard data when status changes
+    await fetchDashboardData();
+    
+    toast({
+      title: "Status Updated",
+      description: `You are now ${newStatus}`,
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
   };
 
   const handleJobClaim = async (jobId: string) => {
@@ -234,11 +186,14 @@ export default function DashboardPage() {
         {/* Status and Location Section */}
         <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={6}>
           <GridItem>
-            <OfflineStatus />
+            <AvailabilityToggle
+              initialStatus={dashboardData.kpis.availability || 'offline'}
+              onStatusChange={handleStatusChange}
+            />
           </GridItem>
           <GridItem>
             <LocationTracker
-              isOnline={true}
+              isOnline={dashboardData.kpis.availability === 'online'}
               hasConsent={dashboardData.locationStatus?.hasConsent || false}
             />
           </GridItem>
@@ -336,7 +291,6 @@ export default function DashboardPage() {
                           size="sm"
                           w="full"
                           onClick={() => handleJobClaim(job.id)}
-                          isLoading={updatingAvailability}
                         >
                           Claim Job
                         </Button>

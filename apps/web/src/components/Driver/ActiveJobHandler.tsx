@@ -63,14 +63,14 @@ interface JobEvent {
 
 interface ActiveJob {
   id: string;
-  jobId: string;
   status: string;
   currentStep: string;
-  completedSteps: string[];
   progressPercentage: number;
+  completedSteps: string[];
   stepOrder: string[];
-  events: JobEvent[];
+  events: any[];
   job: {
+    id: string;
     reference: string;
     pickupAddress: string;
     dropoffAddress: string;
@@ -79,8 +79,8 @@ interface ActiveJob {
     dropoffLat?: number;
     dropoffLng?: number;
     scheduledAt: string;
-    timeSlot: string;
-    vanSize: string;
+    timeSlot?: string; // Made optional as field removed from schema
+    vanSize?: string; // Made optional as field removed from schema
     totalGBP: number;
     contactName?: string;
     contactPhone?: string;
@@ -277,7 +277,7 @@ export default function ActiveJobHandler({ onJobCompleted }: ActiveJobHandlerPro
           
           // If job is completed, trigger callback
           if (selectedStep === "job_completed" && onJobCompleted) {
-            onJobCompleted(activeJob.jobId);
+            onJobCompleted(activeJob.job.id);
           }
         }
 
@@ -348,7 +348,7 @@ export default function ActiveJobHandler({ onJobCompleted }: ActiveJobHandlerPro
               <VStack align="start" spacing={1}>
                 <Heading size="md">Active Job #{activeJob.job.reference}</Heading>
                 <Text fontSize="sm" color="gray.600">
-                  {formatDate(activeJob.job.scheduledAt)} • {formatTimeSlot(activeJob.job.timeSlot)}
+                  {formatDate(activeJob.job.scheduledAt)} • {formatTimeSlot(activeJob.job.timeSlot || '')}
                 </Text>
               </VStack>
               <Badge colorScheme="green" fontSize="lg" p={2}>
@@ -393,7 +393,7 @@ export default function ActiveJobHandler({ onJobCompleted }: ActiveJobHandlerPro
                 <Text fontSize="sm" fontWeight="medium">Vehicle</Text>
               </HStack>
               <Text fontSize="sm" color="gray.700" pl={6}>
-                {activeJob.job.vanSize}
+                {activeJob.job.vanSize || 'N/A'}
               </Text>
 
               {activeJob.job.contactName && (

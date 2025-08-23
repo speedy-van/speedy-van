@@ -22,17 +22,16 @@ import { FiClock, FiCheck, FiX, FiMapPin, FiTruck, FiDollarSign } from "react-ic
 import { useRouter } from "next/navigation";
 
 interface ClaimedJob {
-  id: string;
   jobId: string;
-  status: string;
   expiresAt: string;
   job: {
+    id: string;
     reference: string;
     pickupAddress: string;
     dropoffAddress: string;
     scheduledAt: string;
-    timeSlot: string;
-    vanSize: string;
+    timeSlot?: string; // Made optional as field removed from schema
+    vanSize?: string; // Made optional as field removed from schema
     totalGBP: number;
   };
 }
@@ -282,7 +281,7 @@ export default function ClaimedJobHandler({ onJobAccepted, onJobDeclined }: Clai
               <Text fontSize="sm" fontWeight="medium">Schedule</Text>
             </HStack>
             <Text fontSize="sm" color="gray.700" pl={6}>
-              {formatDate(claimedJob.job.scheduledAt)} • {formatTimeSlot(claimedJob.job.timeSlot)}
+              {formatDate(claimedJob.job.scheduledAt)} • {formatTimeSlot(claimedJob.job.timeSlot || '')}
             </Text>
 
             <HStack>
@@ -290,7 +289,7 @@ export default function ClaimedJobHandler({ onJobAccepted, onJobDeclined }: Clai
               <Text fontSize="sm" fontWeight="medium">Vehicle</Text>
             </HStack>
             <Text fontSize="sm" color="gray.700" pl={6}>
-              {claimedJob.job.vanSize}
+              {claimedJob.job.vanSize || 'N/A'}
             </Text>
           </VStack>
 

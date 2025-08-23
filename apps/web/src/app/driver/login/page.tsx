@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Container, VStack, Heading, Text, FormControl, FormLabel, Input, Button, Alert, AlertIcon, Card, CardBody, Link as ChakraLink, IconButton, HStack } from "@chakra-ui/react";
-import { signIn, getCsrfToken } from "next-auth/react";
+import { signIn, getCsrfToken, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 import { ChevronLeftIcon } from "@chakra-ui/icons";
@@ -14,6 +14,7 @@ export default function DriverLogin() {
   const [error, setError] = useState("");
   const [csrfToken, setCsrfToken] = useState("");
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   // Get CSRF token on component mount
   React.useEffect(() => {
@@ -27,6 +28,16 @@ export default function DriverLogin() {
     };
     fetchCsrfToken();
   }, []);
+
+  // Monitor session and redirect if already authenticated
+  useEffect(() => {
+    if (status === "loading") return; // Still loading
+    
+    if (session?.user && (session.user as any).role === "driver") {
+      console.log("✅ Driver session detected, redirecting to dashboard");
+      router.replace("/driver/dashboard");
+    }
+  }, [session, status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +59,9 @@ export default function DriverLogin() {
       if (result?.error) {
         setError(result.error);
       } else if (result?.ok) {
-        console.log('Sign in successful, redirecting to dashboard');
-        router.push("/driver/dashboard");
+        console.log('Sign in successful, waiting for session update...');
+        // The session will be updated automatically, and the useEffect above will handle the redirect
+        // We don't need to manually redirect here
       } else {
         setError("Authentication failed. Please try again.");
       }
@@ -83,6 +95,11 @@ export default function DriverLogin() {
         <Box textAlign="center">
           <Heading size="lg" mb={2}>Driver Login</Heading>
           <Text color="gray.600">Sign in to your driver account</Text>
+          {status === "loading" && (
+            <Text color="blue.500" fontSize="sm" mt={2}>
+              Checking authentication status...
+            </Text>
+          )}
         </Box>
 
         <Card w="full">

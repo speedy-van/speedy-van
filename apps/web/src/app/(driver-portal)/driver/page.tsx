@@ -53,8 +53,8 @@ interface DashboardData {
     pickupAddress: string;
     dropoffAddress: string;
     scheduledAt: string;
-    timeSlot: string;
-    vanSize: string;
+    timeSlot?: string; // Made optional as field removed from schema
+    vanSize?: string; // Made optional as field removed from schema
     totalGBP: number;
   }>;
   claimedJob?: any;
@@ -73,11 +73,44 @@ export default function DriverDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      console.log('Fetching dashboard data...');
       const response = await fetch('/api/driver/dashboard');
       if (response.ok) {
         const data = await response.json();
-        setDashboardData(data);
+        console.log('Dashboard data received:', data);
+        
+        // Ensure we have default values for critical fields
+        const safeData: DashboardData = {
+          ...data,
+          driver: {
+            id: data.driver?.id || '',
+            name: data.driver?.name || 'Driver',
+            email: data.driver?.email || '',
+            status: data.driver?.status || 'unknown',
+            onboardingStatus: data.driver?.onboardingStatus || 'unknown',
+            basePostcode: data.driver?.basePostcode || '',
+            vehicleType: data.driver?.vehicleType || 'unknown',
+          },
+          kpis: {
+            todayEarnings: data.kpis?.todayEarnings || 0,
+            activeJob: data.kpis?.activeJob || null,
+            rating: data.kpis?.rating || 0,
+            availability: data.kpis?.availability || 'offline',
+          },
+          alerts: data.alerts || [],
+          shifts: data.shifts || [],
+          availableJobs: data.availableJobs || [],
+          locationStatus: {
+            hasConsent: data.locationStatus?.hasConsent || false,
+            lastSeen: data.locationStatus?.lastSeen,
+            coordinates: data.locationStatus?.coordinates,
+          },
+          claimedJob: data.claimedJob || null,
+        };
+        console.log('Safe dashboard data created:', safeData);
+        setDashboardData(safeData);
       } else {
+        console.error('Dashboard fetch failed:', { status: response.status });
         throw new Error('Failed to fetch dashboard data');
       }
     } catch (error) {
@@ -96,9 +129,21 @@ export default function DriverDashboard() {
 
   const updateAvailability = async (newStatus: string) => {
     setUpdatingAvailability(true);
+    console.log('Starting availability update:', {
+      newStatus,
+      currentAvailability: dashboardData?.kpis?.availability,
+      dashboardData: dashboardData
+    });
+    
     try {
       // Get current location if available and consent is given
-      let locationData = {};
+      let locationData: { lat: number; lng: number } | null = null;
+      console.log('Location consent check:', {
+        hasGeolocation: !!navigator.geolocation,
+        hasConsent: dashboardData?.locationStatus?.hasConsent,
+        locationStatus: dashboardData?.locationStatus
+      });
+      
       if (navigator.geolocation && dashboardData?.locationStatus?.hasConsent) {
         try {
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -110,27 +155,47 @@ export default function DriverDashboard() {
           });
           
           locationData = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
           };
+          console.log('Location obtained:', locationData);
         } catch (locationError) {
           console.warn('Could not get location:', locationError);
         }
+      } else {
+        console.log('No location data - geolocation or consent not available');
       }
 
       // Use offline-aware availability update
+      const requestBody: any = { 
+        status: newStatus,
+        locationConsent: dashboardData?.locationStatus?.hasConsent || false
+      };
+      
+      // Only include location if we have valid coordinates
+      if (locationData && locationData.lat && locationData.lng && typeof locationData.lat === 'number' && typeof locationData.lng === 'number') {
+        requestBody.location = locationData;
+      }
+
+      console.log('Sending availability update request:', {
+        newStatus,
+        newStatusType: typeof newStatus,
+        requestBody,
+        requestBodyString: JSON.stringify(requestBody),
+        locationData,
+        hasLocationConsent: dashboardData?.locationStatus?.hasConsent
+      });
+
       const response = await offlineFetch('/api/driver/availability', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          availability: newStatus,
-          ...locationData
-        }),
+        body: JSON.stringify(requestBody),
       }, 'availability_update');
 
       const data = await response.json();
+      console.log('Availability update response:', { status: response.status, data });
 
       if (response.ok || response.status === 202) {
         const isQueued = data.queued;
@@ -150,6 +215,7 @@ export default function DriverDashboard() {
           isClosable: true,
         });
       } else {
+        console.error('Availability update failed:', { status: response.status, data });
         throw new Error('Failed to update availability');
       }
     } catch (error) {
@@ -194,12 +260,17 @@ export default function DriverDashboard() {
   };
 
   const getNextAvailabilityStatus = (currentStatus: string) => {
-    switch (currentStatus) {
-      case 'online': return 'offline';
-      case 'break': return 'online';
-      case 'offline': return 'online';
-      default: return 'online';
-    }
+    console.log('getNextAvailabilityStatus called with:', currentStatus);
+    const nextStatus = (() => {
+      switch (currentStatus) {
+        case 'online': return 'offline';
+        case 'break': return 'online';
+        case 'offline': return 'online';
+        default: return 'online';
+      }
+    })();
+    console.log('getNextAvailabilityStatus returning:', nextStatus);
+    return nextStatus;
   };
 
   if (loading) {
@@ -223,7 +294,7 @@ export default function DriverDashboard() {
       <OfflineStatus variant="compact" />
       {/* Background location tracker */}
       <LocationTracker 
-        isOnline={dashboardData?.kpis.availability === 'online'}
+        isOnline={(dashboardData?.kpis.availability || 'offline') === 'online'}
         hasConsent={dashboardData?.locationStatus?.hasConsent || false}
         onLocationUpdate={(lat, lng) => {
           console.log('Location updated:', lat, lng);
@@ -235,7 +306,7 @@ export default function DriverDashboard() {
       <VStack spacing={6} align="stretch">
         <Box>
           <Heading size="lg" mb={2}>Driver Dashboard</Heading>
-          <Text color="gray.600">Welcome back, {dashboardData.driver.name || "Driver"}</Text>
+          <Text color="gray.600">Welcome back, {dashboardData.driver?.name || "Driver"}</Text>
         </Box>
 
         {/* Claimed Job Handler - shows when driver has claimed a job */}
@@ -256,9 +327,9 @@ export default function DriverDashboard() {
             <CardBody>
               <Stat>
                 <StatLabel>Today's Earnings</StatLabel>
-                <StatNumber>£{dashboardData.kpis.todayEarnings.toFixed(2)}</StatNumber>
+                <StatNumber>£{(dashboardData.kpis.todayEarnings || 0).toFixed(2)}</StatNumber>
                 <StatHelpText>
-                  {dashboardData.kpis.todayEarnings > 0 ? "Great work today!" : "No jobs completed today"}
+                  {(dashboardData.kpis.todayEarnings || 0) > 0 ? "Great work today!" : "No jobs completed today"}
                 </StatHelpText>
               </Stat>
             </CardBody>
@@ -297,10 +368,10 @@ export default function DriverDashboard() {
               <Stat>
                 <StatLabel>Rating</StatLabel>
                 <StatNumber>
-                  {dashboardData.kpis.rating > 0 ? `${dashboardData.kpis.rating.toFixed(1)} ⭐` : "--"}
+                  {(dashboardData.kpis.rating || 0) > 0 ? `${(dashboardData.kpis.rating || 0).toFixed(1)} ⭐` : "--"}
                 </StatNumber>
                 <StatHelpText>
-                  {dashboardData.kpis.rating > 0 ? "Average customer rating" : "No ratings yet"}
+                  {(dashboardData.kpis.rating || 0) > 0 ? "Average customer rating" : "No ratings yet"}
                 </StatHelpText>
               </Stat>
             </CardBody>
@@ -311,20 +382,24 @@ export default function DriverDashboard() {
               <Stat>
                 <StatLabel>Availability</StatLabel>
                 <StatNumber>
-                  <Badge colorScheme={getAvailabilityColor(dashboardData.kpis.availability)}>
-                    {dashboardData.kpis.availability.charAt(0).toUpperCase() + dashboardData.kpis.availability.slice(1)}
+                  <Badge colorScheme={getAvailabilityColor(dashboardData.kpis.availability || 'offline')}>
+                    {(dashboardData.kpis.availability || 'offline').charAt(0).toUpperCase() + (dashboardData.kpis.availability || 'offline').slice(1)}
                   </Badge>
                 </StatNumber>
                 <StatHelpText>
                   <Button 
                     size="sm" 
-                    colorScheme={getAvailabilityButtonColor(dashboardData.kpis.availability)} 
+                    colorScheme={getAvailabilityButtonColor(dashboardData.kpis.availability || 'offline')} 
                     variant="outline"
-                    onClick={() => updateAvailability(getNextAvailabilityStatus(dashboardData.kpis.availability))}
+                    onClick={() => {
+                      const nextStatus = getNextAvailabilityStatus(dashboardData.kpis.availability || 'offline');
+                      console.log('Button clicked - next status:', nextStatus);
+                      updateAvailability(nextStatus);
+                    }}
                     isLoading={updatingAvailability}
                     loadingText="Updating..."
                   >
-                    {getAvailabilityButtonText(dashboardData.kpis.availability)}
+                    {getAvailabilityButtonText(dashboardData.kpis.availability || 'offline')}
                   </Button>
                 </StatHelpText>
               </Stat>
@@ -333,7 +408,7 @@ export default function DriverDashboard() {
         </Grid>
 
         {/* Alerts Section */}
-        {dashboardData.alerts.length > 0 && (
+        {dashboardData.alerts && dashboardData.alerts.length > 0 && (
           <Card>
             <CardBody>
               <Heading size="md" mb={4}>Alerts & Notifications</Heading>
@@ -416,7 +491,7 @@ export default function DriverDashboard() {
                     </HStack>
                   </Box>
                 ))}
-                {dashboardData.shifts.length > 3 && (
+                {dashboardData.shifts && dashboardData.shifts.length > 3 && (
                   <Text fontSize="sm" color="gray.600" textAlign="center">
                     +{dashboardData.shifts.length - 3} more shifts
                   </Text>
@@ -430,7 +505,7 @@ export default function DriverDashboard() {
         <Card>
           <CardBody>
             <Heading size="md" mb={4}>Available Jobs Near You</Heading>
-            {dashboardData.availableJobs.length > 0 ? (
+            {dashboardData.availableJobs && dashboardData.availableJobs.length > 0 ? (
               <VStack align="stretch" spacing={3}>
                 {dashboardData.availableJobs.map((job) => (
                   <Box 

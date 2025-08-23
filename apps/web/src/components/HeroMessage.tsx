@@ -66,7 +66,7 @@ const phrases = [
   "Budget-friendly move Edinburgh to London £170"
 ];
 
-const MotionHeading = motion(Heading);
+const MotionHeading = motion.create(Heading);
 
 export default function HeroMessage() {
   const [currentIndex, setCurrentIndex] = useState(0);

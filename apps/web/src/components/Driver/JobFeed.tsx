@@ -47,8 +47,8 @@ interface Job {
   dropoffLat?: number;
   dropoffLng?: number;
   scheduledAt: string;
-  timeSlot: string;
-  vanSize: string;
+  timeSlot?: string; // Made optional as field removed from schema
+  vanSize?: string; // Made optional as field removed from schema
   crewSize?: number;
   totalGBP: number;
   distance?: number;
@@ -71,10 +71,9 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
   const [claimingJob, setClaimingJob] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [filters, setFilters] = useState({
-    radius: 50,
-    vehicleType: "",
-    date: "",
-    timeSlot: ""
+    radius: 700, // Changed from 50km to 700 miles
+    date: ""
+    // Removed vehicleType and timeSlot as these fields no longer exist in the schema
   });
   const [error, setError] = useState<string | null>(null);
   const [blockingReason, setBlockingReason] = useState<string | null>(null);
@@ -94,9 +93,7 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
     try {
       const params = new URLSearchParams();
       if (filters.radius) params.append('radius', filters.radius.toString());
-      if (filters.vehicleType) params.append('vehicleType', filters.vehicleType);
       if (filters.date) params.append('date', filters.date);
-      if (filters.timeSlot) params.append('timeSlot', filters.timeSlot);
 
       const response = await fetch(`/api/driver/jobs/available?${params}`);
       const data = await response.json();
@@ -193,7 +190,7 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
 
   const formatDistance = (distance?: number) => {
     if (!distance) return "Unknown";
-    return `${distance.toFixed(1)} km`;
+    return `${distance.toFixed(1)} miles`;
   };
 
   const formatDuration = (seconds?: number) => {
@@ -270,30 +267,17 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
             
             <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={4} width="full">
               <FormControl>
-                <FormLabel fontSize="sm">Radius (km)</FormLabel>
+                <FormLabel fontSize="sm">Radius (miles)</FormLabel>
                 <Select
                   value={filters.radius}
                   onChange={(e) => setFilters(prev => ({ ...prev, radius: parseInt(e.target.value) }))}
                   size="sm"
                 >
-                  <option value={10}>10 km</option>
-                  <option value={25}>25 km</option>
-                  <option value={50}>50 km</option>
-                  <option value={100}>100 km</option>
-                </Select>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel fontSize="sm">Vehicle Type</FormLabel>
-                <Select
-                  value={filters.vehicleType}
-                  onChange={(e) => setFilters(prev => ({ ...prev, vehicleType: e.target.value }))}
-                  size="sm"
-                >
-                  <option value="">All Types</option>
-                  <option value="small">Small Van</option>
-                  <option value="luton">Luton Van</option>
-                  <option value="large">Large Van</option>
+                  <option value={100}>100 miles</option>
+                  <option value={250}>250 miles</option>
+                  <option value={500}>500 miles</option>
+                  <option value={700}>700 miles</option>
+                  <option value={1000}>1000 miles</option>
                 </Select>
               </FormControl>
 
@@ -305,20 +289,6 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
                   onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
                   size="sm"
                 />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel fontSize="sm">Time Slot</FormLabel>
-                <Select
-                  value={filters.timeSlot}
-                  onChange={(e) => setFilters(prev => ({ ...prev, timeSlot: e.target.value }))}
-                  size="sm"
-                >
-                  <option value="">All Times</option>
-                  <option value="am">Morning</option>
-                  <option value="pm">Afternoon</option>
-                  <option value="evening">Evening</option>
-                </Select>
               </FormControl>
             </Grid>
           </VStack>
@@ -396,7 +366,7 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
                         <Text fontSize="sm" fontWeight="medium">Schedule</Text>
                       </HStack>
                       <Text fontSize="sm" color="gray.700" pl={6}>
-                        {formatDate(job.scheduledAt)} • {formatTime(job.timeSlot)}
+                        {formatDate(job.scheduledAt)} • {formatTime(job.timeSlot || "")}
                       </Text>
 
                       <HStack>
@@ -404,7 +374,7 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
                         <Text fontSize="sm" fontWeight="medium">Vehicle</Text>
                       </HStack>
                       <Text fontSize="sm" color="gray.700" pl={6}>
-                        {job.vanSize} {job.crewSize && `• ${job.crewSize} crew`}
+                        {job.vanSize || "Not specified"} {job.crewSize && `• ${job.crewSize} crew`}
                       </Text>
 
                       {job.distanceMeters && job.durationSeconds && (
@@ -504,11 +474,11 @@ export default function JobFeed({ onJobClaimed }: JobFeedProps) {
                   </Box>
                   <Box>
                     <Text fontWeight="bold" mb={1}>Time</Text>
-                    <Text color="gray.700">{formatTime(selectedJob.timeSlot)}</Text>
+                    <Text color="gray.700">{formatTime(selectedJob.timeSlot || "")}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold" mb={1}>Vehicle</Text>
-                    <Text color="gray.700">{selectedJob.vanSize}</Text>
+                    <Text color="gray.700">{selectedJob.vanSize || "Not specified"}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold" mb={1}>Crew</Text>

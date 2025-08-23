@@ -70,7 +70,6 @@ interface JobEvent {
 
 interface ActiveJob {
   id: string;
-  jobId: string;
   status: string;
   currentStep: string;
   completedSteps: string[];
@@ -78,6 +77,7 @@ interface ActiveJob {
   stepOrder: string[];
   events: JobEvent[];
   job: {
+    id: string;
     reference: string;
     pickupAddress: string;
     dropoffAddress: string;
@@ -86,8 +86,8 @@ interface ActiveJob {
     dropoffLat?: number;
     dropoffLng?: number;
     scheduledAt: string;
-    timeSlot: string;
-    vanSize: string;
+    timeSlot?: string; // Made optional as field removed from schema
+    vanSize?: string; // Made optional as field removed from schema
     totalGBP: number;
     contactName?: string;
     contactPhone?: string;
@@ -526,7 +526,7 @@ export default function ActiveJobPage() {
                   <VStack align="start" spacing={1}>
                     <Heading size="lg">Job #{activeJob.job.reference}</Heading>
                     <Text fontSize="md" color="gray.600">
-                      {formatDate(activeJob.job.scheduledAt)} • {formatTimeSlot(activeJob.job.timeSlot)}
+                      {formatDate(activeJob.job.scheduledAt)} • {formatTimeSlot(activeJob.job.timeSlot || '')}
                     </Text>
                   </VStack>
                 </HStack>
@@ -678,7 +678,7 @@ export default function ActiveJobPage() {
                     <Text fontSize="md" fontWeight="medium">Vehicle</Text>
                   </HStack>
                   <Text fontSize="md" color="gray.700" pl={6}>
-                    {activeJob.job.vanSize}
+                    {activeJob.job.vanSize || 'N/A'}
                   </Text>
 
                   {activeJob.job.contactName && (

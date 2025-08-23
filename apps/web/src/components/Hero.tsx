@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { rotatingPhrases } from "../lib/rotatingPhrases";
 import HeaderButton from "./common/HeaderButton";
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 export default function Hero() {
   const [currentPhrase, setCurrentPhrase] = useState(0);

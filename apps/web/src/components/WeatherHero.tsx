@@ -6,7 +6,7 @@ import NextLink from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import HeaderButton from "./common/HeaderButton";
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 type WeatherPayload = {
   city: string;

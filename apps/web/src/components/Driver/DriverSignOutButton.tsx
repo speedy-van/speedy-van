@@ -4,6 +4,7 @@ import React from "react";
 import { Button, useToast } from "@chakra-ui/react";
 import { signOut } from "next-auth/react";
 import { FiLogOut } from "react-icons/fi";
+import HeaderButton from "@/components/common/HeaderButton";
 
 export default function DriverSignOutButton() {
   const toast = useToast();
@@ -29,11 +30,15 @@ export default function DriverSignOutButton() {
   return (
     <Button
       leftIcon={<FiLogOut />}
-      variant="outline"
+      variant="headerCta"
       size="sm"
-      colorScheme="red"
       onClick={handleSignOut}
       data-testid="driver-sign-out-button"
+      bg="error.500"
+      _hover={{
+        bg: "error.600",
+        transform: "translateY(-1px)"
+      }}
     >
       Sign Out
     </Button>

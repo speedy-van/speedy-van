@@ -15,12 +15,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   
   // Get query parameters
-  const radius = parseInt(searchParams.get('radius') || '50'); // km
-  const vehicleType = searchParams.get('vehicleType');
+  const radius = parseInt(searchParams.get('radius') || '700'); // miles (increased from 50km to 700 miles)
+  const vehicleType = searchParams.get('vehicleType'); // Note: vanSize field removed, vehicleType filtering disabled
   const minCapacity = searchParams.get('minCapacity');
   const maxCapacity = searchParams.get('maxCapacity');
   const date = searchParams.get('date');
-  const timeSlot = searchParams.get('timeSlot');
+  const timeSlot = searchParams.get('timeSlot'); // Note: timeSlot field removed, timeSlot filtering disabled
 
   try {
     // Get driver data with location
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
 
     // Build query for available jobs
     const whereClause: any = {
-      status: "confirmed",
+      status: "CONFIRMED", // Updated to match new enum
       driverId: null, // No driver assigned
       scheduledAt: {
         gte: new Date() // Future or today
@@ -98,15 +98,8 @@ export async function GET(request: Request) {
       };
     }
 
-    // Add time slot filter if specified
-    if (timeSlot) {
-      whereClause.timeSlot = timeSlot;
-    }
-
-    // Add vehicle type filter if specified
-    if (vehicleType) {
-      whereClause.vanSize = vehicleType;
-    }
+    // Note: timeSlot filtering removed as field no longer exists
+    // Note: vehicleType filtering removed as vanSize field no longer exists
 
     // Get available jobs
     const availableJobs = await prisma.booking.findMany({
@@ -168,15 +161,19 @@ export async function GET(request: Request) {
         distance: (job as any).distance,
         baseDistanceMiles: job.baseDistanceMiles,
         estimatedDurationMinutes: job.estimatedDurationMinutes,
-        createdAt: job.createdAt
+        createdAt: job.createdAt,
+        // Note: vanSize and timeSlot fields removed as they no longer exist in the schema
+        // These will be undefined/null in the response
+        vanSize: undefined,
+        timeSlot: undefined
       })),
       filters: {
         radius,
-        vehicleType,
+        vehicleType: undefined, // Disabled as vanSize field removed
         minCapacity,
         maxCapacity,
         date,
-        timeSlot
+        timeSlot: undefined // Disabled as timeSlot field removed
       },
       driverLocation: driver.availability?.lastLat && driver.availability?.lastLng ? {
         lat: driver.availability.lastLat,
@@ -192,7 +189,7 @@ export async function GET(request: Request) {
 
 // Haversine formula to calculate distance between two points
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of the Earth in kilometers
+  const R = 3959; // Radius of the Earth in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -200,5 +197,5 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c; // Distance in kilometers
+  return R * c; // Distance in miles
 }
