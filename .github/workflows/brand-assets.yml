@@ -23,24 +23,21 @@ jobs:
           node-version: '20.x'
           cache: 'pnpm'
 
-      # Use the exact pnpm version from package.json's "packageManager"
-      - name: Enable corepack & activate pnpm
-        run: |
-          corepack enable
-          if node -e "process.exit(!require('./package.json').packageManager)"; then
-            V=$(node -p "require('./package.json').packageManager.split('@')[1]")
-            echo "Activating pnpm@$V via corepack"
-            corepack prepare pnpm@$V --activate
-          fi
-          pnpm --version
+      # Ensure pnpm is on PATH (explicit install)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+          run_install: false
 
-      - name: Install dependencies (frozen, workspace root)
+      - name: Install Dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
+            echo "Lockfile found, installing with --frozen-lockfile"
             pnpm install --frozen-lockfile --prefer-offline
           else
-            echo "WARN: pnpm-lock.yaml missing, falling back (non-deterministic)"
-            pnpm install --no-frozen-lockfile --prefer-offline
+            echo "No lockfile found, installing without frozen (non-deterministic)"
+            pnpm install --prefer-offline
           fi
 
       # If you're on pnpm v10, approve postinstall scripts explicitly
@@ -52,16 +49,13 @@ jobs:
 
       - name: Optimize SVGs (svgo)
         run: |
-          # Adjust the directory if your assets folder differs
           ASSETS_DIR="apps/web/public"
-          # Optimize any SVGs found under public (logos, icons, etc.)
           pnpm svgo -f "$ASSETS_DIR" || true
 
       - name: Commit optimized brand assets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Stage only changed SVG files anywhere under public
           CHANGES=$(git ls-files -m | grep -E '^apps/web/public/.*\.svg$' || true)
           if [ -n "$CHANGES" ]; then
             git add $CHANGES
