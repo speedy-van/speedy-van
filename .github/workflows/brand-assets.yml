@@ -20,7 +20,24 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 10
+
+      - name: Enable corepack and use exact pnpm version
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.13.1 --activate
+          echo "Using pnpm version:"
+          pnpm --version
+
+      - name: Approve build scripts
+        run: |
+          echo "Approving necessary build scripts for CI environment"
+          pnpm approve-builds @prisma/client @prisma/engines @sentry/cli core-js esbuild prisma unrs-resolver
+
+      - name: Rebuild (run approved postinstalls)
+        run: |
+          echo "Rebuilding packages with approved build scripts"
+          pnpm rebuild -r
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -35,14 +52,17 @@ jobs:
           ls -la
           echo "Looking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "pnpm-lock.yaml not found"
+          echo "pnpm version:"
+          pnpm --version
 
-      - name: Install dependencies (with fallback)
+      - name: Install dependencies (with improved fallback)
         run: |
+          # Install with frozen lockfile for deterministic builds
           if [ -f pnpm-lock.yaml ]; then
-            echo "Lockfile found, installing with frozen flag for deterministic builds"
+            echo "Lockfile found, installing with frozen flag"
             pnpm install --frozen-lockfile --prefer-offline
           else
-            echo "No lockfile found, generating one and installing dependencies"
+            echo "No lockfile found, installing dependencies"
             pnpm install --prefer-offline
           fi
 

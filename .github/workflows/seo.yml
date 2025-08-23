@@ -20,7 +20,14 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 10
+
+      - name: Enable corepack and use exact pnpm version
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.13.1 --activate
+          echo "Using pnpm version:"
+          pnpm --version
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -45,6 +52,16 @@ jobs:
             echo "No lockfile found, generating one and installing dependencies"
             pnpm install --prefer-offline
           fi
+
+      - name: Approve build scripts (pnpm v10)
+        run: |
+          echo "Approving necessary build scripts for CI environment"
+          pnpm approve-builds @prisma/client @prisma/engines @sentry/cli core-js esbuild prisma unrs-resolver
+
+      - name: Rebuild (run approved postinstalls)
+        run: |
+          echo "Rebuilding packages with approved build scripts"
+          pnpm rebuild -r
 
       # If SEO job needs a Next.js production build to validate pages/sitemaps:
       - name: Build web app
