@@ -46,9 +46,16 @@ jobs:
       - name: Rebuild (run approved postinstalls)
         run: pnpm rebuild -r
 
+      - name: Build Next.js (with NextAuth env vars)
+        env:
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: https://speedy-van.onrender.com
+        run: |
+          echo "Building Next.js app with NextAuth configuration..."
+          pnpm --filter ./apps/web build
+          echo "Build completed successfully"
+
       - name: Run SEO checks
         run: |
           echo "Running basic SEO checks..."
-          echo "Checking if build works..."
-          pnpm --filter ./apps/web build
           echo "SEO checks completed successfully"
