@@ -1,0 +1,2 @@
+SELECT * FROM "QuoteSnapshot" 
+WHERE "hash" = '53ce54574b85942a6fe9ee18567184b91659df13c01dba3504ae8b6f81d594db';

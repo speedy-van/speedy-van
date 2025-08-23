@@ -1,0 +1,515 @@
+{
+  "info": {
+    "name": "Speedy Van Admin API",
+    "description": "Complete API collection for Speedy Van admin dashboard operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-domain.com",
+      "type": "string"
+    },
+    {
+      "key": "session_token",
+      "value": "your-session-token-here",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "Orders Management",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders?status=assigned&q=ABC123&dateRange=today&take=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "assigned",
+                  "description": "Filter by order status"
+                },
+                {
+                  "key": "q",
+                  "value": "ABC123",
+                  "description": "Search query"
+                },
+                {
+                  "key": "dateRange",
+                  "value": "today",
+                  "description": "Date range filter"
+                },
+                {
+                  "key": "take",
+                  "value": "20",
+                  "description": "Number of items per page"
+                }
+              ]
+            },
+            "description": "List orders with filtering and pagination"
+          }
+        },
+        {
+          "name": "Get Order Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/ABC123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "ABC123"]
+            },
+            "description": "Get detailed order information by code"
+          }
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"assigned\",\n  \"driverId\": \"driver_123\",\n  \"reason\": \"Manual assignment by admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/ABC123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "ABC123"]
+            },
+            "description": "Update order details (status, driver, time, notes)"
+          }
+        },
+        {
+          "name": "Assign Driver to Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoAssign\": true,\n  \"reason\": \"Auto-assignment based on availability\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/ABC123/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "ABC123", "assign"]
+            },
+            "description": "Assign driver to order (manual or auto-assign)"
+          }
+        },
+        {
+          "name": "Get Driver Assignment Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/ABC123/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "ABC123", "assign"]
+            },
+            "description": "Get driver assignment suggestions for an order"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refunds Management",
+      "item": [
+        {
+          "name": "Create Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"pay_123456789\",\n  \"amount\": 5000,\n  \"reason\": \"customer_request\",\n  \"notes\": \"Customer requested partial refund due to delay\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/refunds",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "refunds"]
+            },
+            "description": "Create a refund for a payment"
+          }
+        },
+        {
+          "name": "List Refunds",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/refunds?page=1&limit=20&status=completed",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "refunds"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "description": "Filter by refund status"
+                }
+              ]
+            },
+            "description": "List refunds with filtering"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Drivers Management",
+      "item": [
+        {
+          "name": "List Driver Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/drivers/applications?status=pending&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "drivers", "applications"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "Filter by onboarding status"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "List driver applications with filtering"
+          }
+        },
+        {
+          "name": "Approve Driver Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"All documents verified and approved\",\n  \"conditions\": [\"Must complete safety training within 7 days\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/drivers/driver_123/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "drivers", "driver_123", "approve"]
+            },
+            "description": "Approve a driver application"
+          }
+        },
+        {
+          "name": "Reject Driver Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete documentation\",\n  \"notes\": \"Missing DBS check and insurance documents\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/drivers/driver_123/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "drivers", "driver_123", "reject"]
+            },
+            "description": "Reject a driver application"
+          }
+        },
+        {
+          "name": "Get Driver Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/drivers/driver_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "drivers", "driver_123"]
+            },
+            "description": "Get detailed driver information"
+          }
+        },
+        {
+          "name": "Update Driver Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"suspended\",\n  \"reason\": \"Multiple customer complaints\",\n  \"notes\": \"Suspended pending investigation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/drivers/driver_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "drivers", "driver_123"]
+            },
+            "description": "Update driver status and details"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuration Management",
+      "item": [
+        {
+          "name": "Update Pricing Configuration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneKey\": \"london\",\n  \"vanRates\": {\n    \"small\": 2500,\n    \"medium\": 3500,\n    \"large\": 4500\n  },\n  \"slotMultipliers\": {\n    \"morning\": 1.2,\n    \"afternoon\": 1.0,\n    \"evening\": 1.1\n  },\n  \"dayMultipliers\": {\n    \"monday\": 1.0,\n    \"tuesday\": 1.0,\n    \"wednesday\": 1.0,\n    \"thursday\": 1.0,\n    \"friday\": 1.0,\n    \"saturday\": 1.1,\n    \"sunday\": 1.2\n  },\n  \"accessFees\": {\n    \"floors\": 500,\n    \"lift\": 200,\n    \"parking\": 300\n  },\n  \"surcharges\": {\n    \"rushHour\": 1.15,\n    \"weekend\": 1.1,\n    \"bankHoliday\": 1.25\n  },\n  \"minFareFloor\": 1500,\n  \"surgePolicy\": {\n    \"enabled\": true,\n    \"multiplier\": 1.5,\n    \"threshold\": 0.8\n  },\n  \"vatRate\": 0.20,\n  \"rounding\": \"nearest\",\n  \"lockTtlSeconds\": 900,\n  \"activeFrom\": \"2024-01-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/config/pricing",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "config", "pricing"]
+            },
+            "description": "Update pricing configuration (versioned)"
+          }
+        },
+        {
+          "name": "Get Pricing Configurations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/config/pricing?zoneKey=london&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "config", "pricing"],
+              "query": [
+                {
+                  "key": "zoneKey",
+                  "value": "london",
+                  "description": "Filter by zone"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of versions to return"
+                }
+              ]
+            },
+            "description": "Get pricing configurations"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Analytics Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session={{session_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/analytics/summary?range=7d",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "analytics", "summary"],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "7d",
+                  "description": "Time range (24h, 7d, 30d)"
+                }
+              ]
+            },
+            "description": "Get analytics summary data"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login (Get Session)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/signin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "signin"]
+            },
+            "description": "Login to get session token (use response cookies)"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set session token from environment",
+          "if (pm.environment.get('session_token')) {",
+          "    pm.request.headers.add({",
+          "        key: 'Cookie',",
+          "        value: 'session=' + pm.environment.get('session_token')",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common test script for all requests",
+          "pm.test('Status code is 200 or 201', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+          "});",
+          "",
+          "pm.test('Response has required fields', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.be.an('object');",
+          "});",
+          "",
+          "// Log response for debugging",
+          "console.log('Response:', pm.response.json());"
+        ]
+      }
+    }
+  ]
+}

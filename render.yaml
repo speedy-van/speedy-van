@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: speedy-van-web
+    env: node
+    branch: main
+    rootDir: .
+    buildCommand: >
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter ./apps/web build
+    startCommand: pnpm --filter ./apps/web start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

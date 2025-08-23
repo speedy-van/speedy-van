@@ -1,0 +1,46 @@
+{
+  "brand": "Speedy Van",
+  "version": "2.0.0",
+  "description": "Professional brand assets for Speedy Van delivery service",
+  "variants": {
+    "logo": {
+      "dark": "speedy-van-logo-dark.svg",
+      "light": "speedy-van-logo-light.svg"
+    },
+    "wordmark": "speedy-van-wordmark.svg",
+    "icon": {
+      "default": "speedy-van-icon.svg",
+      "min": "speedy-van-icon-min.svg"
+    }
+  },
+  "dimensions": {
+    "logo": { "width": 240, "height": 80 },
+    "wordmark": { "width": 200, "height": 60 },
+    "icon": { "width": 64, "height": 64 },
+    "iconMin": { "width": 48, "height": 48 }
+  },
+  "minSizes": {
+    "web": 24,
+    "appIcon": 64,
+    "print_mm": 12
+  },
+  "safeAreaRatio": 0.15,
+  "palette": {
+    "primary": "#00E0FF",
+    "accent": "#B026FF",
+    "success": "#39FF14",
+    "dark": "#0B0B0F",
+    "light": "#FFFFFF"
+  },
+  "usage": {
+    "darkBackground": "speedy-van-logo-light.svg",
+    "lightBackground": "speedy-van-logo-dark.svg",
+    "smallUI": "speedy-van-icon-min.svg",
+    "appIcon": "speedy-van-icon.svg",
+    "print": "speedy-van-wordmark.svg"
+  },
+  "accessibility": {
+    "title": "Speedy Van",
+    "description": "Speedy Van delivery service logo"
+  }
+}

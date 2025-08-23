@@ -1,0 +1,14 @@
+{
+  "name": "speedy-van-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npm run dev --prefix apps/web",
+    "build": "npm run build --prefix apps/web",
+    "start": "npm run start --prefix apps/web",
+    "lint": "npm run lint --prefix apps/web",
+    "verify-logos": "node scripts/verify-logos.mjs",
+    "svgo": "node scripts/svgo.mjs"
+  }
+}
+

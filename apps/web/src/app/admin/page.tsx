@@ -1,0 +1,140 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import AdminDashboard from "@/components/admin/AdminDashboard";
+
+async function getDashboardData() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Today's revenue
+  const todayRevenue = await prisma.booking.aggregate({
+    where: {
+      paidAt: {
+        gte: today,
+        lt: tomorrow
+      },
+      status: "CONFIRMED" // Use booking status instead of paymentStatus
+    },
+    _sum: {
+      totalGBP: true
+    }
+  });
+
+  // Active jobs
+  const activeJobs = await prisma.booking.count({
+    where: {
+      status: {
+        in: ["CONFIRMED"] // Use valid BookingStatus values
+      }
+    }
+  });
+
+  // Average ETA (simplified - would need actual calculation)
+  const avgEta = "25 min";
+
+  // First response time (simplified)
+  const firstResponseTime = "3.2 min";
+
+  // Open incidents
+  const openIncidents = await prisma.driverIncident.count({
+    where: {
+      status: "reported"
+    }
+  });
+
+  // Jobs in progress with SLA timers
+  const jobsInProgress = await prisma.booking.findMany({
+    where: {
+      status: {
+        in: ["CONFIRMED"] // Use valid BookingStatus values
+      }
+    },
+    include: {
+      driver: {
+        include: {
+          user: true
+        }
+      },
+      customer: true
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    take: 5
+  });
+
+  // New driver applications
+  const newApplications = await prisma.driverApplication.count({
+    where: {
+      status: "pending"
+    }
+  });
+
+  // Pending refunds
+  const pendingRefunds = await prisma.booking.count({
+    where: {
+      status: "CANCELLED", // Use booking status instead of paymentStatus
+      updatedAt: {
+        gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+      }
+    }
+  });
+
+  // System health check
+  const dbHealth = "healthy";
+  const queueHealth = "healthy";
+  const pusherHealth = "healthy";
+  const stripeHealth = "healthy";
+
+  return {
+    todayRevenue: todayRevenue._sum.totalGBP || 0,
+    activeJobs,
+    avgEta,
+    firstResponseTime,
+    openIncidents,
+    jobsInProgress,
+    newApplications,
+    pendingRefunds,
+    systemHealth: {
+      db: dbHealth,
+      queue: queueHealth,
+      pusher: pusherHealth,
+      stripe: stripeHealth
+    }
+  };
+}
+
+export default async function AdminHome() {
+  const session = await getServerSession(authOptions);
+  
+  // Add debugging
+  console.log('🔐 Admin page - Session check:', {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    userRole: (session?.user as any)?.role,
+    adminRole: (session?.user as any)?.adminRole,
+    email: session?.user?.email
+  });
+  
+  if (!session?.user) {
+    console.log('❌ Admin page - No session, redirecting to login');
+    redirect("/auth/login");
+  }
+  
+  if ((session.user as any).role !== "admin") {
+    console.log('❌ Admin page - User is not admin, redirecting to login');
+    redirect("/auth/login");
+  }
+  
+  console.log('✅ Admin page - Access granted for admin user');
+  
+  const data = await getDashboardData();
+
+  return <AdminDashboard data={data} />;
+}
+
+

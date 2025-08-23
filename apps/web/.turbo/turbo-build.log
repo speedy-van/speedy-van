@@ -1,0 +1,128 @@
+
+> @speedy-van/web@1.0.0 build
+> next build
+
+  ▲ Next.js 14.2.30
+  - Environments: .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+API key does not start with "SG.".
+   Generating static pages (0/67) ...
+   Generating static pages (16/67) 
+   Generating static pages (33/67) 
+   Generating static pages (50/67) 
+ ✓ Generating static pages (67/67)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                               Size     First Load JS
+┌ ○ /                                     5.82 kB         196 kB
+├ ○ /_not-found                           880 B          88.2 kB
+├ ○ /about                                3.43 kB         180 kB
+├ ○ /accessibility                        8.67 kB         194 kB
+├ ○ /admin                                11.7 kB         212 kB
+├ ○ /admin/analytics                      8.04 kB         179 kB
+├ ○ /admin/chat                           11.9 kB         236 kB
+├ ○ /admin/driver-applications            5.44 kB         195 kB
+├ ○ /admin/drivers                        11.8 kB         196 kB
+├ ○ /admin/orders                         18 kB           249 kB
+├ ○ /admin/unauthorized                   3.2 kB          145 kB
+├ ○ /admin/users                          11.5 kB         196 kB
+├ ○ /ai-assistant-demo                    8.51 kB         184 kB
+├ ○ /api                                  0 B                0 B
+├ ƒ /api/admin/analytics                  0 B                0 B
+├ ƒ /api/admin/chat/inbox                 0 B                0 B
+├ ƒ /api/admin/driver-applications        0 B                0 B
+├ ƒ /api/admin/driver-applications/[id]   0 B                0 B
+├ ƒ /api/admin/drivers                    0 B                0 B
+├ ƒ /api/admin/orders                     0 B                0 B
+├ ƒ /api/admin/orders/[id]                0 B                0 B
+├ ƒ /api/admin/orders/[id]/assign-driver  0 B                0 B
+├ ƒ /api/admin/orders/[id]/status         0 B                0 B
+├ ƒ /api/admin/orders/export              0 B                0 B
+├ ƒ /api/admin/stats                      0 B                0 B
+├ ƒ /api/admin/users                      0 B                0 B
+├ ƒ /api/admin/users/[id]                 0 B                0 B
+├ ƒ /api/admin/users/[id]/promote         0 B                0 B
+├ ƒ /api/auth/[...nextauth]               0 B                0 B
+├ ƒ /api/auth/forgot-password             0 B                0 B
+├ ƒ /api/auth/register                    0 B                0 B
+├ ƒ /api/auth/reset-password              0 B                0 B
+├ ƒ /api/bookings                         0 B                0 B
+├ ƒ /api/bookings/dev                     0 B                0 B
+├ ƒ /api/chat/[orderId]                   0 B                0 B
+├ ƒ /api/chat/[orderId]/read              0 B                0 B
+├ ƒ /api/cookies                          0 B                0 B
+├ ƒ /api/distance                         0 B                0 B
+├ ƒ /api/driver/location                  0 B                0 B
+├ ƒ /api/driver/orders                    0 B                0 B
+├ ƒ /api/driver/orders/[orderId]          0 B                0 B
+├ ƒ /api/driver/orders/[orderId]/claim    0 B                0 B
+├ ƒ /api/driver/orders/[orderId]/status   0 B                0 B
+├ ƒ /api/driver/password/reset/confirm    0 B                0 B
+├ ƒ /api/driver/password/reset/request    0 B                0 B
+├ ƒ /api/driver/portal/entry              0 B                0 B
+├ ƒ /api/driver/profile                   0 B                0 B
+├ ƒ /api/driver/stats                     0 B                0 B
+├ ƒ /api/drivers/apply                    0 B                0 B
+├ ○ /api/health                           0 B                0 B
+├ ƒ /api/portal/bookings                  0 B                0 B
+├ ƒ /api/track                            0 B                0 B
+├ ○ /auth/forgot-password                 1.61 kB         146 kB
+├ ○ /auth/login                           3.9 kB          158 kB
+├ ○ /auth/reset-password                  3.7 kB          148 kB
+├ ○ /auth/signup                          3.5 kB          148 kB
+├ ○ /auth/unauthorized                    3.93 kB         128 kB
+├ ○ /book                                 23.2 kB         239 kB
+├ ○ /contact                              8.7 kB          196 kB
+├ ○ /dashboard                            7.36 kB         150 kB
+├ ○ /driver-application                   30.1 kB         292 kB
+├ ○ /driver-dashboard                     12 kB           217 kB
+├ ○ /driver-terms                         5.37 kB         174 kB
+├ ○ /driver/apply                         4.82 kB         192 kB
+├ ○ /driver/forgot-password               3.8 kB          188 kB
+├ ○ /driver/login                         5.01 kB         199 kB
+├ ○ /driver/reset-password                5 kB            180 kB
+├ ○ /driver/settings                      14.1 kB         234 kB
+├ ○ /header-demo                          4.72 kB         234 kB
+├ ○ /how-it-works                         7.5 kB          191 kB
+├ ○ /live-tracking-demo                   201 B           182 kB
+├ ○ /moving-tips                          739 B           183 kB
+├ ○ /moving-tips/checklist                5.37 kB         183 kB
+├ ○ /portal                               7.47 kB         143 kB
+├ ○ /portal/bookings                      10.3 kB         146 kB
+├ ƒ /portal/bookings/[id]                 7.8 kB          232 kB
+├ ○ /portal/invoices                      9.49 kB         126 kB
+├ ○ /portal/profile                       6.64 kB         175 kB
+├ ○ /portal/support                       6.7 kB          182 kB
+├ ○ /pricing                              6.81 kB         194 kB
+├ ○ /privacy-policy                       3.73 kB         172 kB
+├ ○ /register                             503 B          87.8 kB
+├ ○ /reviews                              8.55 kB         193 kB
+├ ○ /services                             6.37 kB         183 kB
+├ ○ /sitemap.xml                          0 B                0 B
+├ ○ /terms                                4.3 kB          172 kB
+├ ○ /test-alerts                          4.84 kB         180 kB
+├ ○ /test-book                            152 B          87.5 kB
+├ ○ /test-driver-portal                   1.84 kB         116 kB
+├ ○ /test-hydration                       485 B           123 kB
+├ ○ /test-live-tracking                   1.48 kB         195 kB
+├ ○ /test-privacy-policy                  431 B          87.8 kB
+├ ○ /test-terms                           3.55 kB         114 kB
+├ ○ /theme-demo                           8.46 kB         184 kB
+├ ○ /theme-test                           9.95 kB         143 kB
+└ ○ /track                                11.8 kB         189 kB
++ First Load JS shared by all             87.3 kB
+  ├ chunks/1528-7cc00de1cb383446.js       31.6 kB
+  ├ chunks/1dd3208c-957ba32c283aaf4f.js   53.6 kB
+  └ other shared chunks (total)           2.06 kB
+
+
+ƒ Middleware                              66.7 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

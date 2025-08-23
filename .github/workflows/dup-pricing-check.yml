@@ -1,0 +1,19 @@
+name: Duplicate Pricing Guard
+on: [push, pull_request]
+jobs:
+  dup-pricing-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for duplicate pricing files
+        run: |
+          DUPES=$(rg -l 'pricing\.(ts|tsx)$' apps/web/src | grep -v 'apps/web/src/lib/pricing.ts' || true)
+          if [ -n "$DUPES" ]; then
+            echo "❌ Duplicate pricing files detected:"
+            echo "$DUPES"
+            echo ""
+            echo "💡 Use '@/lib/pricing' instead of creating duplicate pricing modules."
+            echo "📖 See docs/adr/0001-unify-booking-and-pricing.md for details."
+            exit 1
+          fi
+          echo "✅ No duplicate pricing files found"

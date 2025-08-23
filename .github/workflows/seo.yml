@@ -1,0 +1,57 @@
+name: SEO Integrity
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Debug repository state
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Looking for pnpm-lock.yaml:"
+          ls -la pnpm-lock.yaml || echo "pnpm-lock.yaml not found"
+
+      - name: Install dependencies (with fallback)
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "Lockfile found, installing with frozen flag for deterministic builds"
+            pnpm install --frozen-lockfile --prefer-offline
+          else
+            echo "No lockfile found, generating one and installing dependencies"
+            pnpm install --prefer-offline
+          fi
+
+      # If SEO job needs a Next.js production build to validate pages/sitemaps:
+      - name: Build web app
+        run: pnpm --filter ./apps/web build
+
+      # Example SEO checks (adjust to your scripts):
+      - name: Check sitemap generation
+        run: pnpm --filter ./apps/web run seo:sitemap
+      - name: Check routes/components
+        run: pnpm --filter ./apps/web run seo:check
