@@ -120,7 +120,8 @@ export default function AddressAutocomplete({
   debounceMs = 250,
   ...unknownProps // Capture any unknown props to prevent them from reaching the DOM
 }: AddressAutocompleteProps) {
-  console.log('[AddressAutocomplete] Component rendered with props:', { value, onChange, onSelect, placeholder, country, limit, minLength, debounceMs });
+  console.log('🎯 [AddressAutocomplete] Component rendered with props:', { value, onChange, onSelect, placeholder, country, limit, minLength, debounceMs });
+  console.log('🔍 [AddressAutocomplete] This should appear in console!');
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<Suggestion[]>([]);
   const [loading, setLoading] = React.useState(false);

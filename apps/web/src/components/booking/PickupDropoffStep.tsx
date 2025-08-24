@@ -32,8 +32,9 @@ export default function PickupDropoffStep({
   onNext, 
   onBack 
 }: PickupDropoffStepProps) {
-  console.log('[PickupDropoffStep] Component rendered');
-  console.log('[PickupDropoffStep] Props:', { bookingData, updateBookingData, onNext, onBack });
+  console.log('🚀 [PickupDropoffStep] Component rendered');
+  console.log('📋 [PickupDropoffStep] Props:', { bookingData, updateBookingData, onNext, onBack });
+  console.log('🔍 [PickupDropoffStep] This should appear in console!');
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [pickupSearch, setPickupSearch] = useState(bookingData.pickupAddress?.line1 || '');
   const [dropoffSearch, setDropoffSearch] = useState(bookingData.dropoffAddress?.line1 || '');
