@@ -151,10 +151,27 @@ export default function AddressAutocomplete({
         console.log('[AddressAutocomplete] Making API call to:', url);
         console.log('[AddressAutocomplete] Signal aborted:', c.signal.aborted);
         
-        const res = await fetch(url, { signal: c.signal });
+        // Add timeout and better error handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const res = await fetch(url, { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
         console.log('[AddressAutocomplete] Response status:', res.status);
         console.log('[AddressAutocomplete] Response ok:', res.ok);
         console.log('[AddressAutocomplete] Response headers:', Object.fromEntries(res.headers.entries()));
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
         
         const data = await res.json();
         
@@ -173,6 +190,26 @@ export default function AddressAutocomplete({
           name: err?.name,
           stack: err?.stack
         });
+        
+        // Try fallback: direct Mapbox API call
+        try {
+          console.log('[AddressAutocomplete] Trying fallback Mapbox API...');
+          const fallbackUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?autocomplete=true&limit=${limit}&country=${country}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`;
+          console.log('[AddressAutocomplete] Fallback URL:', fallbackUrl);
+          
+          const fallbackRes = await fetch(fallbackUrl);
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            console.log('[AddressAutocomplete] Fallback success:', fallbackData);
+            const fallbackItems = normalizeSuggestions(fallbackData);
+            setItems(fallbackItems);
+            setOpen(true);
+            return;
+          }
+        } catch (fallbackErr) {
+          console.error('[AddressAutocomplete] Fallback also failed:', fallbackErr);
+        }
+        
         setItems([]);
         setOpen(false);
       } finally {
