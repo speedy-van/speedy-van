@@ -6,7 +6,7 @@ import "@/styles/mobile-fixes.css";
 import "@/styles/booking-fixes.css";
 import "@/styles/ios-safari-fixes.css";
 import "@/styles/video-background.css";
-import "mapbox-gl/dist/mapbox-gl.css";
+// import "mapbox-gl/dist/mapbox-gl.css"; // Removed to fix CSS error
 import { ConsentProvider } from "@/components/Consent/ConsentProvider";
 import CookieBanner from "@/components/Consent/CookieBanner";
 import CookiePreferencesModal from "@/components/Consent/CookiePreferencesModal";
@@ -91,7 +91,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="icon" type="image/svg+xml" href="/logo/speedy-van-icon.svg" />
         <link rel="apple-touch-icon" href="/logo/speedy-van-icon.svg" />
         <link rel="manifest" href="/manifest.json" />
-        <link href="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css" rel="stylesheet" />
+        {/* <link href="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css" rel="stylesheet" /> */}
       </head>
       <body>
         <ChakraProviders>

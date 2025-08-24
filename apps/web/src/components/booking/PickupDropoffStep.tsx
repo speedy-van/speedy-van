@@ -37,15 +37,18 @@ export default function PickupDropoffStep({
   onNext, 
   onBack 
 }: PickupDropoffStepProps) {
-  // FORCE CONSOLE LOGS IN PRODUCTION
-  console.log('🚀 [PickupDropoffStep] Component rendered');
-  console.log('📋 [PickupDropoffStep] Props:', { bookingData, updateBookingData, onNext, onBack });
-  console.log('🔍 [PickupDropoffStep] This should appear in console!');
+  // ULTRA SIMPLE LOGS FOR PRODUCTION
+  console.log('STEP1_LOADED');
+  console.log('TIME:', Date.now());
+  console.log('BOOKING_DATA:', !!bookingData);
   
-  // ADDITIONAL FORCE LOGS
-  console.warn('⚠️ [Step1] WARNING LOG - This should appear!');
-  console.error('❌ [Step1] ERROR LOG - This should appear!');
-  console.info('ℹ️ [Step1] INFO LOG - This should appear!');
+  // FORCE ALL LOG TYPES
+  console.warn('WARNING_LOG');
+  console.error('ERROR_LOG');
+  console.info('INFO_LOG');
+  
+  // ADDITIONAL SIMPLE LOG
+  console.log('COMPONENT_START');
   
   // States
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -80,10 +83,12 @@ export default function PickupDropoffStep({
 
   // Debounced autocomplete with hard logs to verify handler runs in prod
   useEffect(() => {
+    console.log("USE_EFFECT_RUNNING");
+    console.log("QUERY_VALUE:", query);
     if (!query) return;
-    console.log("[Step1] typing:", query);
-    console.warn("⚠️ [Step1] WARNING - typing detected:", query);
-    console.error("❌ [Step1] ERROR - typing detected:", query);
+    console.log("TYPING_DETECTED:", query);
+    console.warn("WARNING: Typing detected:", query);
+    console.error("ERROR: Typing detected:", query);
     
     if (abortRef.current) abortRef.current.abort();
     const ac = new AbortController();
@@ -387,14 +392,12 @@ export default function PickupDropoffStep({
               <FormLabel>Street Address</FormLabel>
               <AddressAutocomplete
                 value={pickupSearch}
-                onChange={(value) => {
-                  console.log('[PickupDropoffStep] Pickup onChange:', value);
-                  console.log('[PickupDropoffStep] Pickup onChange type:', typeof value);
-                  setPickupSearch(value);
-                  // Add hard log for production debugging
-                  console.log("[Step1] Pickup onChange fired:", value);
-                  setQuery(value);
-                }}
+                                 onChange={(value) => {
+                   console.log('PICKUP_ONCHANGE:', value);
+                   console.log('PICKUP_TYPE:', typeof value);
+                   setPickupSearch(value);
+                   setQuery(value);
+                 }}
                 onSelect={handlePickupAddressSelect}
                 placeholder="Start typing to search addresses..."
                 country="GB"
@@ -459,14 +462,12 @@ export default function PickupDropoffStep({
               <FormLabel>Street Address</FormLabel>
               <AddressAutocomplete
                 value={dropoffSearch}
-                onChange={(value) => {
-                  console.log('[PickupDropoffStep] Dropoff onChange:', value);
-                  console.log('[PickupDropoffStep] Dropoff onChange type:', typeof value);
-                  setDropoffSearch(value);
-                  // Add hard log for production debugging
-                  console.log("[Step1] Dropoff onChange fired:", value);
-                  setQuery(value);
-                }}
+                                 onChange={(value) => {
+                   console.log('DROPOFF_ONCHANGE:', value);
+                   console.log('DROPOFF_TYPE:', typeof value);
+                   setDropoffSearch(value);
+                   setQuery(value);
+                 }}
                 onSelect={handleDropoffAddressSelect}
                 placeholder="Start typing to search addresses..."
                 country="GB"

@@ -148,7 +148,14 @@ export default function AddressAutocomplete({
       try {
         setLoading(true);
         const url = `/api/places/suggest?q=${encodeURIComponent(value)}&country=${country}&limit=${limit}`;
+        console.log('[AddressAutocomplete] Making API call to:', url);
+        console.log('[AddressAutocomplete] Signal aborted:', c.signal.aborted);
+        
         const res = await fetch(url, { signal: c.signal });
+        console.log('[AddressAutocomplete] Response status:', res.status);
+        console.log('[AddressAutocomplete] Response ok:', res.ok);
+        console.log('[AddressAutocomplete] Response headers:', Object.fromEntries(res.headers.entries()));
+        
         const data = await res.json();
         
         // Debug logging
@@ -159,7 +166,13 @@ export default function AddressAutocomplete({
         
         setItems(normalizedItems);
         setOpen(true);
-      } catch {
+      } catch (err) {
+        console.error('[AddressAutocomplete] Fetch error:', err);
+        console.error('[AddressAutocomplete] Error details:', {
+          message: err?.message,
+          name: err?.name,
+          stack: err?.stack
+        });
         setItems([]);
         setOpen(false);
       } finally {
