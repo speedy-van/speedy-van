@@ -241,13 +241,13 @@ export default function PickupDropoffStep({
   // No need for manual click outside handling anymore
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white" shadow="sm">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="blue.600">
+          <Text fontSize="xl" fontWeight="bold" color="neon.500">
             Step 1: Pickup & Dropoff Addresses
           </Text>
-          <Text fontSize="sm" color="gray.600" mt={2}>
+          <Text fontSize="sm" color="text.secondary" mt={2}>
             Enter the addresses for pickup and delivery
           </Text>
         </Box>
@@ -263,8 +263,8 @@ export default function PickupDropoffStep({
         <Box>
           <HStack spacing={3} mb={4} justify="space-between">
             <HStack spacing={3}>
-              <Icon as={FaMapMarkerAlt} color="green.500" />
-              <Text fontSize="lg" fontWeight="semibold" color="green.600">
+              <Icon as={FaMapMarkerAlt} color="brand.500" />
+              <Text fontSize="lg" fontWeight="semibold" color="brand.500">
                 Pickup Address
               </Text>
             </HStack>
@@ -328,8 +328,8 @@ export default function PickupDropoffStep({
         <Box>
           <HStack spacing={3} mb={4} justify="space-between">
             <HStack spacing={3}>
-              <Icon as={FaArrowRight} color="blue.500" />
-              <Text fontSize="lg" fontWeight="semibold" color="blue.600">
+              <Icon as={FaArrowRight} color="neon.500" />
+              <Text fontSize="lg" fontWeight="semibold" color="neon.500">
                 Dropoff Address
               </Text>
             </HStack>

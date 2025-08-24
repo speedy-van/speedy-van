@@ -236,25 +236,25 @@ export default function ItemSelectionStep({
   );
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white" shadow="sm">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="blue.600">
+          <Text fontSize="xl" fontWeight="bold" color="neon.500">
             Step 3: Items to Move
           </Text>
-          <Text fontSize="sm" color="gray.600" mt={2}>
+          <Text fontSize="sm" color="text.secondary" mt={2}>
             Select the items you need to move from our catalog
           </Text>
         </Box>
 
         {/* Search and Filter */}
-        <Box p={4} borderWidth="1px" borderRadius="md" bg="gray.50">
+        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
           <VStack spacing={4}>
             <HStack w="full">
               <Box flex={1}>
                 <FormLabel fontSize="sm">Search Items</FormLabel>
                 <HStack>
-                  <Icon as={FaSearch} color="gray.400" />
+                  <Icon as={FaSearch} color="text.tertiary" />
                   <Input
                     placeholder="Search for items..."
                     value={searchTerm}
@@ -288,7 +288,7 @@ export default function ItemSelectionStep({
             <Text fontSize="lg" fontWeight="semibold">
               Available Items
             </Text>
-            <Badge colorScheme="blue" fontSize="md" p={2}>
+            <Badge colorScheme="neon" fontSize="md" p={2}>
               {filteredItems.length} items found
             </Badge>
           </HStack>
@@ -298,91 +298,89 @@ export default function ItemSelectionStep({
               {filteredItems.map(renderItemCard)}
             </SimpleGrid>
           ) : (
-            <Box p={8} textAlign="center" bg="gray.50" borderRadius="md">
-              <Icon as={FaBox} color="gray.400" boxSize={12} mb={4} />
-              <Text color="gray.500" fontSize="lg">No items found</Text>
-              <Text color="gray.400" fontSize="sm">Try adjusting your search or category filter</Text>
+            <Box textAlign="center" py={8}>
+              <Icon as={FaBox} boxSize={12} color="text.tertiary" mb={4} />
+              <Text color="text.secondary">No items found matching your search</Text>
             </Box>
           )}
         </Box>
 
         {/* Selected Items */}
-        <Box>
-          <HStack justify="space-between" mb={4}>
-            <Text fontSize="lg" fontWeight="semibold">
-              Selected Items
-            </Text>
-            <HStack spacing={4}>
-              <Badge colorScheme="green" fontSize="md" p={2}>
-                {getTotalItems()} items
-              </Badge>
-              <Badge colorScheme="purple" fontSize="md" p={2}>
-                £{getTotalValue().toFixed(2)}
-              </Badge>
+        {bookingData.items && bookingData.items.length > 0 && (
+          <Box>
+            <HStack justify="space-between" mb={4}>
+              <Text fontSize="lg" fontWeight="semibold">
+                Selected Items ({bookingData.items.length})
+              </Text>
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<FaPlus />}
+                onClick={onOpen}
+              >
+                Add More
+              </Button>
             </HStack>
-          </HStack>
-
-          {bookingData.items && bookingData.items.length > 0 ? (
+            
             <VStack spacing={3} align="stretch">
               {bookingData.items.map((item: any, index: number) => (
-                <HStack
+                <Box
                   key={index}
                   p={4}
                   borderWidth="1px"
-                  borderRadius="md"
-                  bg="white"
-                  justify="space-between"
-                  shadow="sm"
+                  borderRadius="lg"
+                  bg="bg.surface"
+                  borderColor="border.primary"
                 >
-                  <HStack spacing={4}>
-                    <Image 
-                      src={item.image} 
-                      alt={item.name}
-                      boxSize="40px"
-                      fallbackSrc="/items/misc/add_custom.svg"
+                  <HStack justify="space-between">
+                    <HStack spacing={3}>
+                      <Image 
+                        src={item.image || "/items/misc/add_custom.svg"} 
+                        alt={item.name}
+                        boxSize="40px"
+                        fallbackSrc="/items/misc/add_custom.svg"
+                      />
+                      <VStack align="start" spacing={1}>
+                        <Text fontWeight="semibold">{item.name}</Text>
+                        <Text fontSize="sm" color="text.tertiary">
+                          Qty: {item.quantity} • £{item.price}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <IconButton
+                      aria-label="Remove item"
+                      icon={<FaTrash />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="red"
+                      onClick={() => removeItem(index)}
                     />
-                    <VStack align="start" spacing={1}>
-                      <Text fontWeight="semibold">{item.name}</Text>
-                      <HStack spacing={2}>
-                        <Badge colorScheme="green">Qty: {item.quantity}</Badge>
-                        <Badge colorScheme="blue">£{item.price} each</Badge>
-                        <Badge colorScheme="purple">£{(item.price * item.quantity).toFixed(2)}</Badge>
-                      </HStack>
-                    </VStack>
                   </HStack>
-                  <IconButton
-                    aria-label="Remove item"
-                    icon={<FaTrash />}
-                    colorScheme="red"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeItem(index)}
-                  />
-                </HStack>
+                </Box>
               ))}
             </VStack>
-          ) : (
-            <Box p={4} textAlign="center" bg="gray.50" borderRadius="md">
-              <Icon as={FaBox} color="gray.400" boxSize={8} mb={2} />
-              <Text color="gray.500">No items added yet</Text>
-            </Box>
-          )}
-        </Box>
-
-        {errors.items && (
-          <Text color="red.500" fontSize="sm">
-            {errors.items}
-          </Text>
+          </Box>
         )}
 
-        {/* Pricing Display */}
-        <PricingDisplay bookingData={bookingData} compact={true} />
+        {/* Add Item Button */}
+        {(!bookingData.items || bookingData.items.length === 0) && (
+          <Box textAlign="center" py={8}>
+            <Button
+              size="lg"
+              variant="outline"
+              leftIcon={<FaPlus />}
+              onClick={onOpen}
+            >
+              Add Your First Item
+            </Button>
+          </Box>
+        )}
 
         {/* Navigation Buttons */}
         <HStack spacing={4} justify="space-between" pt={4}>
           <Button
             onClick={onBack}
-            variant="outline"
+            variant="secondary"
             size="lg"
             leftIcon={<FaArrowLeft />}
           >
@@ -393,8 +391,9 @@ export default function ItemSelectionStep({
             variant="primary"
             size="lg"
             rightIcon={<FaArrowRight />}
+            isDisabled={!bookingData.items || bookingData.items.length === 0}
           >
-            Continue to Schedule
+            Continue to Date & Time
           </Button>
         </HStack>
       </VStack>
@@ -419,8 +418,8 @@ export default function ItemSelectionStep({
                     fallbackSrc="/items/misc/add_custom.svg"
                   />
                   <Text fontSize="lg" fontWeight="semibold">{selectedItem.name}</Text>
-                  <Text fontSize="sm" color="gray.600">{selectedItem.description}</Text>
-                  <Badge colorScheme="green" fontSize="md" mt={2}>£{selectedItem.price}</Badge>
+                  <Text fontSize="sm" color="text.secondary">{selectedItem.description}</Text>
+                  <Badge colorScheme="brand" fontSize="md" mt={2}>£{selectedItem.price}</Badge>
                 </Box>
                 
                 <FormControl>
@@ -440,10 +439,10 @@ export default function ItemSelectionStep({
                   </NumberInput>
                 </FormControl>
 
-                <Box p={3} bg="blue.50" borderRadius="md" w="full">
+                <Box p={3} bg="bg.surface" borderRadius="md" w="full" borderWidth="1px" borderColor="border.primary">
                   <HStack justify="space-between">
                     <Text fontSize="sm">Total Price:</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                    <Text fontSize="lg" fontWeight="bold" color="neon.500">
                       £{(selectedItem.price * itemQuantity).toFixed(2)}
                     </Text>
                   </HStack>
@@ -497,10 +496,10 @@ export default function ItemSelectionStep({
                   </FormControl>
                 </HStack>
 
-                <Box p={3} bg="blue.50" borderRadius="md" w="full">
+                <Box p={3} bg="bg.surface" borderRadius="md" w="full" borderWidth="1px" borderColor="border.primary">
                   <HStack justify="space-between">
                     <Text fontSize="sm">Total Price:</Text>
-                    <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                    <Text fontSize="lg" fontWeight="bold" color="neon.500">
                       £{(customItemPrice * itemQuantity).toFixed(2)}
                     </Text>
                   </HStack>

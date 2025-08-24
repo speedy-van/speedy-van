@@ -120,55 +120,41 @@ export default function CrewSelectionStep({
   };
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white" shadow="sm">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="blue.600">
+          <Text fontSize="xl" fontWeight="bold" color="neon.500">
             Step 6: Crew Selection
           </Text>
-          <Text fontSize="sm" color="gray.600" mt={2}>
-            Choose the number of people for your move
+          <Text fontSize="sm" color="text.secondary" mt={2}>
+            Choose the crew size for your move
           </Text>
         </Box>
 
-        {/* Volume Summary */}
-        {bookingData.items && bookingData.items.length > 0 && (
-          <Box p={4} borderWidth="1px" borderRadius="md" bg="blue.50">
-            <HStack justify="space-between">
-              <Text fontWeight="semibold">Total Volume:</Text>
-              <Badge colorScheme="blue" fontSize="md" p={2}>
-                {getTotalVolume().toFixed(1)} m³
-              </Badge>
-            </HStack>
-            <Text fontSize="sm" color="gray.600" mt={1}>
-              Based on your {bookingData.items.length} item{bookingData.items.length !== 1 ? 's' : ''}
-            </Text>
-          </Box>
-        )}
-
-        {/* Crew Selection */}
+        {/* Crew Options */}
         <Box>
           <HStack spacing={3} mb={4}>
-            <Icon as={FaUsers} color="green.500" />
-            <Text fontSize="lg" fontWeight="semibold" color="green.600">
-              Select Crew Size
+            <Icon as={FaUsers} color="brand.500" />
+            <Text fontSize="lg" fontWeight="semibold" color="brand.500">
+              Crew Size Options
             </Text>
           </HStack>
           
           <FormControl isInvalid={!!errors.crewSize}>
+            <FormLabel>Select Crew Size</FormLabel>
             <RadioGroup value={bookingData.crewSize?.toString() || ''} onChange={(value) => updateCrewSize(parseInt(value))}>
-              <Stack spacing={4}>
-                {CREW_OPTIONS.map(option => (
+              <Stack spacing={3}>
+                {CREW_OPTIONS.map((option) => (
                   <Box
                     key={option.value}
                     p={4}
                     borderWidth="2px"
-                    borderRadius="md"
-                    borderColor={bookingData.crewSize === option.value ? 'blue.500' : 'gray.200'}
-                    bg={bookingData.crewSize === option.value ? 'blue.50' : 'white'}
+                    borderRadius="lg"
+                    borderColor={bookingData.crewSize === option.value ? 'neon.500' : 'border.primary'}
+                    bg={bookingData.crewSize === option.value ? 'bg.surface.hover' : 'bg.surface'}
                     cursor="pointer"
-                    onClick={() => updateCrewSize(option.value)}
-                    _hover={{ borderColor: 'blue.300' }}
+                    transition="all 0.2s"
+                    _hover={{ borderColor: 'neon.400' }}
                   >
                     <HStack justify="space-between" align="start">
                       <VStack align="start" spacing={1}>
@@ -176,18 +162,18 @@ export default function CrewSelectionStep({
                           <Radio value={option.value.toString()} />
                           <Text fontWeight="semibold">{option.label}</Text>
                           {option.recommended && (
-                            <Badge colorScheme="green" size="sm">Recommended</Badge>
+                            <Badge colorScheme="brand" size="sm">Recommended</Badge>
                           )}
                           {getRecommendedCrew() === option.value && getTotalVolume() > 0 && (
-                            <Badge colorScheme="blue" size="sm">Best Match</Badge>
+                            <Badge colorScheme="neon" size="sm">Best Match</Badge>
                           )}
                         </HStack>
-                        <Text fontSize="sm" color="gray.600" ml={6}>
+                        <Text fontSize="sm" color="text.secondary" ml={6}>
                           {option.description}
                         </Text>
                       </VStack>
                       <Badge 
-                        colorScheme={option.multiplier === 1.0 ? 'green' : option.multiplier < 1.0 ? 'blue' : 'orange'}
+                        colorScheme={option.multiplier === 1.0 ? 'brand' : option.multiplier < 1.0 ? 'neon' : 'warning'}
                         variant="outline"
                       >
                         {option.price}
@@ -198,7 +184,7 @@ export default function CrewSelectionStep({
               </Stack>
             </RadioGroup>
             {errors.crewSize && (
-              <Text color="red.500" fontSize="sm" mt={2}>
+              <Text color="error.500" fontSize="sm" mt={2}>
                 {errors.crewSize}
               </Text>
             )}
@@ -220,7 +206,7 @@ export default function CrewSelectionStep({
 
         {/* Selected Crew Summary */}
         {getSelectedCrew() && (
-          <Box p={4} borderWidth="1px" borderRadius="md" bg="green.50">
+          <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
             <Text fontSize="lg" fontWeight="semibold" mb={3}>
               Selected Crew
             </Text>
@@ -229,7 +215,7 @@ export default function CrewSelectionStep({
                 <Text fontWeight="medium">Crew Size:</Text>
                 <Text>{getSelectedCrew()?.label}</Text>
                 {getSelectedCrew()?.recommended && (
-                  <Badge colorScheme="green">Recommended</Badge>
+                  <Badge colorScheme="brand">Recommended</Badge>
                 )}
               </HStack>
               <HStack>
@@ -248,7 +234,7 @@ export default function CrewSelectionStep({
         <HStack spacing={4} justify="space-between" pt={4}>
           <Button
             onClick={onBack}
-            variant="outline"
+            variant="secondary"
             size="lg"
             leftIcon={<FaArrowLeft />}
           >
@@ -256,11 +242,11 @@ export default function CrewSelectionStep({
           </Button>
           <Button
             onClick={handleNext}
-            colorScheme="blue"
+            variant="primary"
             size="lg"
             rightIcon={<FaArrowRight />}
           >
-Continue to Confirmation
+            Continue to Confirmation
           </Button>
         </HStack>
       </VStack>

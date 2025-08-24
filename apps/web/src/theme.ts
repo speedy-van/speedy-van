@@ -221,6 +221,20 @@ const styles = {
       bg: 'dark.500',
     },
     
+    // Select dropdown styling
+    'select option': {
+      backgroundColor: '#1A1A1A',
+      color: '#E5E5E5',
+    },
+    'select option:hover': {
+      backgroundColor: '#333333',
+      color: '#FFFFFF',
+    },
+    'select option:checked': {
+      backgroundColor: '#00C2FF',
+      color: '#0D0D0D',
+    },
+    
     // Motion reduction support
     '@media (prefers-reduced-motion: reduce)': {
       '*': {
@@ -507,9 +521,156 @@ const components = {
           boxShadow: '0 0 20px rgba(239,68,68,0.3)',
         },
       },
+      icon: {
+        color: 'text.secondary',
+      },
     },
-    
+    variants: {
+      filled: {
+        field: {
+          bg: 'bg.input',
+          _focus: {
+            bg: 'bg.surface',
+          },
+        },
+      },
+    },
     defaultProps: { variant: 'filled' },
+  },
+  
+  // Add styling for Select dropdown options
+  SelectOption: {
+    baseStyle: {
+      bg: 'bg.surface',
+      color: 'text.secondary',
+      _hover: {
+        bg: 'bg.surface.hover',
+        color: 'text.primary',
+      },
+      _selected: {
+        bg: 'neon.500',
+        color: 'dark.900',
+      },
+    },
+  },
+  
+  // Add styling for Select dropdown menu
+  Menu: {
+    baseStyle: {
+      list: {
+        bg: 'bg.surface',
+        borderWidth: '1px',
+        borderColor: 'border.primary',
+        borderRadius: 'lg',
+        boxShadow: 'lg',
+        py: 2,
+      },
+      item: {
+        color: 'text.secondary',
+        _hover: {
+          bg: 'bg.surface.hover',
+          color: 'text.primary',
+        },
+        _focus: {
+          bg: 'bg.surface.hover',
+          color: 'text.primary',
+        },
+      },
+    },
+  },
+  
+  NumberInput: {
+    baseStyle: {
+      field: {
+        bg: 'bg.input',
+        borderWidth: '2px',
+        borderColor: 'border.primary',
+        borderRadius: 'lg',
+        color: 'text.primary',
+        fontSize: 'md',
+        minH: '44px',
+        px: 4,
+        py: 3,
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        _hover: {
+          borderColor: 'border.neon',
+        },
+        _focus: {
+          borderColor: 'neon.500',
+          boxShadow: 'neon.glow',
+          bg: 'bg.surface',
+        },
+        _invalid: {
+          borderColor: 'error.500',
+          boxShadow: '0 0 20px rgba(239,68,68,0.3)',
+        },
+      },
+      stepper: {
+        borderLeftWidth: '1px',
+        borderLeftColor: 'border.primary',
+        bg: 'bg.input',
+      },
+      stepperButton: {
+        color: 'text.secondary',
+        bg: 'bg.input',
+        borderLeftWidth: '1px',
+        borderLeftColor: 'border.primary',
+        _hover: {
+          bg: 'bg.surface.hover',
+          color: 'neon.500',
+        },
+        _active: {
+          bg: 'bg.surface.hover',
+        },
+        _first: {
+          borderTopRightRadius: 'lg',
+        },
+        _last: {
+          borderBottomRightRadius: 'lg',
+        },
+      },
+    },
+    defaultProps: { variant: 'filled' },
+  },
+  
+  Checkbox: {
+    baseStyle: {
+      control: {
+        bg: 'bg.input',
+        borderWidth: '2px',
+        borderColor: 'border.primary',
+        borderRadius: 'md',
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        _checked: {
+          bg: 'neon.500',
+          borderColor: 'neon.500',
+          color: 'dark.900',
+        },
+        _hover: {
+          borderColor: 'border.neon',
+          bg: 'bg.surface.hover',
+        },
+        _focus: {
+          borderColor: 'neon.500',
+          boxShadow: 'neon.glow',
+        },
+        _invalid: {
+          borderColor: 'error.500',
+          boxShadow: '0 0 20px rgba(239,68,68,0.3)',
+        },
+      },
+      label: {
+        color: 'text.secondary',
+        fontSize: 'md',
+        fontWeight: 'normal',
+        _checked: {
+          color: 'text.primary',
+        },
+        _hover: {
+          color: 'text.primary',
+        },
+      },
+    },
   },
   
   Textarea: {
@@ -742,30 +903,6 @@ const components = {
     },
   },
   
-  Menu: {
-    baseStyle: {
-      list: {
-        bg: 'bg.surface',
-        borderWidth: '1px',
-        borderColor: 'border.primary',
-        borderRadius: 'lg',
-        boxShadow: 'lg',
-        py: 2,
-      },
-      item: {
-        color: 'text.secondary',
-        _hover: {
-          bg: 'bg.surface.hover',
-          color: 'text.primary',
-        },
-        _focus: {
-          bg: 'bg.surface.hover',
-          color: 'text.primary',
-        },
-      },
-    },
-  },
-  
   Toast: {
     baseStyle: {
       container: {
@@ -783,6 +920,7 @@ const components = {
     baseStyle: {
       borderColor: 'border.primary',
       opacity: 0.6,
+      borderWidth: '1px',
     },
   },
   
@@ -834,6 +972,73 @@ const components = {
     },
     
     defaultProps: { variant: 'body' },
+  },
+
+  Form: {
+    baseStyle: {
+      label: {
+        color: 'text.primary',
+        fontWeight: 'medium',
+        fontSize: 'md',
+        mb: 2,
+      },
+      helperText: {
+        color: 'text.tertiary',
+        fontSize: 'sm',
+        mt: 1,
+      },
+      errorText: {
+        color: 'error.500',
+        fontSize: 'sm',
+        mt: 1,
+      },
+    },
+  },
+  
+  FormControl: {
+    baseStyle: {
+      mb: 4,
+    },
+  },
+
+  FormLabel: {
+    baseStyle: {
+      color: 'text.primary',
+      fontWeight: 'medium',
+      fontSize: 'md',
+      mb: 2,
+      _disabled: {
+        opacity: 0.6,
+        color: 'text.disabled',
+      },
+    },
+  },
+
+  FormErrorMessage: {
+    baseStyle: {
+      color: 'error.500',
+      fontSize: 'sm',
+      mt: 1,
+      fontWeight: 'normal',
+    },
+  },
+
+  Icon: {
+    baseStyle: {
+      color: 'text.secondary',
+    },
+  },
+
+  VStack: {
+    baseStyle: {
+      spacing: 4,
+    },
+  },
+  
+  HStack: {
+    baseStyle: {
+      spacing: 4,
+    },
   },
 };
 

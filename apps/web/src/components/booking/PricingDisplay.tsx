@@ -130,158 +130,137 @@ export default function PricingDisplay({
     calculateQuote();
   }, [bookingData]);
 
-  if (loading) {
-    return (
-      <Box p={4} bg="white" borderRadius="lg" shadow="sm">
-        <HStack justify="center" spacing={3}>
-          <Spinner size="sm" color="blue.500" />
-          <Text fontSize="sm" color="gray.600">Calculating price...</Text>
-        </HStack>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert status="error" borderRadius="lg">
-        <AlertIcon />
-        <Box>
-          <AlertTitle>Pricing Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Box>
-      </Alert>
-    );
-  }
-
-  if (!quote) {
-    return (
-      <Box p={4} bg="gray.50" borderRadius="lg" border="1px" borderColor="gray.200">
-        <Text fontSize="sm" color="gray.600" textAlign="center">
-          Add items to see pricing
-        </Text>
-      </Box>
-    );
-  }
-
-  if (compact) {
-    return (
-      <Box p={3} bg="white" borderRadius="lg" shadow="sm" border="1px" borderColor="blue.200">
-        <HStack justify="space-between">
-          <Text fontSize="sm" color="gray.600">Estimated Price:</Text>
-          <HStack spacing={2}>
-            <Icon as={FaPoundSign} color="blue.500" />
-            <Text fontSize="lg" fontWeight="bold" color="blue.600">
-              {quote.totalGBP}
-            </Text>
-          </HStack>
-        </HStack>
-      </Box>
-    );
-  }
-
   return (
-    <Box p={4} bg="white" borderRadius="lg" shadow="sm" border="1px" borderColor="blue.200">
+    <Box p={4} bg="bg.surface" borderRadius="lg" shadow="sm" border="1px" borderColor="border.primary">
       <VStack spacing={3} align="stretch">
-        {/* Main Price Display */}
-        <HStack justify="space-between">
-          <Text fontSize="lg" fontWeight="semibold" color="gray.700">
-            Estimated Price
-          </Text>
-          <HStack spacing={2}>
-            <Icon as={FaPoundSign} color="blue.500" />
-            <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-              {quote.totalGBP}
-            </Text>
+        {loading && (
+          <HStack justify="center" py={4}>
+            <Spinner size="sm" color="neon.500" />
+            <Text fontSize="sm" color="text.secondary">Calculating price...</Text>
           </HStack>
-        </HStack>
+        )}
 
-        {/* Price Breakdown Toggle */}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowDetails(!showDetails)}
-          rightIcon={showDetails ? <FaChevronUp /> : <FaChevronDown />}
-          color="blue.500"
-        >
-          {showDetails ? 'Hide' : 'Show'} breakdown
-        </Button>
+        {error && (
+          <Alert status="error">
+            <AlertIcon />
+            <AlertTitle>Pricing Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        {/* Detailed Breakdown */}
-        <Collapse in={showDetails}>
-          <VStack spacing={2} align="stretch" pt={2}>
-            <Divider />
-            
-            <HStack justify="space-between">
-              <Text fontSize="sm" color="gray.600">Base Rate</Text>
-              <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.baseRate}</Text>
-            </HStack>
+        {!quote && !loading && !error && (
+          <Box p={4} bg="bg.surface" borderRadius="lg" border="1px" borderColor="border.primary">
+            <Text fontSize="sm" color="text.secondary" textAlign="center">
+              Complete your booking details to see pricing
+            </Text>
+          </Box>
+        )}
 
-            {quote.breakdown.distanceCost > 0 && (
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">Distance Cost</Text>
-                <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.distanceCost}</Text>
-              </HStack>
-            )}
-
-            {quote.breakdown.itemsCost > 0 && (
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">Items Cost</Text>
-                <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.itemsCost}</Text>
-              </HStack>
-            )}
-
-            {quote.breakdown.workersCost > 0 && (
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">Extra Workers</Text>
-                <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.workersCost}</Text>
-              </HStack>
-            )}
-
-            {quote.breakdown.stairsCost > 0 && (
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">Stairs Cost</Text>
-                <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.stairsCost}</Text>
-              </HStack>
-            )}
-
-            {quote.breakdown.extrasCost > 0 && (
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">Extras</Text>
-                <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.extrasCost}</Text>
-              </HStack>
-            )}
-
-            <Divider />
-            
-            <HStack justify="space-between">
-              <Text fontSize="sm" fontWeight="semibold" color="gray.700">Subtotal</Text>
-              <Text fontSize="sm" fontWeight="semibold">£{quote.breakdown.subtotal}</Text>
-            </HStack>
-
-            {quote.breakdown.vat > 0 && (
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">VAT (20%)</Text>
-                <Text fontSize="sm" fontWeight="medium">£{quote.breakdown.vat}</Text>
-              </HStack>
-            )}
-
-            <HStack justify="space-between">
-              <Text fontSize="sm" fontWeight="bold" color="blue.600">Total</Text>
-              <Text fontSize="sm" fontWeight="bold" color="blue.600">£{quote.breakdown.total}</Text>
-            </HStack>
-
-            {/* Additional Info */}
-            <Box p={3} bg="blue.50" borderRadius="md">
+        {quote && !compact && (
+          <Box>
+            <HStack justify="space-between" mb={2}>
+              <Text fontSize="sm" color="text.secondary">Estimated Price:</Text>
               <HStack spacing={2}>
-                <Icon as={FaInfoCircle} color="blue.500" />
-                <Text fontSize="xs" color="blue.700">
-                  Price includes fuel, insurance, and basic packing materials. 
-                  One worker included in base rate.
+                <Icon as={FaPoundSign} color="neon.500" />
+                <Text fontSize="lg" fontWeight="bold" color="neon.500">
+                  £{quote.totalGBP?.toFixed(2) || '0.00'}
                 </Text>
               </HStack>
+            </HStack>
+          </Box>
+        )}
+
+        {quote && compact && (
+          <Box textAlign="center" py={4}>
+            <HStack justify="center" spacing={2} mb={2}>
+              <Icon as={FaPoundSign} color="neon.500" />
+              <Text fontSize="2xl" fontWeight="bold" color="neon.500">
+                £{quote.totalGBP?.toFixed(2) || '0.00'}
+              </Text>
+            </HStack>
+            <Text fontSize="sm" color="text.tertiary">
+              Total estimated cost
+            </Text>
+          </Box>
+        )}
+
+        {quote && showBreakdown && (
+          <Collapse in={showDetails}>
+            <Box mt={4} p={4} bg="bg.surface" borderRadius="lg" borderWidth="1px" borderColor="border.primary">
+              <HStack justify="space-between" mb={3}>
+                <Text fontSize="lg" fontWeight="semibold">Price Breakdown</Text>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowDetails(!showDetails)}
+                  color="neon.500"
+                >
+                  <Icon as={showDetails ? FaChevronUp : FaChevronDown} />
+                </Button>
+              </HStack>
+              
+              <VStack spacing={3} align="stretch">
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Base Rate</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.baseRate?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Distance Cost</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.distanceCost?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Items Cost</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.itemsCost?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Extra Workers</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.workersCost?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Stairs Cost</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.stairsCost?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Extras</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.extrasCost?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <Divider />
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">Subtotal</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.subtotal?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" color="text.secondary">VAT (20%)</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.vat?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+                
+                <Divider />
+                
+                <HStack justify="space-between">
+                  <Text fontSize="sm" fontWeight="bold" color="neon.500">Total</Text>
+                  <Text fontSize="sm" fontWeight="bold" color="neon.500">£{quote.breakdown?.total?.toFixed(2) || '0.00'}</Text>
+                </HStack>
+              </VStack>
+              
+              <Box p={3} bg="bg.surface" borderRadius="md" mt={4} borderWidth="1px" borderColor="border.primary">
+                <HStack spacing={2}>
+                  <Icon as={FaInfoCircle} color="neon.500" />
+                  <Text fontSize="sm" color="text.secondary">
+                    This is an estimated price. Final price may vary based on actual requirements.
+                  </Text>
+                </HStack>
+              </Box>
             </Box>
-          </VStack>
-        </Collapse>
+          </Collapse>
+        )}
       </VStack>
     </Box>
   );

@@ -262,12 +262,12 @@ export default function EmailInputWithSuggestions({
           mt={1}
         >
           <VStack spacing={0} align="stretch">
-                         {/* Popular domains section */}
-             <Box p={3} bg="blue.50" borderBottomWidth="1px" borderColor={borderColor}>
-               <Text fontSize="sm" fontWeight="semibold" color="blue.600">
-                 Popular Domains
-               </Text>
-             </Box>
+            {/* Popular domains section */}
+            <Box p={3} bg="bg.surface" borderBottomWidth="1px" borderColor="border.primary">
+              <Text fontSize="sm" fontWeight="semibold" color="neon.500">
+                Popular Domains
+              </Text>
+            </Box>
             
             {/* Domain suggestions */}
             {filteredDomains.slice(0, 20).map((domain, index) => (
@@ -280,7 +280,7 @@ export default function EmailInputWithSuggestions({
                 py={2}
                 h="auto"
                 borderRadius={0}
-                _hover={{ bg: hoverBg }}
+                _hover={{ bg: 'bg.surface.hover' }}
                 onClick={() => handleDomainSelect(domain)}
                 textAlign="left"
               >
@@ -289,12 +289,12 @@ export default function EmailInputWithSuggestions({
                     <Text as="span" fontWeight="medium">
                       {getLocalPart()}
                     </Text>
-                    <Text as="span" color="gray.500">
+                    <Text as="span" color="text.tertiary">
                       {domain}
                     </Text>
                   </Text>
                   {index < 10 && (
-                    <Badge colorScheme="blue" size="sm">
+                    <Badge colorScheme="neon" size="sm">
                       Popular
                     </Badge>
                   )}
@@ -302,14 +302,14 @@ export default function EmailInputWithSuggestions({
               </Button>
             ))}
 
-                         {/* Show more domains if available */}
-             {filteredDomains.length > 20 && (
-               <Box p={3} bg="gray.50" borderTopWidth="1px" borderColor={borderColor}>
-                 <Text fontSize="xs" color="gray.500" textAlign="center">
-                   +{filteredDomains.length - 20} more domains available
-                 </Text>
-               </Box>
-             )}
+            {/* Show more domains if available */}
+            {filteredDomains.length > 20 && (
+              <Box p={3} bg="bg.surface" borderTopWidth="1px" borderColor="border.primary">
+                <Text fontSize="xs" color="text.tertiary" textAlign="center">
+                  +{filteredDomains.length - 20} more domains available
+                </Text>
+              </Box>
+            )}
           </VStack>
         </Box>
       )}

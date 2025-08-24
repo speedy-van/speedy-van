@@ -315,33 +315,64 @@ export default function AddressAutocomplete({
       <style>{`
         .address-input {
           width: 100%;
-          height: 40px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 0 12px;
+          height: 44px;
+          border: 2px solid #404040;
+          border-radius: 12px;
+          padding: 0 16px;
+          background-color: #262626;
+          color: #FFFFFF;
+          font-size: 16px;
+          outline: none;
+          transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .address-input:hover {
+          border-color: #00C2FF;
+        }
+        .address-input:focus {
+          border-color: #00C2FF;
+          box-shadow: 0 0 20px rgba(0,194,255,0.3);
+          background-color: #1A1A1A;
+        }
+        .address-input::placeholder {
+          color: #A3A3A3;
         }
         .autocomplete-menu {
           position: absolute;
-          background: white;
-          border: 1px solid #eee;
-          border-radius: 8px;
+          background: #1A1A1A;
+          border: 1px solid #404040;
+          border-radius: 12px;
           margin-top: 4px;
           width: 100%;
           max-height: 280px;
           overflow-y: auto;
           z-index: 1000;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          box-shadow: 0 6px 16px rgba(0,0,0,0.5);
         }
         .autocomplete-menu li {
-          padding: 8px 12px;
+          padding: 12px 16px;
           cursor: pointer;
+          color: #E5E5E5;
+          transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .autocomplete-menu li:hover {
+          background: #333333;
         }
         .autocomplete-menu li.active {
-          background: #f0f9ff;
+          background: #00C2FF;
+          color: #0D0D0D;
+        }
+        .autocomplete-menu li.active small {
+          color: #0D0D0D;
         }
         .muted {
-          color: #666;
-          padding: 8px 12px;
+          color: #A3A3A3;
+          padding: 12px 16px;
+        }
+        .autocomplete-menu small {
+          color: #A3A3A3;
+          display: block;
+          margin-top: 4px;
+          font-size: 12px;
         }
       `}</style>
     </div>

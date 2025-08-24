@@ -141,36 +141,37 @@ export default function BookingPage() {
   ];
 
   return (
-    <Box minH="100vh" bg="gray.50" py={8}>
+    <Box minH="100vh" bg="bg.canvas" py={8}>
       <Container maxW="4xl">
         <VStack spacing={8}>
           {/* Header */}
           <Box textAlign="center" w="full">
-            <Heading size="xl" color="blue.600" mb={2}>
+            <Heading size="xl" color="neon.500" mb={2}>
               Book Your Move
             </Heading>
-            <Text color="gray.600" fontSize="lg">
+            <Text color="text.secondary" fontSize="lg">
               Complete your booking in {9 - currentStep + 1} simple steps
             </Text>
           </Box>
 
           {/* Progress Bar */}
-          <Box w="full" bg="white" p={6} borderRadius="lg" shadow="sm">
+          <Box w="full" bg="bg.card" p={6} borderRadius="xl" borderWidth="1px" borderColor="border.primary" boxShadow="md">
             <VStack spacing={4}>
               <HStack justify="space-between" w="full">
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color="text.tertiary">
                   Step {currentStep} of 9
                 </Text>
-                <Text fontSize="sm" color="blue.600" fontWeight="semibold">
+                <Text fontSize="sm" color="neon.500" fontWeight="semibold">
                   {stepTitles[currentStep - 1]}
                 </Text>
               </HStack>
               <Progress 
                 value={(currentStep / 9) * 100} 
                 w="full" 
-                colorScheme="brand" 
+                colorScheme="neon" 
                 size="lg"
                 borderRadius="full"
+                bg="bg.surface"
               />
             </VStack>
           </Box>

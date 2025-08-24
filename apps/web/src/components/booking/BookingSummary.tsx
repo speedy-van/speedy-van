@@ -49,24 +49,24 @@ export default function BookingSummary({
   }, [currentPrice]);
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="lg" bg="white" shadow="sm">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="blue.600">
+          <Text fontSize="xl" fontWeight="bold" color="neon.500">
             Step 7: Booking Summary
           </Text>
-          <Text fontSize="sm" color="gray.600" mt={2}>
+          <Text fontSize="sm" color="text.secondary" mt={2}>
             Review your booking details and total cost
           </Text>
         </Box>
 
         {/* Total Amount Display */}
-        <Box p={4} borderWidth="2px" borderRadius="md" borderColor="green.500" bg="green.50">
+        <Box p={4} borderWidth="2px" borderRadius="lg" borderColor="brand.500" bg="bg.surface">
           <HStack justify="space-between">
-            <Text fontSize="xl" fontWeight="bold" color="green.700">
+            <Text fontSize="xl" fontWeight="bold" color="brand.500">
               Total Amount
             </Text>
-            <Badge colorScheme="green" fontSize="2xl" p={3}>
+            <Badge colorScheme="brand" fontSize="2xl" p={3}>
               {formatCurrency(currentPrice)}
             </Badge>
           </HStack>
@@ -80,7 +80,7 @@ export default function BookingSummary({
         />
 
         {/* Booking Details Summary */}
-        <Box p={4} borderWidth="1px" borderRadius="md" bg="blue.50">
+        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
           <Text fontSize="lg" fontWeight="semibold" mb={3}>
             Booking Details
           </Text>
@@ -98,55 +98,70 @@ export default function BookingSummary({
               <Text>{bookingData.crewSize} person{bookingData.crewSize !== 1 ? 's' : ''}</Text>
             </HStack>
             <HStack justify="space-between" w="full">
-              <Text fontWeight="medium">Items:</Text>
-              <Text>{bookingData.items?.length || 0} item{bookingData.items?.length !== 1 ? 's' : ''}</Text>
+              <Text fontWeight="medium">Customer:</Text>
+              <Text>{bookingData.customer?.name || 'Not set'}</Text>
+            </HStack>
+            <HStack justify="space-between" w="full">
+              <Text fontWeight="medium">Email:</Text>
+              <Text>{bookingData.customer?.email || 'Not set'}</Text>
+            </HStack>
+            <HStack justify="space-between" w="full">
+              <Text fontWeight="medium">Phone:</Text>
+              <Text>{bookingData.customer?.phone || 'Not set'}</Text>
             </HStack>
           </VStack>
         </Box>
 
         {/* Address Summary */}
-        <Box p={4} borderWidth="1px" borderRadius="md" bg="gray.50">
+        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
           <Text fontSize="lg" fontWeight="semibold" mb={3}>
-            Addresses
+            Address Details
           </Text>
           <VStack align="start" spacing={3}>
             <Box>
-              <Text fontWeight="medium" color="blue.600">Pickup Address:</Text>
-              <Text>{bookingData.pickupAddress?.line1 || 'Not set'}</Text>
-              <Text fontSize="sm" color="gray.600">
-                {bookingData.pickupAddress?.city}, {bookingData.pickupAddress?.postcode}
+              <Text fontWeight="medium" color="brand.500">Pickup Address:</Text>
+              <Text fontSize="sm" color="text.secondary">
+                {bookingData.pickupAddress?.line1 || 'Not set'}, {bookingData.pickupAddress?.city || ''} {bookingData.pickupAddress?.postcode || ''}
               </Text>
+              {bookingData.pickupProperty?.propertyType && (
+                <Text fontSize="sm" color="text.tertiary">
+                  Property: {bookingData.pickupProperty.propertyType} (Floor: {bookingData.pickupProperty.floor || 0})
+                </Text>
+              )}
             </Box>
             <Box>
-              <Text fontWeight="medium" color="green.600">Dropoff Address:</Text>
-              <Text>{bookingData.dropoffAddress?.line1 || 'Not set'}</Text>
-              <Text fontSize="sm" color="gray.600">
-                {bookingData.dropoffAddress?.city}, {bookingData.dropoffAddress?.postcode}
+              <Text fontWeight="medium" color="neon.500">Dropoff Address:</Text>
+              <Text fontSize="sm" color="text.secondary">
+                {bookingData.dropoffAddress?.line1 || 'Not set'}, {bookingData.dropoffAddress?.city || ''} {bookingData.dropoffAddress?.postcode || ''}
               </Text>
+              {bookingData.dropoffProperty?.propertyType && (
+                <Text fontSize="sm" color="text.tertiary">
+                  Property: {bookingData.dropoffProperty.propertyType} (Floor: {bookingData.dropoffProperty.floor || 0})
+                </Text>
+              )}
             </Box>
           </VStack>
         </Box>
 
-        {/* Customer Details */}
-        <Box p={4} borderWidth="1px" borderRadius="md" bg="purple.50">
-          <Text fontSize="lg" fontWeight="semibold" mb={3}>
-            Customer Details
-          </Text>
-          <VStack align="start" spacing={2}>
-            <HStack justify="space-between" w="full">
-              <Text fontWeight="medium">Name:</Text>
-              <Text>{bookingData.customerName || 'Not set'}</Text>
-            </HStack>
-            <HStack justify="space-between" w="full">
-              <Text fontWeight="medium">Email:</Text>
-              <Text>{bookingData.customerEmail || 'Not set'}</Text>
-            </HStack>
-            <HStack justify="space-between" w="full">
-              <Text fontWeight="medium">Phone:</Text>
-              <Text>{bookingData.customerPhone || 'Not set'}</Text>
-            </HStack>
-          </VStack>
-        </Box>
+        {/* Items Summary */}
+        {bookingData.items && bookingData.items.length > 0 && (
+          <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
+            <Text fontSize="lg" fontWeight="semibold" mb={3}>
+              Items to Move ({bookingData.items.length})
+            </Text>
+            <VStack align="start" spacing={2}>
+              {bookingData.items.map((item: any, index: number) => (
+                <HStack key={index} justify="space-between" w="full">
+                  <Text fontSize="sm">{item.name}</Text>
+                  <HStack spacing={2}>
+                    <Badge colorScheme="neon" variant="outline">Qty: {item.quantity}</Badge>
+                    <Badge colorScheme="brand" variant="outline">£{item.price}</Badge>
+                  </HStack>
+                </HStack>
+              ))}
+            </VStack>
+          </Box>
+        )}
 
         {/* Navigation Buttons */}
         <HStack spacing={4} justify="space-between" pt={4}>
@@ -162,9 +177,7 @@ export default function BookingSummary({
             onClick={handleContinue}
             variant="primary"
             size="lg"
-            isCTA={true}
             rightIcon={<FaArrowRight />}
-            isDisabled={currentPrice <= 0}
           >
             Continue to Payment
           </Button>
