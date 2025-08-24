@@ -109,6 +109,7 @@ function normalizeSuggestions(data: any): Suggestion[] {
 
 /** Address Autocomplete Input */
 export default function AddressAutocomplete({
+  console.log('[AddressAutocomplete] Component rendered with props:', { value, onChange, onSelect, placeholder, country, limit, minLength, debounceMs });
   value,
   onChange,
   onSelect,
