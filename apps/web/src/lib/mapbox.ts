@@ -1,11 +1,15 @@
-const TOKEN =
+// Server-side token (for API routes)
+const SERVER_TOKEN =
   process.env.MAPBOX_TOKEN ||
   process.env.MAPBOX_ACCESS_TOKEN ||
   process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
   "";
 
-// Export for client-side use (must be NEXT_PUBLIC_ only)
+// Client-side token (for browser)
 export const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+// Use appropriate token based on environment
+const TOKEN = typeof window === 'undefined' ? SERVER_TOKEN : MAPBOX_TOKEN;
 
 const BASE = "https://api.mapbox.com";
 

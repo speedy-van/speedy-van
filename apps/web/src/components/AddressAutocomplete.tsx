@@ -1,6 +1,7 @@
 
 'use client';
 import * as React from "react";
+import { MAPBOX_TOKEN } from "@/lib/mapbox";
 
 export type AddressParts = {
   line1: string;
@@ -191,11 +192,11 @@ export default function AddressAutocomplete({
           stack: err?.stack
         });
         
-        // Try fallback: direct Mapbox API call
-        try {
-          console.log('[AddressAutocomplete] Trying fallback Mapbox API...');
-          const fallbackUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?autocomplete=true&limit=${limit}&country=${country}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`;
-          console.log('[AddressAutocomplete] Fallback URL:', fallbackUrl);
+                 // Try fallback: direct Mapbox API call
+         try {
+           console.log('[AddressAutocomplete] Trying fallback Mapbox API...');
+           const fallbackUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?autocomplete=true&limit=${limit}&country=${country}&access_token=${MAPBOX_TOKEN}`;
+           console.log('[AddressAutocomplete] Fallback URL:', fallbackUrl);
           
           const fallbackRes = await fetch(fallbackUrl);
           if (fallbackRes.ok) {
