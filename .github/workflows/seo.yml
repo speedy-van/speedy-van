@@ -57,6 +57,12 @@ jobs:
           echo "Build completed successfully"
 
       - name: Run SEO checks
+        env:
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: https://speedy-van.onrender.com
+          NODE_ENV: production
         run: |
-          echo "Running basic SEO checks..."
-          echo "SEO checks completed successfully"
+          echo "Running SEO checks..."
+          echo "Checking Next.js build integrity..."
+          pnpm --filter ./apps/web run seo-check
+          echo "✅ SEO checks completed successfully"

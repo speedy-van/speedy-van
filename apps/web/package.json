@@ -37,7 +37,8 @@
     "analyze:server": "ANALYZE=true npm run build && open bundle-analysis.html",
     "performance:build": "npm run build",
     "performance:start": "npm run start",
-    "performance:lighthouse": "npx lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html"
+    "performance:lighthouse": "npx lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html",
+    "seo-check": "tsx scripts/seo-check.ts"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.6",
