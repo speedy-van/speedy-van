@@ -388,7 +388,7 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
             <HStack justify="space-between">
               <VStack align="start" spacing={1}>
                 <Text fontSize="lg" fontWeight="bold">#{order.reference}</Text>
-                <Text fontSize="sm" color="gray.600">Order Details</Text>
+                <Text fontSize="sm" color="text.secondary">Order Details</Text>
               </VStack>
               <HStack spacing={2}>
                 <Badge colorScheme={getStatusColor(order.status)} size="lg">
@@ -446,10 +446,10 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                               <VStack align="start" spacing={1}>
                                 <Text fontWeight="bold">Pickup</Text>
                                 <Text>{order.pickupAddress?.label || 'Not specified'}</Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {order.pickupAddress?.postcode} • {order.pickupProperty?.propertyType}
                                 </Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {order.scheduledAt ? format(new Date(order.scheduledAt), 'MMM dd, yyyy HH:mm') : 'No scheduled time'}
                                 </Text>
                               </VStack>
@@ -459,10 +459,10 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                               <VStack align="start" spacing={1}>
                                 <Text fontWeight="bold">Dropoff</Text>
                                 <Text>{order.dropoffAddress?.label || 'Not specified'}</Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {order.dropoffAddress?.postcode} • {order.dropoffProperty?.propertyType}
                                 </Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   Distance: {order.baseDistanceMiles.toFixed(1)} miles • Duration: {order.estimatedDurationMinutes} mins
                                 </Text>
                               </VStack>
@@ -480,19 +480,19 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                           </HStack>
                           <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                             <VStack align="start" spacing={2}>
-                              <Text fontSize="sm" color="gray.600">Crew Size</Text>
+                              <Text fontSize="sm" color="text.tertiary">Crew Size</Text>
                               <Text fontWeight="medium">{order.crewSize || 'Not specified'}</Text>
                             </VStack>
                             <VStack align="start" spacing={2}>
-                              <Text fontSize="sm" color="gray.600">Pickup Floors</Text>
+                              <Text fontSize="sm" color="text.tertiary">Pickup Floors</Text>
                               <Text fontWeight="medium">{order.pickupProperty?.floors || 0} floors</Text>
                             </VStack>
                             <VStack align="start" spacing={2}>
-                              <Text fontSize="sm" color="gray.600">Pickup Access</Text>
+                              <Text fontSize="sm" color="text.tertiary">Pickup Access</Text>
                               <Text fontWeight="medium">{order.pickupProperty?.accessType || 'Not specified'}</Text>
                             </VStack>
                             <VStack align="start" spacing={2}>
-                              <Text fontSize="sm" color="gray.600">Dropoff Access</Text>
+                              <Text fontSize="sm" color="text.tertiary">Dropoff Access</Text>
                               <Text fontWeight="medium">{order.dropoffProperty?.accessType || 'Not specified'}</Text>
                             </VStack>
                           </Grid>
@@ -508,7 +508,7 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                                   </Text>
                                 ))}
                                 {order.items.length > 5 && (
-                                  <Text fontSize="sm" color="gray.600">
+                                  <Text fontSize="sm" color="text.secondary">
                                     ... and {order.items.length - 5} more items
                                   </Text>
                                 )}
@@ -533,7 +533,7 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                               <VStack align="start" spacing={1}>
                                 <Text fontWeight="bold">{order.customerName}</Text>
                                 <Text fontSize="sm">{order.customerEmail}</Text>
-                                <Text fontSize="sm" color="gray.600">{order.customerPhone}</Text>
+                                <Text fontSize="sm" color="text.secondary">{order.customerPhone}</Text>
                               </VStack>
                             </HStack>
                             <HStack spacing={3}>
@@ -580,7 +580,7 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                               </HStack>
                             </VStack>
                           ) : (
-                            <Text color="gray.500">No driver assigned</Text>
+                            <Text color="text.tertiary">No driver assigned</Text>
                           )}
                         </CardBody>
                       </Card>
@@ -612,7 +612,7 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                             {order.stripePaymentIntentId && (
                               <HStack justify="space-between">
                                 <Text>Payment ID</Text>
-                                <Text fontSize="xs" color="gray.600">{order.stripePaymentIntentId.substring(0, 20)}...</Text>
+                                <Text fontSize="xs" color="text.secondary">{order.stripePaymentIntentId.substring(0, 20)}...</Text>
                               </HStack>
                             )}
                           </VStack>
@@ -634,25 +634,25 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                         {order.assignment?.events && order.assignment.events.length > 0 ? (
                           order.assignment.events.map((event, index) => (
                             <HStack key={event.id} spacing={4}>
-                              <Text fontSize="sm" color="gray.600" minW="80px">
+                              <Text fontSize="sm" color="text.secondary" minW="80px">
                                 {format(new Date(event.createdAt), 'HH:mm')}
                               </Text>
                               <Box
                                 w="12px"
                                 h="12px"
                                 borderRadius="full"
-                                bg={index === order.assignment!.events.length - 1 ? "blue.500" : "gray.300"}
+                                bg={index === order.assignment!.events.length - 1 ? "blue.500" : "text.tertiary"}
                               />
                               <VStack align="start" spacing={1}>
                                 <Text fontWeight="medium">{event.step.replace(/_/g, ' ')}</Text>
                                 {event.notes && (
-                                  <Text fontSize="sm" color="gray.600">{event.notes}</Text>
+                                  <Text fontSize="sm" color="text.secondary">{event.notes}</Text>
                                 )}
                               </VStack>
                             </HStack>
                           ))
                         ) : (
-                          <Text color="gray.500">No timeline events yet</Text>
+                          <Text color="text.tertiary">No timeline events yet</Text>
                         )}
                       </VStack>
                     </CardBody>
@@ -737,15 +737,15 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                       <VStack spacing={4} align="stretch">
                         {order.messages && order.messages.length > 0 ? (
                           order.messages.map((message) => (
-                            <Box key={message.id} p={3} bg="gray.50" borderRadius="md">
-                              <Text fontSize="sm" color="gray.600" mb={1}>
+                            <Box key={message.id} p={3} bg="bg.surface.elevated" borderRadius="md">
+                              <Text fontSize="sm" color="text.secondary" mb={1}>
                                 {format(new Date(message.createdAt), 'MMM dd, yyyy HH:mm')}
                               </Text>
                               <Text>{message.content}</Text>
                             </Box>
                           ))
                         ) : (
-                          <Text color="gray.500">No messages yet</Text>
+                          <Text color="text.tertiary">No messages yet</Text>
                         )}
                         <Button leftIcon={<Icon as={FiSend} />} colorScheme="blue">
                           Send Message
@@ -763,7 +763,7 @@ export function OrderDetailDrawer({ isOpen, onClose, orderCode }: OrderDetailDra
                         <Icon as={FiFile} />
                         <Text fontWeight="bold" fontSize="lg">Files</Text>
                       </HStack>
-                      <Text color="gray.500">Photos, POD, and invoice PDFs will be displayed here</Text>
+                      <Text color="text.tertiary">Photos, POD, and invoice PDFs will be displayed here</Text>
                     </CardBody>
                   </Card>
                 </TabPanel>

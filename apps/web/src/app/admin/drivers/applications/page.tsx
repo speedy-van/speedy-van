@@ -230,7 +230,7 @@ export default function DriverApplicationsPage() {
         <Flex justify="space-between" align="center">
           <VStack align="start" spacing={1}>
             <Heading size="lg">Driver Applications</Heading>
-            <Text color="gray.600">Review and approve new driver applications</Text>
+            <Text color="text.secondary">Review and approve new driver applications</Text>
           </VStack>
           <HStack spacing={4}>
             <Button
@@ -248,6 +248,8 @@ export default function DriverApplicationsPage() {
                 });
               }}
               isDisabled={autoApproveEligible.length === 0}
+              variant="solid"
+              _hover={{ bg: "green.600", shadow: "neon.glow" }}
             >
               Auto-approve Eligible ({autoApproveEligible.length})
             </Button>
@@ -256,35 +258,47 @@ export default function DriverApplicationsPage() {
 
         {/* Stats Row */}
         <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-          <Stat>
-            <StatLabel>Pending Review</StatLabel>
-            <StatNumber color="orange.500">{pendingApplications.length}</StatNumber>
-            <StatHelpText>Awaiting approval</StatHelpText>
-          </Stat>
-          <Stat>
-            <StatLabel>Auto-approve Eligible</StatLabel>
-            <StatNumber color="green.500">{autoApproveEligible.length}</StatNumber>
-            <StatHelpText>Score ≥ 85, all docs complete</StatHelpText>
-          </Stat>
-          <Stat>
-            <StatLabel>Average Score</StatLabel>
-            <StatNumber>
-              {pendingApplications.length > 0 
-                ? Math.round(pendingApplications.reduce((sum, app) => sum + app.score, 0) / pendingApplications.length)
-                : 0
-              }
-            </StatNumber>
-            <StatHelpText>Of pending applications</StatHelpText>
-          </Stat>
+          <Card bg="bg.surface" borderColor="border.primary" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)" }} transition="all 0.3s ease">
+            <CardBody>
+              <Stat>
+                <StatLabel color="text.secondary">Pending Review</StatLabel>
+                <StatNumber color="orange.500">{pendingApplications.length}</StatNumber>
+                <StatHelpText color="text.tertiary">Awaiting approval</StatHelpText>
+              </Stat>
+            </CardBody>
+          </Card>
+          <Card bg="bg.surface" borderColor="border.primary" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)" }} transition="all 0.3s ease">
+            <CardBody>
+              <Stat>
+                <StatLabel color="text.secondary">Auto-approve Eligible</StatLabel>
+                <StatNumber color="green.500">{autoApproveEligible.length}</StatNumber>
+                <StatHelpText color="text.tertiary">Score ≥ 85, all docs complete</StatHelpText>
+              </Stat>
+            </CardBody>
+          </Card>
+          <Card bg="bg.surface" borderColor="border.primary" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)" }} transition="all 0.3s ease">
+            <CardBody>
+              <Stat>
+                <StatLabel color="text.secondary">Average Score</StatLabel>
+                <StatNumber color="neon.500">
+                  {pendingApplications.length > 0 
+                    ? Math.round(pendingApplications.reduce((sum, app) => sum + app.score, 0) / pendingApplications.length)
+                    : 0
+                  }
+                </StatNumber>
+                <StatHelpText color="text.tertiary">Of pending applications</StatHelpText>
+              </Stat>
+            </CardBody>
+          </Card>
         </Grid>
 
         {/* Filters */}
-        <Card>
+        <Card bg="bg.surface" borderColor="border.primary">
           <CardBody>
             <HStack spacing={4}>
               <InputGroup maxW="300px">
                 <InputLeftElement>
-                  <Icon as={FiSearch} color="gray.400" />
+                  <Icon as={FiSearch} color="text.tertiary" />
                 </InputLeftElement>
                 <Input
                   placeholder="Search by name, email, phone..."
@@ -318,17 +332,20 @@ export default function DriverApplicationsPage() {
                 setSelectedApplication(application);
                 onOpen();
               }}
-              _hover={{ shadow: "lg" }}
+              _hover={{ shadow: "neon.glow", borderLeftColor: "neon.500", transform: "translateY(-2px)" }}
+              transition="all 0.3s ease"
               borderLeft="4px solid"
               borderLeftColor={getScoreColor(application.score)}
+              bg="bg.surface"
+              borderColor="border.primary"
             >
               <CardBody>
                 <VStack spacing={3} align="stretch">
                   <Flex justify="space-between" align="start">
                     <VStack align="start" spacing={1}>
                       <Heading size="md">{application.name}</Heading>
-                      <Text color="gray.600" fontSize="sm">{application.email}</Text>
-                      <Text color="gray.600" fontSize="sm">{application.phone}</Text>
+                      <Text color="text.secondary" fontSize="sm">{application.email}</Text>
+                      <Text color="text.secondary" fontSize="sm">{application.phone}</Text>
                     </VStack>
                     <VStack align="end" spacing={1}>
                       <Badge colorScheme={getScoreColor(application.score)}>
@@ -345,15 +362,15 @@ export default function DriverApplicationsPage() {
                   <Grid templateColumns="1fr 1fr" gap={3}>
                     <VStack align="start" spacing={1}>
                       <Text fontSize="sm" fontWeight="medium">Vehicle</Text>
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="text.secondary">
                         {application.vehicle.year} {application.vehicle.make} {application.vehicle.model}
                       </Text>
-                      <Text fontSize="sm" color="gray.600">{application.vehicle.reg}</Text>
+                      <Text fontSize="sm" color="text.secondary">{application.vehicle.reg}</Text>
                     </VStack>
                     <VStack align="start" spacing={1}>
                       <Text fontSize="sm" fontWeight="medium">Experience</Text>
-                      <Text fontSize="sm" color="gray.600">{application.experience}</Text>
-                      <Text fontSize="sm" color="gray.600">Rating: {application.rating}/5</Text>
+                      <Text fontSize="sm" color="text.secondary">{application.experience}</Text>
+                      <Text fontSize="sm" color="text.secondary">Rating: {application.rating}/5</Text>
                     </VStack>
                   </Grid>
 
@@ -392,11 +409,11 @@ export default function DriverApplicationsPage() {
         </Grid>
 
         {filteredApplications.length === 0 && (
-          <Card>
+          <Card bg="bg.surface" borderColor="border.primary">
             <CardBody>
               <VStack spacing={4} py={8}>
-                <Icon as={FiUser} size="48px" color="gray.400" />
-                <Text color="gray.600">No applications found</Text>
+                <Icon as={FiUser} size="48px" color="text.tertiary" />
+                <Text color="text.secondary">No applications found</Text>
               </VStack>
             </CardBody>
           </Card>
@@ -405,23 +422,67 @@ export default function DriverApplicationsPage() {
 
       {/* Application Detail Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="6xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <VStack align="start" spacing={1}>
-              <Heading size="md">Review Application: {selectedApplication?.name}</Heading>
-              <Text color="gray.600" fontSize="sm">Score: {selectedApplication?.score}/100</Text>
+        <ModalOverlay bg="rgba(0, 0, 0, 0.8)" />
+        <ModalContent 
+          bg="dark.800" 
+          borderColor="neon.500"
+          border="2px solid"
+          shadow="neon.glow"
+          borderRadius="xl"
+          color="white"
+        >
+          <ModalHeader 
+            bg="dark.900" 
+            borderBottom="2px solid" 
+            borderColor="neon.500"
+            borderRadius="xl xl 0 0"
+            color="white"
+          >
+            <VStack align="start" spacing={2}>
+              <Heading size="lg" color="white">Review Application: {selectedApplication?.name}</Heading>
+              <HStack spacing={4}>
+                <Badge colorScheme="green" size="lg" variant="solid">
+                  Score: {selectedApplication?.score}/100
+                </Badge>
+                <Badge colorScheme={selectedApplication?.autoApproveEligible ? "green" : "orange"} size="md">
+                  {selectedApplication?.autoApproveEligible ? "Auto-approve Eligible" : "Manual Review Required"}
+                </Badge>
+              </HStack>
             </VStack>
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedApplication && (
-              <Tabs index={selectedTab} onChange={setSelectedTab}>
-                <TabList>
-                  <Tab>Overview</Tab>
-                  <Tab>Documents</Tab>
-                  <Tab>Vehicle</Tab>
-                  <Tab>Compliance</Tab>
+              <Tabs index={selectedTab} onChange={setSelectedTab} variant="enclosed" colorScheme="blue">
+                <TabList bg="dark.900" border="2px solid" borderColor="neon.500" borderRadius="md" p={2}>
+                  <Tab 
+                    _selected={{ bg: "neon.500", color: "dark.900", fontWeight: "bold" }}
+                    _hover={{ bg: "dark.700" }}
+                    color="white"
+                  >
+                    Overview
+                  </Tab>
+                  <Tab 
+                    _selected={{ bg: "neon.500", color: "dark.900", fontWeight: "bold" }}
+                    _hover={{ bg: "dark.700" }}
+                    color="white"
+                  >
+                    Documents
+                  </Tab>
+                  <Tab 
+                    _selected={{ bg: "neon.500", color: "dark.900", fontWeight: "bold" }}
+                    _hover={{ bg: "dark.700" }}
+                    color="white"
+                  >
+                    Vehicle
+                  </Tab>
+                  <Tab 
+                    _selected={{ bg: "neon.500", color: "dark.900", fontWeight: "bold" }}
+                    _hover={{ bg: "dark.700" }}
+                    color="white"
+                  >
+                    Compliance
+                  </Tab>
                 </TabList>
 
                 <TabPanels>
@@ -430,7 +491,9 @@ export default function DriverApplicationsPage() {
                     <VStack spacing={6} align="stretch">
                       <Grid templateColumns="1fr 1fr" gap={6}>
                         <VStack align="start" spacing={4}>
-                          <Heading size="sm">Personal Information</Heading>
+                          <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                            Personal Information
+                          </Heading>
                           <VStack align="start" spacing={2}>
                             <HStack>
                               <Icon as={FiUser} />
@@ -452,7 +515,9 @@ export default function DriverApplicationsPage() {
                         </VStack>
 
                         <VStack align="start" spacing={4}>
-                          <Heading size="sm">Application Details</Heading>
+                          <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                            Application Details
+                          </Heading>
                           <VStack align="start" spacing={2}>
                             <Text><strong>Applied:</strong> {new Date(selectedApplication.appliedAt).toLocaleDateString()}</Text>
                             <Text><strong>Experience:</strong> {selectedApplication.experience}</Text>
@@ -465,46 +530,57 @@ export default function DriverApplicationsPage() {
                       <Divider />
 
                       <VStack align="start" spacing={4}>
-                        <Heading size="sm">Score Breakdown</Heading>
+                        <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                          Score Breakdown
+                        </Heading>
                         <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4} w="full">
-                          <Card>
+                          <Card bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                             <CardBody>
-                              <VStack spacing={2}>
-                                <Text fontSize="sm" fontWeight="medium">Documents</Text>
+                              <VStack spacing={3}>
+                                <HStack>
+                                  <Icon as={FiFile} color="neon.500" />
+                                  <Text fontSize="sm" fontWeight="bold" color="white">Documents</Text>
+                                </HStack>
                                 <Progress 
                                   value={Object.values(selectedApplication.documents).filter(doc => doc.status === 'complete').length * 20} 
                                   colorScheme="green" 
                                   size="sm" 
                                 />
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {Object.values(selectedApplication.documents).filter(doc => doc.status === 'complete').length}/5 complete
                                 </Text>
                               </VStack>
                             </CardBody>
                           </Card>
-                          <Card>
+                          <Card bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                             <CardBody>
-                              <VStack spacing={2}>
-                                <Text fontSize="sm" fontWeight="medium">Experience</Text>
+                              <VStack spacing={3}>
+                                <HStack>
+                                  <Icon as={FiUser} color="neon.500" />
+                                  <Text fontSize="sm" fontWeight="bold" color="white">Experience</Text>
+                                </HStack>
                                 <Text fontSize="lg" fontWeight="bold">
                                   {parseInt(selectedApplication.experience.split(' ')[0])} years
                                 </Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {parseInt(selectedApplication.experience.split(' ')[0]) >= 5 ? 'Excellent' : 
                                    parseInt(selectedApplication.experience.split(' ')[0]) >= 3 ? 'Good' : 'Basic'}
                                 </Text>
                               </VStack>
                             </CardBody>
                           </Card>
-                          <Card>
+                          <Card bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                             <CardBody>
-                              <VStack spacing={2}>
-                                <Text fontSize="sm" fontWeight="medium">Rating</Text>
+                              <VStack spacing={3}>
+                                <HStack>
+                                  <Icon as={FiStar} color="neon.500" />
+                                  <Text fontSize="sm" fontWeight="bold" color="white">Rating</Text>
+                                </HStack>
                                 <HStack>
                                   <Icon as={FiStar} color="yellow.400" />
                                   <Text fontSize="lg" fontWeight="bold">{selectedApplication.rating}/5</Text>
                                 </HStack>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {selectedApplication.rating >= 4.8 ? 'Excellent' : 
                                    selectedApplication.rating >= 4.5 ? 'Good' : 'Average'}
                                 </Text>
@@ -519,15 +595,17 @@ export default function DriverApplicationsPage() {
                   {/* Documents Tab */}
                   <TabPanel>
                     <VStack spacing={6} align="stretch">
-                      <Text fontWeight="medium">Document Review with OCR Data</Text>
+                      <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                        Document Review with OCR Data
+                      </Heading>
                       
                       <Grid templateColumns="1fr 1fr" gap={6}>
                         {Object.entries(selectedApplication.documents).map(([docType, doc]) => (
-                          <Card key={docType}>
+                          <Card key={docType} bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                             <CardBody>
                               <VStack spacing={4} align="stretch">
                                 <HStack justify="space-between">
-                                  <Heading size="sm" textTransform="capitalize">{docType}</Heading>
+                                  <Heading size="sm" textTransform="capitalize" color="white">{docType}</Heading>
                                   <Badge colorScheme={getDocumentStatusColor(doc.status)}>
                                     {doc.status}
                                   </Badge>
@@ -541,6 +619,27 @@ export default function DriverApplicationsPage() {
                                       borderRadius="md"
                                       maxH="300px"
                                       objectFit="contain"
+                                      fallback={
+                                        <Box
+                                          bg="dark.700"
+                                          border="1px solid"
+                                          borderColor="neon.500"
+                                          borderRadius="md"
+                                          p={4}
+                                          textAlign="center"
+                                          color="white"
+                                        >
+                                          <Icon as={FiFile} size="48px" color="neon.500" mb={2} />
+                                          <Text>Image not available</Text>
+                                          <Text fontSize="sm" color="text.secondary" mt={1}>
+                                            File may have been moved or deleted
+                                          </Text>
+                                        </Box>
+                                      }
+                                      onError={(e) => {
+                                        console.warn(`Failed to load image: ${doc.url}`);
+                                        e.currentTarget.style.display = 'none';
+                                      }}
                                     />
                                   </Box>
                                 ) : (
@@ -554,12 +653,15 @@ export default function DriverApplicationsPage() {
                                   <VStack align="start" spacing={2}>
                                     <Text fontSize="sm" fontWeight="medium">OCR Extracted Data:</Text>
                                     <Box 
-                                      bg="gray.50" 
+                                      bg="dark.700" 
+                                      border="1px solid"
+                                      borderColor="neon.500"
                                       p={3} 
                                       borderRadius="md" 
                                       fontSize="sm"
                                       maxH="200px"
                                       overflowY="auto"
+                                      color="white"
                                     >
                                       <pre>{JSON.stringify(doc.ocrData, null, 2)}</pre>
                                     </Box>
@@ -576,7 +678,9 @@ export default function DriverApplicationsPage() {
                   {/* Vehicle Tab */}
                   <TabPanel>
                     <VStack spacing={6} align="stretch">
-                      <Heading size="sm">Vehicle Information</Heading>
+                      <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                        Vehicle Information
+                      </Heading>
                       
                       <Grid templateColumns="1fr 1fr" gap={6}>
                         <VStack align="start" spacing={4}>
@@ -611,7 +715,9 @@ export default function DriverApplicationsPage() {
                   {/* Compliance Tab */}
                   <TabPanel>
                     <VStack spacing={6} align="stretch">
-                      <Heading size="sm">Compliance Check</Heading>
+                      <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                        Compliance Check
+                      </Heading>
                       
                       {selectedApplication.complianceIssues.length > 0 ? (
                         <Alert status="error">
@@ -638,31 +744,31 @@ export default function DriverApplicationsPage() {
                       )}
 
                       <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
-                        <Card>
+                        <Card bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                           <CardBody>
-                            <VStack spacing={2}>
+                            <VStack spacing={3}>
                               <Icon as={FiShield} size="24px" color="green.500" />
-                              <Text fontWeight="medium">Right to Work</Text>
+                              <Text fontWeight="bold" color="white">Right to Work</Text>
                               <Badge colorScheme="green">{selectedApplication.rightToWorkType}</Badge>
                             </VStack>
                           </CardBody>
                         </Card>
-                        <Card>
+                        <Card bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                           <CardBody>
-                            <VStack spacing={2}>
+                            <VStack spacing={3}>
                               <Icon as={FiFile} size="24px" color="blue.500" />
-                              <Text fontWeight="medium">DBS Check</Text>
+                              <Text fontWeight="bold" color="white">DBS Check</Text>
                               <Badge colorScheme={selectedApplication.documents.dbs.status === 'complete' ? 'green' : 'red'}>
                                 {selectedApplication.documents.dbs.status}
                               </Badge>
                             </VStack>
                           </CardBody>
                         </Card>
-                        <Card>
+                        <Card bg="dark.900" borderColor="neon.500" border="1px solid" _hover={{ shadow: "neon.glow", transform: "translateY(-2px)", borderColor: "neon.400" }} transition="all 0.3s ease">
                           <CardBody>
-                            <VStack spacing={2}>
+                            <VStack spacing={3}>
                               <Icon as={FiTruck} size="24px" color="purple.500" />
-                              <Text fontWeight="medium">Vehicle Insurance</Text>
+                              <Text fontWeight="bold" color="white">Vehicle Insurance</Text>
                               <Badge colorScheme={selectedApplication.documents.insurance.status === 'complete' ? 'green' : 'red'}>
                                 {selectedApplication.documents.insurance.status}
                               </Badge>
@@ -677,13 +783,21 @@ export default function DriverApplicationsPage() {
             )}
           </ModalBody>
 
-          <ModalFooter>
+          <ModalFooter 
+            bg="dark.900" 
+            borderTop="2px solid" 
+            borderColor="neon.500"
+            borderRadius="0 0 xl xl"
+            color="white"
+          >
             <HStack spacing={3}>
               <Button
                 leftIcon={<FiThumbsUp />}
                 colorScheme="green"
                 onClick={() => handleApplicationAction('approve')}
                 isLoading={processing}
+                variant="solid"
+                _hover={{ bg: "green.600", shadow: "green.glow" }}
               >
                 Approve
               </Button>
@@ -692,6 +806,8 @@ export default function DriverApplicationsPage() {
                 colorScheme="red"
                 onClick={() => handleApplicationAction('reject')}
                 isLoading={processing}
+                variant="solid"
+                _hover={{ bg: "red.600", shadow: "red.glow" }}
               >
                 Reject
               </Button>
@@ -700,6 +816,8 @@ export default function DriverApplicationsPage() {
                 colorScheme="orange"
                 onClick={() => handleApplicationAction('request_info')}
                 isLoading={processing}
+                variant="solid"
+                _hover={{ bg: "orange.600", shadow: "orange.glow" }}
               >
                 Request More Info
               </Button>

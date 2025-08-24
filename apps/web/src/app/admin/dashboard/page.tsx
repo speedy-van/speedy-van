@@ -247,16 +247,16 @@ export default function AdminDashboard() {
             <CardBody>
               <Stat>
                 <StatLabel>Today Revenue</StatLabel>
-                <StatNumber>£{data.kpis.todayRevenue.toLocaleString()}</StatNumber>
+                <StatNumber>£{(data.kpis.todayRevenue || 0).toLocaleString()}</StatNumber>
                 <StatHelpText>
                   <HStack spacing={1}>
-                    {data.kpis.revenueChangePercent >= 0 ? (
+                    {(data.kpis.revenueChangePercent || 0) >= 0 ? (
                       <FiTrendingUp color="green" />
                     ) : (
                       <FiTrendingDown color="red" />
                     )}
-                    <Text color={data.kpis.revenueChangePercent >= 0 ? 'green.500' : 'red.500'}>
-                      {data.kpis.revenueChangePercent >= 0 ? '+' : ''}{data.kpis.revenueChangePercent}% from yesterday
+                    <Text color={(data.kpis.revenueChangePercent || 0) >= 0 ? 'green.500' : 'red.500'}>
+                      {(data.kpis.revenueChangePercent || 0) >= 0 ? '+' : ''}{data.kpis.revenueChangePercent || 0}% from yesterday
                     </Text>
                   </HStack>
                 </StatHelpText>
@@ -273,7 +273,7 @@ export default function AdminDashboard() {
             <CardBody>
               <Stat>
                 <StatLabel>Active Jobs</StatLabel>
-                <StatNumber>{data.kpis.activeJobs}</StatNumber>
+                <StatNumber>{data.kpis.activeJobs || 0}</StatNumber>
                 <StatHelpText>
                   <FiTruck style={{ display: 'inline', marginRight: '4px' }} />
                   In progress
@@ -287,13 +287,13 @@ export default function AdminDashboard() {
             onClick={() => handleCardClick('newOrders')}
             _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
             transition="all 0.2s"
-            bg={data.kpis.newOrders > 0 ? 'orange.50' : 'white'}
-            borderColor={data.kpis.newOrders > 0 ? 'orange.200' : 'gray.200'}
+            bg={(data.kpis.newOrders || 0) > 0 ? 'orange.50' : 'white'}
+            borderColor={(data.kpis.newOrders || 0) > 0 ? 'orange.200' : 'gray.200'}
           >
             <CardBody>
               <Stat>
                 <StatLabel>New Orders</StatLabel>
-                <StatNumber color={data.kpis.newOrders > 0 ? 'orange.600' : 'inherit'}>{data.kpis.newOrders}</StatNumber>
+                <StatNumber color={(data.kpis.newOrders || 0) > 0 ? 'orange.600' : 'inherit'}>{data.kpis.newOrders || 0}</StatNumber>
                 <StatHelpText>
                   <FiPlus style={{ display: 'inline', marginRight: '4px' }} />
                   Pending assignment
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
             <CardBody>
               <Stat>
                 <StatLabel>Avg ETA</StatLabel>
-                <StatNumber>{data.kpis.avgEta}</StatNumber>
+                <StatNumber>{data.kpis.avgEta || 'N/A'}</StatNumber>
                 <StatHelpText>
                   <FiClock style={{ display: 'inline', marginRight: '4px' }} />
                   Current jobs
@@ -319,7 +319,7 @@ export default function AdminDashboard() {
             <CardBody>
               <Stat>
                 <StatLabel>First Response</StatLabel>
-                <StatNumber>{data.kpis.firstResponseTime}</StatNumber>
+                <StatNumber>{data.kpis.firstResponseTime || 'N/A'}</StatNumber>
                 <StatHelpText>
                   <FiMessageSquare style={{ display: 'inline', marginRight: '4px' }} />
                   Support tickets
@@ -337,7 +337,7 @@ export default function AdminDashboard() {
             <CardBody>
               <Stat>
                 <StatLabel>Open Incidents</StatLabel>
-                <StatNumber>{data.kpis.openIncidents}</StatNumber>
+                <StatNumber>{data.kpis.openIncidents || 0}</StatNumber>
                 <StatHelpText>
                   <FiAlertTriangle style={{ display: 'inline', marginRight: '4px' }} />
                   Need attention

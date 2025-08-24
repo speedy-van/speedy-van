@@ -281,7 +281,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
         <HStack justify="space-between">
           <VStack align="start" spacing={1}>
             <Heading size="lg">Compliance Management</Heading>
-            <Text color="gray.600">Monitor driver document expiries and compliance issues</Text>
+            <Text color="text.secondary">Monitor driver document expiries and compliance issues</Text>
           </VStack>
           <Button
             leftIcon={<FiMail />}
@@ -311,7 +311,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
                 <Text fontSize="2xl" fontWeight="bold" color="red.500">
                   {criticalIssues.length}
                 </Text>
-                <Text fontSize="sm" color="gray.600">Expired today</Text>
+                <Text fontSize="sm" color="text.tertiary">Expired today</Text>
               </VStack>
             </CardBody>
           </Card>
@@ -323,7 +323,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
                 <Text fontSize="2xl" fontWeight="bold" color="orange.500">
                   {highIssues.length}
                 </Text>
-                <Text fontSize="sm" color="gray.600">Expires within 7 days</Text>
+                <Text fontSize="sm" color="text.tertiary">Expires within 7 days</Text>
               </VStack>
             </CardBody>
           </Card>
@@ -335,7 +335,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
                 <Text fontSize="2xl" fontWeight="bold" color="yellow.500">
                   {mediumIssues.length}
                 </Text>
-                <Text fontSize="sm" color="gray.600">Expires within 14 days</Text>
+                <Text fontSize="sm" color="text.tertiary">Expires within 14 days</Text>
               </VStack>
             </CardBody>
           </Card>
@@ -347,7 +347,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
                 <Text fontSize="2xl" fontWeight="bold" color="blue.500">
                   {lowIssues.length}
                 </Text>
-                <Text fontSize="sm" color="gray.600">Expires within 30 days</Text>
+                <Text fontSize="sm" color="text.tertiary">Expires within 30 days</Text>
               </VStack>
             </CardBody>
           </Card>
@@ -373,7 +373,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
             <HStack spacing={4} wrap="wrap">
               <InputGroup maxW="300px">
                 <InputLeftElement>
-                  <Icon as={FiSearch} color="gray.400" />
+                  <Icon as={FiSearch} color="text.tertiary" />
                 </InputLeftElement>
                 <Input
                   placeholder="Search drivers or issues..."
@@ -429,7 +429,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
                     <Td>
                       <VStack align="start" spacing={1}>
                         <Text fontWeight="medium">{issue.driverName}</Text>
-                        <Text fontSize="sm" color="gray.600">{issue.driverEmail}</Text>
+                        <Text fontSize="sm" color="text.secondary">{issue.driverEmail}</Text>
                       </VStack>
                     </Td>
                     <Td>
@@ -452,7 +452,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
                     <Td>
                       <Text 
                         fontSize="sm" 
-                        color={issue.daysUntilExpiry <= 0 ? 'red.500' : issue.daysUntilExpiry <= 7 ? 'orange.500' : 'gray.600'}
+                        color={issue.daysUntilExpiry <= 0 ? 'red.500' : issue.daysUntilExpiry <= 7 ? 'orange.500' : 'text.tertiary'}
                         fontWeight={issue.daysUntilExpiry <= 7 ? 'bold' : 'normal'}
                       >
                         {issue.daysUntilExpiry <= 0 ? 'Expired' : `${issue.daysUntilExpiry} days`}
@@ -487,7 +487,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
             {filteredIssues.length === 0 && (
               <VStack spacing={4} py={8}>
                 <Icon as={FiCheck} size="48px" color="green.400" />
-                <Text color="gray.600">No compliance issues found</Text>
+                <Text color="text.tertiary">No compliance issues found</Text>
               </VStack>
             )}
           </CardBody>
@@ -510,28 +510,28 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
               <VStack spacing={4} align="stretch">
                 <VStack align="start" spacing={2}>
                   <Text fontWeight="medium">Driver Information</Text>
-                  <Text fontSize="sm" color="gray.600">Name: {selectedIssue.driverName}</Text>
-                  <Text fontSize="sm" color="gray.600">Email: {selectedIssue.driverEmail}</Text>
+                  <Text fontSize="sm" color="text.secondary">Name: {selectedIssue.driverName}</Text>
+                  <Text fontSize="sm" color="text.secondary">Email: {selectedIssue.driverEmail}</Text>
                 </VStack>
 
                 <VStack align="start" spacing={2}>
                   <Text fontWeight="medium">Issue Details</Text>
-                  <Text fontSize="sm" color="gray.600">Type: {selectedIssue.documentType}</Text>
-                  <Text fontSize="sm" color="gray.600">Description: {selectedIssue.description}</Text>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.secondary">Type: {selectedIssue.documentType}</Text>
+                  <Text fontSize="sm" color="text.secondary">Description: {selectedIssue.description}</Text>
+                  <Text fontSize="sm" color="text.secondary">
                     Expiry Date: {new Date(selectedIssue.expiryDate).toLocaleDateString()}
                   </Text>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.secondary">
                     Days Until Expiry: {selectedIssue.daysUntilExpiry <= 0 ? 'Expired' : selectedIssue.daysUntilExpiry}
                   </Text>
                 </VStack>
 
                 <VStack align="start" spacing={2}>
                   <Text fontWeight="medium">Recommended Actions</Text>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.secondary">
                     • Send reminder email to driver
                   </Text>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.secondary">
                     • Follow up with phone call if no response
                   </Text>
                   {selectedIssue.severity === 'critical' && (

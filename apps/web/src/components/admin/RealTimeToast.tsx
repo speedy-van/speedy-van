@@ -52,11 +52,11 @@ const toastIcons = {
 };
 
 const toastColors = {
-  success: { bg: 'green.50', color: 'green.600', border: 'green.200' },
-  error: { bg: 'red.50', color: 'red.600', border: 'red.200' },
-  warning: { bg: 'yellow.50', color: 'yellow.600', border: 'yellow.200' },
-  info: { bg: 'blue.50', color: 'blue.600', border: 'blue.200' },
-  loading: { bg: 'gray.50', color: 'gray.600', border: 'gray.200' },
+  success: { bg: 'success.500', color: 'white', border: 'success.400' },
+  error: { bg: 'error.500', color: 'white', border: 'error.400' },
+  warning: { bg: 'warning.500', color: 'white', border: 'warning.400' },
+  info: { bg: 'info.500', color: 'white', border: 'info.400' },
+  loading: { bg: 'neon.500', color: 'dark.900', border: 'neon.400' },
 };
 
 export function RealTimeToast({ 
@@ -66,11 +66,21 @@ export function RealTimeToast({
   maxToasts = 5 
 }: RealTimeToastProps) {
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const [mounted, setMounted] = useState(false);
+  
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Auto-dismiss toasts with duration
   useEffect(() => {
+    if (!mounted) return;
+    
     const timers: Record<string, NodeJS.Timeout> = {};
 
     toasts.forEach(toast => {
@@ -96,7 +106,12 @@ export function RealTimeToast({
     return () => {
       Object.values(timers).forEach(timer => clearTimeout(timer));
     };
-  }, [toasts, onDismiss]);
+  }, [toasts, onDismiss, mounted]);
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   const getPositionStyles = () => {
     switch (position) {
@@ -173,11 +188,11 @@ export function RealTimeToast({
                   
                   <VStack align="start" spacing={1} flex={1}>
                     <HStack justify="space-between" w="full">
-                      <Text fontWeight="semibold" fontSize="sm">
+                      <Text fontWeight="semibold" fontSize="sm" color="text.primary">
                         {toast.title}
                       </Text>
                       <HStack spacing={2}>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="text.tertiary">
                           {formatTime(toast.timestamp)}
                         </Text>
                         <IconButton
@@ -186,15 +201,17 @@ export function RealTimeToast({
                           icon={<Icon as={FiX} />}
                           onClick={() => onDismiss(toast.id)}
                           aria-label="Dismiss toast"
+                          color="text.secondary"
+                          _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
                         />
                       </HStack>
                     </HStack>
                     
                     {toast.message && (
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="text.secondary">
                         {toast.message}
                       </Text>
-                    )}
+                      )}
                   </VStack>
                 </HStack>
               </MotionBox>

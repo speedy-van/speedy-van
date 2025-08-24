@@ -145,8 +145,8 @@ export default function TeamSettings() {
   const [isEditing, setIsEditing] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
 
   // Fetch admin users from database
   const fetchAdminUsers = async () => {

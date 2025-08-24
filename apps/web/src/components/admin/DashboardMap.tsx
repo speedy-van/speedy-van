@@ -49,7 +49,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
     return (
       <Box
         height={height}
-        bg="gray.100"
+        bg="bg.surface.elevated"
         borderRadius="md"
         display="flex"
         alignItems="center"
@@ -67,7 +67,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
     return (
       <Box
         height={height}
-        bg="gray.100"
+        bg="bg.surface.elevated"
         borderRadius="md"
         display="flex"
         alignItems="center"
@@ -75,7 +75,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
       >
         <VStack spacing={2}>
           <Spinner size="md" />
-          <Text color="gray.500" fontSize="sm">Loading map...</Text>
+          <Text color="text.tertiary" fontSize="sm">Loading map...</Text>
         </VStack>
       </Box>
     );
@@ -85,7 +85,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
     <Box
       ref={mapRef}
       height={height}
-      bg="gray.100"
+      bg="bg.surface.elevated"
       borderRadius="md"
       position="relative"
       overflow="hidden"
@@ -142,7 +142,8 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
               height="12px"
               borderRadius="full"
               bg={location.type === 'pickup' ? 'blue.500' : 'green.500'}
-              border="2px solid white"
+              border="2px solid"
+              borderColor="bg.surface"
               boxShadow="0 2px 4px rgba(0,0,0,0.2)"
               position="relative"
             >
@@ -166,7 +167,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
               top="16px"
               left="50%"
               transform="translateX(-50%)"
-              bg="white"
+              bg="bg.surface"
               px={2}
               py={1}
               borderRadius="md"
@@ -195,13 +196,14 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
               height="16px"
               borderRadius="full"
               bg="orange.500"
-              border="3px solid white"
+              border="3px solid"
+              borderColor="bg.surface"
               boxShadow="0 2px 6px rgba(0,0,0,0.3)"
               display="flex"
               alignItems="center"
               justifyContent="center"
             >
-              <FiTruck size={8} color="white" />
+              <FiTruck size={8} color="dark.900" />
             </Box>
             
             {/* Driver name tooltip */}
@@ -210,7 +212,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
               top="20px"
               left="50%"
               transform="translateX(-50%)"
-              bg="white"
+              bg="bg.surface"
               px={2}
               py={1}
               borderRadius="md"
@@ -232,7 +234,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
           position="absolute"
           top={4}
           right={4}
-          bg="white"
+          bg="bg.surface"
           borderRadius="md"
           p={2}
           boxShadow="0 2px 8px rgba(0,0,0,0.1)"
@@ -259,7 +261,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
         position="absolute"
         bottom={4}
         left={4}
-        bg="white"
+        bg="bg.surface"
         borderRadius="md"
         p={3}
         boxShadow="0 2px 8px rgba(0,0,0,0.1)"
@@ -271,7 +273,7 @@ export function DashboardMap({ activeJobs, height = "300px", showControls = fals
               {activeJobs.length} Active Jobs
             </Text>
           </HStack>
-          <Text fontSize="xs" color="gray.600">
+          <Text fontSize="xs" color="text.tertiary">
             Real-time tracking enabled
           </Text>
         </VStack>

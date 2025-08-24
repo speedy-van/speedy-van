@@ -26,6 +26,11 @@ const nextConfig = {
 			{
 				source: '/:file((?:\\d|\\-)+-.+\\.(?:png|jpe?g|webp|gif))',
 				destination: '/uploads/:file'
+			},
+			// Map driver application uploads
+			{
+				source: '/uploads/driver-applications/:file',
+				destination: '/api/uploads/driver-applications/:file'
 			}
 		];
 	},

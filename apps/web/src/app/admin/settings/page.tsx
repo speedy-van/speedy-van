@@ -31,9 +31,10 @@ interface SettingsCardProps {
 }
 
 function SettingsCard({ title, description, href, icon, badge }: SettingsCardProps) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+  // Use neon dark theme colors
+  const cardBg = 'bg.surface';
+  const borderColor = 'border.primary';
+  const hoverBg = 'bg.surface.hover';
 
   return (
     <NextLink href={href}>
@@ -43,7 +44,7 @@ function SettingsCard({ title, description, href, icon, badge }: SettingsCardPro
         borderColor={borderColor}
         _hover={{
           bg: hoverBg,
-          borderColor: 'brand.500',
+          borderColor: 'neon.500',
           transform: 'translateY(-2px)',
         }}
         transition="all 0.2s"
@@ -53,7 +54,7 @@ function SettingsCard({ title, description, href, icon, badge }: SettingsCardPro
         <CardBody>
           <VStack align="start" spacing={4}>
             <HStack justify="space-between" w="full">
-              <Icon as={icon} boxSize={6} color="brand.500" />
+              <Icon as={icon} boxSize={6} color="neon.500" />
               {badge && (
                 <Badge colorScheme="blue" variant="subtle">
                   {badge}
@@ -64,12 +65,12 @@ function SettingsCard({ title, description, href, icon, badge }: SettingsCardPro
               <Heading size="md" mb={2}>
                 {title}
               </Heading>
-              <Text color="gray.600" fontSize="sm">
+              <Text color="text.secondary" fontSize="sm">
                 {description}
               </Text>
             </Box>
             <HStack w="full" justify="end">
-              <Icon as={FiArrowRight} boxSize={4} color="gray.400" />
+              <Icon as={FiArrowRight} boxSize={4} color="text.tertiary" />
             </HStack>
           </VStack>
         </CardBody>
@@ -117,7 +118,7 @@ export default function AdminSettings() {
           <Heading size="lg" mb={2}>
             Settings
           </Heading>
-          <Text color="gray.600">
+          <Text color="text.secondary">
             Manage your admin team, integrations, security settings, and legal compliance.
           </Text>
         </Box>

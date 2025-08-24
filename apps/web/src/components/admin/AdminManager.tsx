@@ -183,8 +183,9 @@ export default function AdminManager() {
   const toast = useToast();
   const cancelRef = useRef<HTMLButtonElement>(null);
   
-  const bgColor = 'white';
-  const borderColor = 'gray.200';
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
 
   // Fetch admin users
   const fetchAdminUsers = async () => {
@@ -257,6 +258,19 @@ export default function AdminManager() {
   const handleDeleteUser = (user: AdminUser) => {
     setSelectedUser(user);
     onDeleteOpen();
+  };
+
+  const handleRemoveAdmin = () => {
+    if (filteredUsers.length === 1) {
+      // If only one user, directly select them
+      setSelectedUser(filteredUsers[0]);
+      onDeleteOpen();
+    } else if (filteredUsers.length > 1) {
+      // If multiple users, show a selection dialog or use the first one
+      // For now, we'll use the first filtered user
+      setSelectedUser(filteredUsers[0]);
+      onDeleteOpen();
+    }
   };
 
   const confirmDeleteUser = async () => {
@@ -427,7 +441,7 @@ export default function AdminManager() {
             <Heading size="lg" mb={2}>
               Admin Management
             </Heading>
-            <Text color="gray.600">
+            <Text color="text.secondary">
               Add, edit, and manage admin users with role-based permissions.
             </Text>
           </Box>
@@ -453,6 +467,20 @@ export default function AdminManager() {
             >
               Add Admin
             </Button>
+            <Tooltip label="Remove the first admin user from the filtered list">
+              <Button
+                leftIcon={<FiTrash2 />}
+                colorScheme="red"
+                bg="red.500"
+                background="#E53E3E"
+                color="white"
+                _hover={{ bg: 'red.600', background: '#C53030' }}
+                onClick={handleRemoveAdmin}
+                isDisabled={filteredUsers.length === 0}
+              >
+                Remove Admin
+              </Button>
+            </Tooltip>
           </HStack>
         </HStack>
 
@@ -469,7 +497,7 @@ export default function AdminManager() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                   <InputRightElement>
-                    <Icon as={FiSearch} color="gray.400" />
+                    <Icon as={FiSearch} color="text.tertiary" />
                   </InputRightElement>
                 </InputGroup>
               </FormControl>
@@ -509,7 +537,7 @@ export default function AdminManager() {
           <Card bg={bgColor} border="1px solid" borderColor={borderColor}>
             <CardBody>
               <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="gray.500">Total Admins</Text>
+                <Text fontSize="sm" color="text.tertiary">Total Admins</Text>
                 <Text fontSize="2xl" fontWeight="bold">{users.length}</Text>
               </VStack>
             </CardBody>
@@ -517,7 +545,7 @@ export default function AdminManager() {
           <Card bg={bgColor} border="1px solid" borderColor={borderColor}>
             <CardBody>
               <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="gray.500">Active</Text>
+                <Text fontSize="sm" color="text.tertiary">Active</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="green.500">
                   {users.filter(u => u.isActive).length}
                 </Text>
@@ -527,7 +555,7 @@ export default function AdminManager() {
           <Card bg={bgColor} border="1px solid" borderColor={borderColor}>
             <CardBody>
               <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="gray.500">2FA Enabled</Text>
+                <Text fontSize="sm" color="text.tertiary">2FA Enabled</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="blue.500">
                   {users.filter(u => u.twoFactorEnabled).length}
                 </Text>
@@ -537,7 +565,7 @@ export default function AdminManager() {
           <Card bg={bgColor} border="1px solid" borderColor={borderColor}>
             <CardBody>
               <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="gray.500">Super Admins</Text>
+                <Text fontSize="sm" color="text.tertiary">Super Admins</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="red.500">
                   {users.filter(u => u.adminRole === 'superadmin').length}
                 </Text>
@@ -628,7 +656,7 @@ export default function AdminManager() {
             
             {filteredUsers.length === 0 && (
               <Box textAlign="center" py={8}>
-                <Text color="gray.500">No admin users found</Text>
+                <Text color="text.tertiary">No admin users found</Text>
               </Box>
             )}
           </CardBody>
@@ -650,27 +678,36 @@ export default function AdminManager() {
           leastDestructiveRef={cancelRef}
           onClose={onDeleteClose}
         >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                Remove Admin User
-              </AlertDialogHeader>
+          <AlertDialogOverlay />
+          <AlertDialogContent bg="bg.surface" background="#1A1A1A" borderColor="border.primary">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" bg="bg.surface" background="#1A1A1A" borderBottom="1px solid" borderColor="border.primary">
+              Remove Admin User
+            </AlertDialogHeader>
 
-              <AlertDialogBody>
+            <AlertDialogBody bg="bg.surface" background="#1A1A1A">
+              <Text color="white">
                 Are you sure you want to remove <strong>{selectedUser?.name}</strong> from the admin team? 
                 This action cannot be undone.
-              </AlertDialogBody>
+              </Text>
+            </AlertDialogBody>
 
-              <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={onDeleteClose}>
-                  Cancel
-                </Button>
-                <Button colorScheme="red" onClick={confirmDeleteUser} ml={3}>
-                  Remove
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
+            <AlertDialogFooter bg="bg.surface" background="#1A1A1A" borderTop="1px solid" borderColor="border.primary">
+              <Button ref={cancelRef} onClick={onDeleteClose}>
+                Cancel
+              </Button>
+              <Button 
+                colorScheme="red" 
+                bg="red.500"
+                background="#E53E3E"
+                color="white"
+                _hover={{ bg: 'red.600', background: '#C53030' }}
+                onClick={confirmDeleteUser} 
+                ml={3}
+              >
+                Remove
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
         </AlertDialog>
       </VStack>
     </Box>
@@ -730,12 +767,12 @@ function UserModal({ isOpen, onClose, user, isEditing, roles, onSave }: UserModa
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent bg="bg.surface" background="#1A1A1A" borderColor="border.primary">
         <form onSubmit={handleSubmit}>
-          <ModalHeader>
+          <ModalHeader bg="bg.surface" background="#1A1A1A" borderBottom="1px solid" borderColor="border.primary">
             {isEditing ? 'Edit Admin User' : 'Add New Admin'}
           </ModalHeader>
-          <ModalBody>
+          <ModalBody bg="bg.surface" background="#1A1A1A">
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Full Name</FormLabel>
@@ -793,7 +830,7 @@ function UserModal({ isOpen, onClose, user, isEditing, roles, onSave }: UserModa
                 </Select>
                 {selectedRole && (
                   <FormHelperText>
-                    <Text fontSize="sm" color="gray.600" mt={2}>
+                    <Text fontSize="sm" color="text.secondary" mt={2}>
                       <strong>Permissions:</strong> {selectedRole.permissions.length === 1 && selectedRole.permissions[0] === '*' 
                         ? 'All permissions' 
                         : selectedRole.permissions.join(', ')}
@@ -817,7 +854,7 @@ function UserModal({ isOpen, onClose, user, isEditing, roles, onSave }: UserModa
               </FormControl>
             </VStack>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter bg="bg.surface" background="#1A1A1A" borderTop="1px solid" borderColor="border.primary">
             <Button variant="ghost" mr={3} onClick={onClose}>
               Cancel
             </Button>

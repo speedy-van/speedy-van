@@ -7,8 +7,10 @@ import React, { useState, useEffect } from "react";
 export default function Footer() {
   const { openPreferences } = useConsent();
   const [currentYear, setCurrentYear] = useState('2024');
+  const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
+    setMounted(true);
     setCurrentYear(new Date().getFullYear().toString());
   }, []);
   
@@ -49,7 +51,7 @@ export default function Footer() {
         </HStack>
 
         <Box mt="8" pt="6" borderTop="1px solid" borderColor="whiteAlpha.200" fontSize="xs" color="gray.400">
-          © {currentYear} Speedy Van. All rights reserved.
+          © {mounted ? currentYear : '2024'} Speedy Van. All rights reserved.
         </Box>
       </Container>
     </Box>

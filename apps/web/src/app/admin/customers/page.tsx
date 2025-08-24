@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Heading, HStack, VStack, Text, Badge, Card, CardBody, Button, Input, Select, Table, Thead, Tbody, Tr, Th, Td, Avatar, Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid, InputGroup, InputLeftElement, useToast, Spinner, Alert, AlertIcon } from "@chakra-ui/react";
 import { FiSearch, FiUser, FiMail, FiPhone, FiDollarSign, FiPackage, FiFlag, FiDownload, FiRefreshCw } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -48,6 +48,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -65,8 +66,13 @@ export default function CustomersPage() {
   const toast = useToast();
   const router = useRouter();
 
-  // Fetch customers from API
-  const fetchCustomers = async () => {
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch customers from API - memoized to prevent recreation
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -102,26 +108,28 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit, filters, toast]);
 
   // Load customers on mount and when filters change
   useEffect(() => {
-    fetchCustomers();
-  }, [filters, pagination.page]);
+    if (mounted) {
+      fetchCustomers();
+    }
+  }, [fetchCustomers, mounted]);
 
   // Handle filter changes
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = useCallback((key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
-  };
+  }, []);
 
   // Handle pagination
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
-  };
+  }, []);
 
   // Export customers to CSV
-  const handleExportCSV = async () => {
+  const handleExportCSV = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/customers/export', {
         method: 'POST',
@@ -139,7 +147,9 @@ export default function CustomersPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`;
+      // Use consistent date formatting to prevent hydration mismatch
+      const today = mounted ? new Date().toISOString().split('T')[0] : '2024-01-01';
+      a.download = `customers-${today}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -161,19 +171,43 @@ export default function CustomersPage() {
         isClosable: true,
       });
     }
-  };
+  }, [filters, toast, mounted]);
 
   // Calculate stats from real data
   const stats = {
     totalCustomers: pagination.total,
-    activeCustomers: customers.filter(c => c.stats.totalOrders > 0).length,
-    totalLtv: customers.reduce((sum, c) => sum + c.stats.totalLtv, 0),
-    avgLtv: customers.length > 0 ? customers.reduce((sum, c) => sum + c.stats.totalLtv, 0) / customers.length : 0,
-    totalOrders: customers.reduce((sum, c) => sum + c.stats.totalOrders, 0),
-    totalCancellations: customers.reduce((sum, c) => sum + c.stats.cancelledOrders, 0)
+    activeCustomers: customers.filter(c => (c.stats.totalOrders || 0) > 0).length,
+    totalLtv: customers.reduce((sum, c) => sum + (c.stats.totalLtv || 0), 0),
+    avgLtv: customers.length > 0 ? customers.reduce((sum, c) => sum + (c.stats.totalLtv || 0), 0) / customers.length : 0,
+    totalOrders: customers.reduce((sum, c) => sum + (c.stats.totalOrders || 0), 0),
+    totalCancellations: customers.reduce((sum, c) => sum + (c.stats.cancelledOrders || 0), 0)
   };
 
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <Box>
+        <HStack justify="space-between" mb={6}>
+          <VStack align="start" spacing={1}>
+            <Heading size="lg">Customers</Heading>
+            <Text color="gray.600">Customer relationship management</Text>
+          </VStack>
+        </HStack>
+        <VStack spacing={4} py={8}>
+          <Text>Loading...</Text>
+        </VStack>
+      </Box>
+    );
+  }
 
+  // Helper function for consistent date formatting
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return 'Invalid date';
+    }
+  };
 
   return (
     <Box>
@@ -247,7 +281,7 @@ export default function CustomersPage() {
           <CardBody>
             <Stat>
               <StatLabel>Total LTV</StatLabel>
-              <StatNumber>£{stats.totalLtv.toLocaleString()}</StatNumber>
+              <StatNumber>£{(stats.totalLtv || 0).toLocaleString()}</StatNumber>
               <StatHelpText>
                 <FiDollarSign style={{ display: 'inline', marginRight: '4px' }} />
                 Lifetime value
@@ -386,7 +420,7 @@ export default function CustomersPage() {
                           <VStack align="start" spacing={0}>
                             <Text fontWeight="bold">{customer.name}</Text>
                             <Text fontSize="sm" color="gray.600">
-                              Joined {new Date(customer.createdAt).toLocaleDateString()}
+                              Joined {formatDate(customer.createdAt)}
                             </Text>
                           </VStack>
                         </HStack>
@@ -397,49 +431,49 @@ export default function CustomersPage() {
                             <FiMail size={12} />
                             <Text fontSize="sm">{customer.email}</Text>
                           </HStack>
-                          {customer.contacts.length > 0 && (
+                          {(customer.contacts || []).length > 0 && (
                             <HStack spacing={1}>
                               <FiPhone size={12} />
-                              <Text fontSize="sm">{customer.contacts[0].phone}</Text>
+                              <Text fontSize="sm">{customer.contacts[0]?.phone || 'N/A'}</Text>
                             </HStack>
                           )}
                         </VStack>
                       </Td>
                       <Td>
                         <VStack align="start" spacing={1}>
-                          <Text fontWeight="bold">{customer.stats.totalOrders}</Text>
-                          {customer.stats.cancelledOrders > 0 && (
+                          <Text fontWeight="bold">{customer.stats.totalOrders || 0}</Text>
+                          {(customer.stats.cancelledOrders || 0) > 0 && (
                             <Text fontSize="sm" color="red.500">
-                              {customer.stats.cancelledOrders} cancelled
+                              {customer.stats.cancelledOrders || 0} cancelled
                             </Text>
                           )}
                         </VStack>
                       </Td>
                       <Td>
-                        <Text fontWeight="bold">£{customer.stats.totalLtv.toLocaleString()}</Text>
+                        <Text fontWeight="bold">£{(customer.stats.totalLtv || 0).toLocaleString()}</Text>
                       </Td>
                       <Td>
                         <VStack align="start" spacing={1}>
-                          <Badge colorScheme={customer.stats.totalOrders > 0 ? "green" : "gray"}>
-                            {customer.stats.totalOrders > 0 ? "Active" : "New"}
+                          <Badge colorScheme={(customer.stats.totalOrders || 0) > 0 ? "green" : "gray"}>
+                            {(customer.stats.totalOrders || 0) > 0 ? "Active" : "New"}
                           </Badge>
-                          {customer.stats.openTickets > 0 && (
+                          {(customer.stats.openTickets || 0) > 0 && (
                             <Badge colorScheme="orange" size="sm">
-                              {customer.stats.openTickets} tickets
+                              {customer.stats.openTickets || 0} tickets
                             </Badge>
                           )}
                         </VStack>
                       </Td>
                       <Td>
                         <VStack align="start" spacing={1}>
-                          <Text fontSize="sm">{customer.addresses.length} addresses</Text>
-                          <Text fontSize="sm">{customer.contacts.length} contacts</Text>
+                          <Text fontSize="sm">{(customer.addresses || []).length} addresses</Text>
+                          <Text fontSize="sm">{(customer.contacts || []).length} contacts</Text>
                         </VStack>
                       </Td>
                       <Td>
                         <Text fontSize="sm">
                           {customer.stats.lastOrder 
-                            ? new Date(customer.stats.lastOrder).toLocaleDateString()
+                            ? formatDate(customer.stats.lastOrder)
                             : "No orders"
                           }
                         </Text>

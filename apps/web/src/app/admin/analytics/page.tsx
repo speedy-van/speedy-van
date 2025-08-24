@@ -61,8 +61,9 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,10 +89,10 @@ export default function Analytics() {
     return (
       <Box p={6}>
         <Box>
-          <Box h="32px" bg="gray.200" rounded="md" w="1/4" mb={6}></Box>
+          <Box h="32px" bg="bg.surface.elevated" rounded="md" w="1/4" mb={6}></Box>
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4} mb={6}>
             {[...Array(8)].map((_, i) => (
-              <Box key={i} h="96px" bg="gray.200" rounded="md"></Box>
+              <Box key={i} h="96px" bg="bg.surface.elevated" rounded="md"></Box>
             ))}
           </SimpleGrid>
         </Box>
@@ -109,7 +110,7 @@ export default function Analytics() {
       <Flex justify="space-between" align="center">
         <Box>
           <Heading size="lg">Analytics Dashboard</Heading>
-          <Text color="gray.600">Real-time business insights and performance metrics</Text>
+          <Text color="text.secondary">Real-time business insights and performance metrics</Text>
         </Box>
         <Flex gap={2}>
           <Button

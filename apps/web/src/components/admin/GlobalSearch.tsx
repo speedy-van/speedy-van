@@ -44,12 +44,19 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Real search implementation - calls API to search database
   const performSearch = useCallback(async (searchQuery: string): Promise<SearchResult[]> => {
@@ -70,6 +77,8 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
 
   // Handle search
   useEffect(() => {
+    if (!mounted) return;
+    
     const searchTimeout = setTimeout(async () => {
       if (query.trim()) {
         setIsLoading(true);
@@ -89,10 +98,12 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
     }, 300);
 
     return () => clearTimeout(searchTimeout);
-  }, [query, performSearch]);
+  }, [query, performSearch, mounted]);
 
   // Keyboard shortcuts
   useEffect(() => {
+    if (!mounted) return;
+    
     const handleKeyDown = (event: KeyboardEvent) => {
       // Cmd/Ctrl + K to open search
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
@@ -129,7 +140,33 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, results, selectedIndex, router, onOpen, onClose]);
+  }, [isOpen, results, selectedIndex, router, onOpen, onClose, mounted]);
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <Box>
+        <InputGroup size="sm">
+          <InputLeftElement>
+            <Icon as={FiSearch} color="text.tertiary" />
+          </InputLeftElement>
+          <Input
+            placeholder={placeholder}
+            readOnly
+            bg="bg.input"
+            borderColor={borderColor}
+            _hover={{ borderColor: 'neon.500' }}
+            cursor="pointer"
+            color="text.secondary"
+            _placeholder={{ color: 'text.tertiary' }}
+          />
+          <InputRightElement>
+            <Kbd fontSize="xs" bg="bg.surface.elevated" color="text.secondary" borderColor="border.primary">⌘K</Kbd>
+          </InputRightElement>
+        </InputGroup>
+      </Box>
+    );
+  }
 
   const handleResultClick = (result: SearchResult) => {
     router.push(result.href);
@@ -154,18 +191,20 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
       <Box onClick={onOpen} cursor="pointer">
         <InputGroup size="sm">
           <InputLeftElement>
-            <Icon as={FiSearch} color="gray.400" />
+            <Icon as={FiSearch} color="text.tertiary" />
           </InputLeftElement>
           <Input
             placeholder={placeholder}
             readOnly
-            bg={useColorModeValue('gray.50', 'gray.700')}
+            bg="bg.input"
             borderColor={borderColor}
-            _hover={{ borderColor: 'gray.300' }}
+            _hover={{ borderColor: 'neon.500' }}
             cursor="pointer"
+            color="text.secondary"
+            _placeholder={{ color: 'text.tertiary' }}
           />
           <InputRightElement>
-            <Kbd fontSize="xs">⌘K</Kbd>
+            <Kbd fontSize="xs" bg="bg.surface.elevated" color="text.secondary" borderColor="border.primary">⌘K</Kbd>
           </InputRightElement>
         </InputGroup>
       </Box>
@@ -180,7 +219,7 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
               <Box p={4} borderBottom="1px solid" borderColor={borderColor}>
                 <InputGroup>
                   <InputLeftElement>
-                    <Icon as={FiSearch} color="gray.400" />
+                    <Icon as={FiSearch} color="text.tertiary" />
                   </InputLeftElement>
                   <Input
                     ref={inputRef}
@@ -190,10 +229,13 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
                     border="none"
                     _focus={{ boxShadow: 'none' }}
                     fontSize="lg"
+                    bg="transparent"
+                    color="text.primary"
+                    _placeholder={{ color: 'text.tertiary' }}
                   />
                   <InputRightElement>
                     {isLoading ? (
-                      <Spinner size="sm" />
+                      <Spinner size="sm" color="neon.500" />
                     ) : (
                       <IconButton
                         size="sm"
@@ -201,6 +243,8 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
                         icon={<Icon as={FiX} />}
                         onClick={() => setQuery('')}
                         aria-label="Clear search"
+                        color="text.secondary"
+                        _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
                       />
                     )}
                   </InputRightElement>
@@ -216,8 +260,8 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
                         key={result.id}
                         p={4}
                         cursor="pointer"
-                        bg={selectedIndex === index ? useColorModeValue('gray.50', 'gray.700') : 'transparent'}
-                        _hover={{ bg: useColorModeValue('gray.50', 'gray.700') }}
+                        bg={selectedIndex === index ? 'bg.surface.hover' : 'transparent'}
+                        _hover={{ bg: 'bg.surface.hover' }}
                         onClick={() => handleResultClick(result)}
                         transition="background-color 0.2s"
                       >
@@ -229,14 +273,14 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
                           />
                           <VStack align="start" spacing={1} flex={1}>
                             <HStack spacing={2}>
-                              <Text fontWeight="medium">{result.title}</Text>
+                              <Text fontWeight="medium" color="text.primary">{result.title}</Text>
                               {result.badge && (
-                                <Badge size="sm" colorScheme={getTypeColor(result.type)}>
+                                <Badge size="sm" colorScheme={getTypeColor(result.type)} variant="solid">
                                   {result.badge}
                                 </Badge>
                               )}
                             </HStack>
-                            <Text fontSize="sm" color="gray.500">
+                            <Text fontSize="sm" color="text.secondary">
                               {result.subtitle}
                             </Text>
                           </VStack>
@@ -246,14 +290,14 @@ export function GlobalSearch({ placeholder = "Search orders, drivers, customers.
                   </VStack>
                 ) : query && !isLoading ? (
                   <Box p={4} textAlign="center">
-                    <Text color="gray.500">No results found</Text>
+                    <Text color="text.tertiary">No results found</Text>
                   </Box>
                 ) : null}
               </Box>
 
               {/* Footer */}
-              <Box p={3} borderTop="1px solid" borderColor={borderColor} bg={useColorModeValue('gray.50', 'gray.700')}>
-                <HStack justify="space-between" fontSize="xs" color="gray.500">
+              <Box p={3} borderTop="1px solid" borderColor={borderColor} bg="bg.surface.elevated">
+                <HStack justify="space-between" fontSize="xs" color="text.tertiary">
                   <Text>Use ↑↓ to navigate, Enter to select</Text>
                   <Text>Esc to close</Text>
                 </HStack>

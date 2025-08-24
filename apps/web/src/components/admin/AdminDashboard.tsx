@@ -53,12 +53,12 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
     <Box>
       {/* KPI Row */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} spacing={6} mb={8}>
-        <Card>
+        <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
           <CardBody>
             <Stat>
-              <StatLabel>Today Revenue</StatLabel>
-              <StatNumber>£{(data.todayRevenue / 100).toFixed(2)}</StatNumber>
-              <StatHelpText>
+              <StatLabel color="text.secondary">Today Revenue</StatLabel>
+              <StatNumber color="neon.500" fontSize="2xl">£{(data.todayRevenue / 100).toFixed(2)}</StatNumber>
+              <StatHelpText color="success.500">
                 <StatArrow type="increase" />
                 12.5%
               </StatHelpText>
@@ -66,12 +66,12 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
           <CardBody>
             <Stat>
-              <StatLabel>Active Jobs</StatLabel>
-              <StatNumber>{data.activeJobs}</StatNumber>
-              <StatHelpText>
+              <StatLabel color="text.secondary">Active Jobs</StatLabel>
+              <StatNumber color="neon.500" fontSize="2xl">{data.activeJobs}</StatNumber>
+              <StatHelpText color="success.500">
                 <StatArrow type="increase" />
                 3 new
               </StatHelpText>
@@ -79,12 +79,12 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
           <CardBody>
             <Stat>
-              <StatLabel>Avg ETA</StatLabel>
-              <StatNumber>{data.avgEta}</StatNumber>
-              <StatHelpText>
+              <StatLabel color="text.secondary">Avg ETA</StatLabel>
+              <StatNumber color="neon.500" fontSize="2xl">{data.avgEta}</StatNumber>
+              <StatHelpText color="success.500">
                 <StatArrow type="decrease" />
                 2 min faster
               </StatHelpText>
@@ -92,12 +92,12 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
           <CardBody>
             <Stat>
-              <StatLabel>First Response</StatLabel>
-              <StatNumber>{data.firstResponseTime}</StatNumber>
-              <StatHelpText>
+              <StatLabel color="text.secondary">First Response</StatLabel>
+              <StatNumber color="neon.500" fontSize="2xl">{data.firstResponseTime}</StatNumber>
+              <StatHelpText color="success.500">
                 <StatArrow type="decrease" />
                 0.8 min faster
               </StatHelpText>
@@ -105,12 +105,12 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
           <CardBody>
             <Stat>
-              <StatLabel>Open Incidents</StatLabel>
-              <StatNumber>{data.openIncidents}</StatNumber>
-              <StatHelpText>
+              <StatLabel color="text.secondary">Open Incidents</StatLabel>
+              <StatNumber color="neon.500" fontSize="2xl">{data.openIncidents}</StatNumber>
+              <StatHelpText color="success.500">
                 <StatArrow type="decrease" />
                 2 resolved
               </StatHelpText>
@@ -121,33 +121,45 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
 
       <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
         {/* Live Ops Panel */}
-        <Card>
+        <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
           <CardHeader>
-            <Heading size="md">Live Operations</Heading>
+            <Heading size="md" color="text.primary">Live Operations</Heading>
           </CardHeader>
           <CardBody>
             <VStack spacing={4} align="stretch">
               {data.jobsInProgress.map((job) => (
-                <Box key={job.id} p={4} border="1px" borderColor="gray.200" borderRadius="md">
+                <Box 
+                  key={job.id} 
+                  p={4} 
+                  border="1px" 
+                  borderColor="border.primary" 
+                  borderRadius="lg"
+                  bg="bg.surface.elevated"
+                  _hover={{ borderColor: "neon.500", bg: "bg.surface.hover" }}
+                  transition="all 0.2s ease"
+                >
                   <Flex align="center" justify="space-between">
                     <VStack align="start" spacing={1}>
-                      <Text fontWeight="bold">#{job.reference}</Text>
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontWeight="bold" color="text.primary">#{job.reference}</Text>
+                      <Text fontSize="sm" color="text.secondary">
                         {job.pickupAddress} → {job.dropoffAddress}
                       </Text>
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize="sm" color="text.tertiary">
                         Driver: {job.driver?.user.name || "Unassigned"}
                       </Text>
                     </VStack>
                     <VStack align="end" spacing={1}>
-                      <Badge colorScheme={
-                        job.status === "assigned" ? "blue" :
-                        job.status === "in_progress" ? "yellow" :
-                        job.status === "picked_up" ? "green" : "gray"
-                      }>
+                      <Badge 
+                        colorScheme={
+                          job.status === "assigned" ? "blue" :
+                          job.status === "in_progress" ? "yellow" :
+                          job.status === "picked_up" ? "green" : "gray"
+                        }
+                        variant="solid"
+                      >
                         {job.status.replace("_", " ")}
                       </Badge>
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize="sm" color="text.tertiary">
                         {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
                       </Text>
                     </VStack>
@@ -161,85 +173,89 @@ export default function AdminDashboard({ data }: AdminDashboardProps) {
         {/* Queue & Health */}
         <VStack spacing={6} align="stretch">
           {/* Queue */}
-          <Card>
+          <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
             <CardHeader>
-              <Heading size="md">Queue</Heading>
+              <Heading size="md" color="text.primary">Queue</Heading>
             </CardHeader>
             <CardBody>
               <VStack spacing={3} align="stretch">
                 <Flex justify="space-between" align="center">
-                  <Text>Driver Applications</Text>
-                  <Badge colorScheme="blue">{data.newApplications}</Badge>
+                  <Text color="text.secondary">Driver Applications</Text>
+                  <Badge colorScheme="blue" variant="solid">{data.newApplications}</Badge>
                 </Flex>
                 <Flex justify="space-between" align="center">
-                  <Text>Pending Refunds</Text>
-                  <Badge colorScheme="orange">{data.pendingRefunds}</Badge>
+                  <Text color="text.secondary">Pending Refunds</Text>
+                  <Badge colorScheme="orange" variant="solid">{data.pendingRefunds}</Badge>
                 </Flex>
                 <Flex justify="space-between" align="center">
-                  <Text>Disputed Payouts</Text>
-                  <Badge colorScheme="red">0</Badge>
+                  <Text color="text.secondary">Disputed Payouts</Text>
+                  <Badge colorScheme="red" variant="solid">0</Badge>
                 </Flex>
               </VStack>
             </CardBody>
           </Card>
 
           {/* Map Snapshot */}
-          <Card>
+          <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
             <CardHeader>
-              <Heading size="md">Map Snapshot</Heading>
+              <Heading size="md" color="text.primary">Map Snapshot</Heading>
             </CardHeader>
             <CardBody>
               <Box 
-                bg="gray.100" 
+                bg="bg.surface.elevated" 
                 h="200px" 
-                borderRadius="md" 
+                borderRadius="lg" 
                 display="flex" 
                 alignItems="center" 
                 justifyContent="center"
+                border="1px"
+                borderColor="border.primary"
+                _hover={{ borderColor: "neon.500" }}
+                transition="all 0.2s ease"
               >
                 <VStack>
-                  <Icon as={FaMapMarkedAlt} boxSize={8} color="gray.400" />
-                  <Text color="gray.500">Live Map View</Text>
-                  <Text fontSize="sm" color="gray.400">{data.activeJobs} active crews</Text>
+                  <Icon as={FaMapMarkedAlt} boxSize={8} color="neon.500" />
+                  <Text color="text.secondary">Live Map View</Text>
+                  <Text fontSize="sm" color="text.tertiary">{data.activeJobs} active crews</Text>
                 </VStack>
               </Box>
             </CardBody>
           </Card>
 
           {/* System Health */}
-          <Card>
+          <Card variant="elevated" _hover={{ transform: "translateY(-2px)", shadow: "neon.glow" }} transition="all 0.3s ease">
             <CardHeader>
-              <Heading size="md">System Health</Heading>
+              <Heading size="md" color="text.primary">System Health</Heading>
             </CardHeader>
             <CardBody>
               <VStack spacing={3} align="stretch">
                 <Flex justify="space-between" align="center">
                   <HStack>
-                    <Icon as={FaDatabase} color="green.500" />
-                    <Text>Database</Text>
+                    <Icon as={FaDatabase} color="success.500" />
+                    <Text color="text.secondary">Database</Text>
                   </HStack>
-                  <Badge colorScheme="green">{data.systemHealth.db}</Badge>
+                  <Badge colorScheme="green" variant="solid">{data.systemHealth.db}</Badge>
                 </Flex>
                 <Flex justify="space-between" align="center">
                   <HStack>
-                    <Icon as={FaServer} color="green.500" />
-                    <Text>Queue</Text>
+                    <Icon as={FaServer} color="success.500" />
+                    <Text color="text.secondary">Queue</Text>
                   </HStack>
-                  <Badge colorScheme="green">{data.systemHealth.queue}</Badge>
+                  <Badge colorScheme="green" variant="solid">{data.systemHealth.queue}</Badge>
                 </Flex>
                 <Flex justify="space-between" align="center">
                   <HStack>
-                    <Icon as={FaBell} color="green.500" />
-                    <Text>Pusher</Text>
+                    <Icon as={FaBell} color="success.500" />
+                    <Text color="text.secondary">Pusher</Text>
                   </HStack>
-                  <Badge colorScheme="green">{data.systemHealth.pusher}</Badge>
+                  <Badge colorScheme="green" variant="solid">{data.systemHealth.pusher}</Badge>
                 </Flex>
                 <Flex justify="space-between" align="center">
                   <HStack>
-                    <Icon as={FaStripe} color="green.500" />
-                    <Text>Stripe Webhooks</Text>
+                    <Icon as={FaStripe} color="success.500" />
+                    <Text color="text.secondary">Stripe Webhooks</Text>
                   </HStack>
-                  <Badge colorScheme="green">{data.systemHealth.stripe}</Badge>
+                  <Badge colorScheme="green" variant="solid">{data.systemHealth.stripe}</Badge>
                 </Flex>
               </VStack>
             </CardBody>

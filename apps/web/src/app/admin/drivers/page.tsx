@@ -275,7 +275,7 @@ export default function AdminDriversPage() {
         <Flex justify="space-between" align="center">
           <VStack align="start" spacing={1}>
             <Heading size="lg">Driver Roster</Heading>
-            <Text color="gray.600">Manage active drivers and compliance</Text>
+            <Text color="text.secondary">Manage active drivers and compliance</Text>
           </VStack>
           <HStack spacing={4}>
             <Button
@@ -341,7 +341,7 @@ export default function AdminDriversPage() {
             <HStack spacing={4} wrap="wrap">
               <InputGroup maxW="300px">
                 <InputLeftElement>
-                  <Icon as={FiSearch} color="gray.400" />
+                  <Icon as={FiSearch} color="text.tertiary" />
                 </InputLeftElement>
                 <Input
                   placeholder="Search drivers..."
@@ -408,8 +408,8 @@ export default function AdminDriversPage() {
                       <Td>
                         <VStack align="start" spacing={1}>
                           <Text fontWeight="medium">{driver.name}</Text>
-                          <Text fontSize="sm" color="gray.600">{driver.email}</Text>
-                          <Text fontSize="sm" color="gray.600">{driver.phone}</Text>
+                                            <Text fontSize="sm" color="text.secondary">{driver.email}</Text>
+                  <Text fontSize="sm" color="text.secondary">{driver.phone}</Text>
                         </VStack>
                       </Td>
                       <Td>
@@ -433,13 +433,13 @@ export default function AdminDriversPage() {
                             <Icon as={FiStar} color="yellow.400" />
                             <Text fontSize="sm">{driver.rating.toFixed(1)}</Text>
                           </HStack>
-                          <Text fontSize="sm" color="gray.600">
+                          <Text fontSize="sm" color="text.secondary">
                             {driver.completedJobs}/{driver.totalJobs} jobs
                           </Text>
                         </VStack>
                       </Td>
                       <Td>
-                        <Text fontSize="sm" color="gray.600">
+                        <Text fontSize="sm" color="text.secondary">
                           {driver.lastSeen ? new Date(driver.lastSeen).toLocaleString() : 'Never'}
                         </Text>
                       </Td>
@@ -522,8 +522,8 @@ export default function AdminDriversPage() {
 
             {filteredDrivers.length === 0 && (
               <VStack spacing={4} py={8}>
-                <Icon as={FiUser} size="48px" color="gray.400" />
-                <Text color="gray.600">No drivers found</Text>
+                <Icon as={FiUser} size="48px" color="text.tertiary" />
+                <Text color="text.secondary">No drivers found</Text>
               </VStack>
             )}
           </CardBody>
@@ -537,7 +537,7 @@ export default function AdminDriversPage() {
           <ModalHeader>
             <VStack align="start" spacing={1}>
               <Heading size="md">Driver Profile: {selectedDriver?.name}</Heading>
-              <Text color="gray.600" fontSize="sm">{selectedDriver?.email}</Text>
+              <Text color="text.secondary" fontSize="sm">{selectedDriver?.email}</Text>
             </VStack>
           </ModalHeader>
           <ModalCloseButton />
@@ -615,7 +615,7 @@ export default function AdminDriversPage() {
                                 <Icon as={FiTruck} size="24px" color="blue.500" />
                                 <Text fontWeight="medium">Total Jobs</Text>
                                 <Text fontSize="2xl" fontWeight="bold">{selectedDriver.totalJobs}</Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   {selectedDriver.completedJobs} completed
                                 </Text>
                               </VStack>
@@ -629,7 +629,7 @@ export default function AdminDriversPage() {
                                 <Text fontSize="2xl" fontWeight="bold">
                                   £{(selectedDriver.totalEarnings / 100).toFixed(2)}
                                 </Text>
-                                <Text fontSize="sm" color="gray.600">Lifetime earnings</Text>
+                                <Text fontSize="sm" color="text.secondary">Lifetime earnings</Text>
                               </VStack>
                             </CardBody>
                           </Card>
@@ -639,7 +639,7 @@ export default function AdminDriversPage() {
                                 <Icon as={FiStar} size="24px" color="yellow.500" />
                                 <Text fontWeight="medium">Rating</Text>
                                 <Text fontSize="2xl" fontWeight="bold">{selectedDriver.rating.toFixed(1)}</Text>
-                                <Text fontSize="sm" color="gray.600">Average rating</Text>
+                                <Text fontSize="sm" color="text.secondary">Average rating</Text>
                               </VStack>
                             </CardBody>
                           </Card>
@@ -711,19 +711,19 @@ export default function AdminDriversPage() {
                         <Grid templateColumns="1fr 1fr" gap={6}>
                           <VStack align="start" spacing={2}>
                             <Text fontWeight="medium">Job Completion</Text>
-                            <Text fontSize="sm" color="gray.600">
+                            <Text fontSize="sm" color="text.secondary">
                               {selectedDriver.completedJobs} of {selectedDriver.totalJobs} jobs completed
                             </Text>
-                            <Text fontSize="sm" color="gray.600">
+                            <Text fontSize="sm" color="text.secondary">
                               {selectedDriver.onTimeJobs} jobs completed on time
                             </Text>
                           </VStack>
                           <VStack align="start" spacing={2}>
                             <Text fontWeight="medium">Earnings</Text>
-                            <Text fontSize="sm" color="gray.600">
+                            <Text fontSize="sm" color="text.secondary">
                               Total: £{(selectedDriver.totalEarnings / 100).toFixed(2)}
                             </Text>
-                            <Text fontSize="sm" color="gray.600">
+                            <Text fontSize="sm" color="text.secondary">
                               Average per job: £{selectedDriver.totalJobs > 0 ? (selectedDriver.totalEarnings / selectedDriver.totalJobs / 100).toFixed(2) : '0.00'}
                             </Text>
                           </VStack>
@@ -771,7 +771,7 @@ export default function AdminDriversPage() {
                                 {selectedDriver.documentExpiries.license ? 'Expires Soon' : 'Valid'}
                               </Badge>
                               {selectedDriver.documentExpiries.license && (
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   Expires: {new Date(selectedDriver.documentExpiries.license).toLocaleDateString()}
                                 </Text>
                               )}
@@ -787,7 +787,7 @@ export default function AdminDriversPage() {
                                 {selectedDriver.documentExpiries.insurance ? 'Expires Soon' : 'Valid'}
                               </Badge>
                               {selectedDriver.documentExpiries.insurance && (
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   Expires: {new Date(selectedDriver.documentExpiries.insurance).toLocaleDateString()}
                                 </Text>
                               )}
@@ -803,7 +803,7 @@ export default function AdminDriversPage() {
                                 {selectedDriver.documentExpiries.mot ? 'Expires Soon' : 'Valid'}
                               </Badge>
                               {selectedDriver.documentExpiries.mot && (
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="text.secondary">
                                   Expires: {new Date(selectedDriver.documentExpiries.mot).toLocaleDateString()}
                                 </Text>
                               )}
@@ -829,12 +829,12 @@ export default function AdminDriversPage() {
                                     <Badge colorScheme={incident.severity === 'high' ? 'red' : incident.severity === 'medium' ? 'yellow' : 'green'}>
                                       {incident.severity} severity
                                     </Badge>
-                                    <Text fontSize="sm" color="gray.600">
+                                    <Text fontSize="sm" color="text.secondary">
                                       {new Date(incident.createdAt).toLocaleDateString()}
                                     </Text>
                                   </HStack>
                                   <Text fontWeight="medium">{incident.type}</Text>
-                                  <Text fontSize="sm" color="gray.600">{incident.description}</Text>
+                                  <Text fontSize="sm" color="text.secondary">{incident.description}</Text>
                                   <HStack>
                                     <Badge colorScheme={incident.resolved ? 'green' : 'red'}>
                                       {incident.resolved ? 'Resolved' : 'DRAFT'}

@@ -51,10 +51,11 @@ const viewOptions = [
 ];
 
 export function ViewToggle({ view, onViewChange, showLabel = false, size = 'md' }: ViewToggleProps) {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const activeBg = useColorModeValue('brand.50', 'brand.900');
-  const activeColor = 'brand.500';
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
+  const activeBg = 'neon.500';
+  const activeColor = 'dark.900';
 
   const currentView = viewOptions.find(v => v.type === view);
 
@@ -65,15 +66,16 @@ export function ViewToggle({ view, onViewChange, showLabel = false, size = 'md' 
           as={IconButton}
           icon={
             <HStack spacing={2}>
-              <Icon as={currentView?.icon} />
-              <Text fontSize="sm">{currentView?.label}</Text>
-              <Icon as={FiChevronDown} />
+              <Icon as={currentView?.icon} color="text.secondary" />
+              <Text fontSize="sm" color="text.secondary">{currentView?.label}</Text>
+              <Icon as={FiChevronDown} color="text.secondary" />
             </HStack>
           }
           variant="outline"
           size={size}
           borderColor={borderColor}
-          _hover={{ borderColor: 'gray.300' }}
+          _hover={{ borderColor: 'neon.500' }}
+          color="text.secondary"
         />
         <MenuList bg={bgColor} borderColor={borderColor}>
           {viewOptions.map((option) => (
@@ -82,11 +84,12 @@ export function ViewToggle({ view, onViewChange, showLabel = false, size = 'md' 
               icon={<Icon as={option.icon} />}
               onClick={() => onViewChange(option.type)}
               bg={view === option.type ? activeBg : 'transparent'}
-              color={view === option.type ? activeColor : 'inherit'}
+              color={view === option.type ? activeColor : 'text.secondary'}
+              _hover={{ bg: view === option.type ? activeBg : 'bg.surface.hover', color: view === option.type ? activeColor : 'text.primary' }}
             >
               <VStack align="start" spacing={0}>
                 <Text fontWeight="medium">{option.label}</Text>
-                <Text fontSize="xs" color="gray.500">
+                <Text fontSize="xs" color="text.tertiary">
                   {option.description}
                 </Text>
               </VStack>
@@ -107,9 +110,10 @@ export function ViewToggle({ view, onViewChange, showLabel = false, size = 'md' 
             variant="ghost"
             onClick={() => onViewChange(option.type)}
             bg={view === option.type ? activeBg : 'transparent'}
-            color={view === option.type ? activeColor : 'gray.500'}
+            color={view === option.type ? activeColor : 'text.tertiary'}
             _hover={{
-              bg: view === option.type ? activeBg : useColorModeValue('gray.100', 'gray.700'),
+              bg: view === option.type ? activeBg : 'bg.surface.hover',
+              color: view === option.type ? activeColor : 'text.primary',
             }}
             aria-label={option.label}
           />

@@ -429,7 +429,7 @@ export default function AnalyticsReportsPage() {
 
                           <HStack justify="space-between">
                             <Text fontSize="sm" color="gray.600">
-                              Last run: {new Date(report.lastRun).toLocaleString()}
+                              Last run: {report.lastRun ? new Date(report.lastRun).toLocaleString() : 'Never'}
                             </Text>
                             <HStack spacing={2}>
                               <Button size="xs" variant="outline" onClick={() => runReport(report.id)}>

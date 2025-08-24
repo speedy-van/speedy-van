@@ -352,7 +352,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
           <CardBody>
             <Stat>
               <StatLabel>Lifetime Value</StatLabel>
-              <StatNumber>£{customer.stats.totalLtv.toLocaleString()}</StatNumber>
+              <StatNumber>£{(customer.stats.totalLtv || 0).toLocaleString()}</StatNumber>
               <StatHelpText>
                 <FiDollarSign style={{ display: 'inline', marginRight: '4px' }} />
                 Total spent
@@ -424,7 +424,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                         <FiUser />
                         <VStack align="start" spacing={1}>
                           <Text fontWeight="bold">Last Order</Text>
-                          <Text>{new Date(customer.lastOrder).toLocaleDateString()}</Text>
+                          <Text>{customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'No orders'}</Text>
                         </VStack>
                       </HStack>
                     </VStack>
@@ -436,15 +436,15 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                   <CardBody>
                     <Heading size="md" mb={4}>Saved Addresses</Heading>
                     <VStack spacing={3} align="stretch">
-                      {customer.addresses.map((address) => (
+                      {(customer.addresses || []).map((address) => (
                         <HStack key={address.id} justify="space-between" p={3} bg="gray.50" borderRadius="md">
                           <VStack align="start" spacing={1}>
                             <HStack>
                               <FiMapPin />
-                              <Text fontWeight="bold" textTransform="capitalize">{address.type}</Text>
+                              <Text fontWeight="bold" textTransform="capitalize">{address.type || 'Address'}</Text>
                               {address.isDefault && <Badge colorScheme="green" size="sm">Default</Badge>}
                             </HStack>
-                            <Text fontSize="sm">{address.address}</Text>
+                            <Text fontSize="sm">{address.address || `${address.line1}, ${address.city}`}</Text>
                           </VStack>
                           <Button size="sm" variant="outline">
                             Edit
@@ -460,11 +460,11 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                   <CardBody>
                     <Heading size="md" mb={4}>Emergency Contacts</Heading>
                     <VStack spacing={3} align="stretch">
-                      {customer.contacts.map((contact) => (
+                      {(customer.contacts || []).map((contact) => (
                         <HStack key={contact.id} justify="space-between" p={3} bg="gray.50" borderRadius="md">
                           <VStack align="start" spacing={1}>
                             <Text fontWeight="bold">{contact.name}</Text>
-                            <Text fontSize="sm" color="gray.600">{contact.relationship}</Text>
+                            <Text fontSize="sm" color="gray.600">{contact.relationship || 'Contact'}</Text>
                             <Text fontSize="sm">{contact.phone}</Text>
                             <Text fontSize="sm">{contact.email}</Text>
                           </VStack>
@@ -541,7 +541,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {customer.orders.map((order) => (
+                    {(customer.orders || []).map((order) => (
                       <Tr key={order.id}>
                         <Td>
                           <Text fontWeight="bold">{order.ref}</Text>
@@ -550,10 +550,10 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                           <Text fontSize="sm">{new Date(order.date).toLocaleDateString()}</Text>
                         </Td>
                         <Td>
-                          <Text fontSize="sm">{order.items.join(", ")}</Text>
+                          <Text fontSize="sm">{(order.items || []).join(", ")}</Text>
                         </Td>
                         <Td>
-                          <Text fontWeight="bold">£{order.amount.toFixed(2)}</Text>
+                          <Text fontWeight="bold">£{(order.amount || 0).toFixed(2)}</Text>
                         </Td>
                         <Td>
                           <Badge colorScheme={getStatusColor(order.status)}>
@@ -597,7 +597,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {customer.supportTickets.map((ticket) => (
+                    {(customer.supportTickets || []).map((ticket) => (
                       <Tr key={ticket.id}>
                         <Td>
                           <Text fontWeight="bold">{ticket.subject}</Text>
@@ -656,13 +656,13 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                           <Text fontWeight="bold">{invoice.ref}</Text>
                         </Td>
                         <Td>
-                          <Text fontSize="sm">{new Date(invoice.date).toLocaleDateString()}</Text>
+                          <Text fontSize="sm">{invoice.date ? new Date(invoice.date).toLocaleDateString() : 'N/A'}</Text>
                         </Td>
                         <Td>
-                          <Text fontSize="sm">{new Date(invoice.dueDate).toLocaleDateString()}</Text>
+                          <Text fontSize="sm">{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</Text>
                         </Td>
                         <Td>
-                          <Text fontWeight="bold">£{invoice.amount.toFixed(2)}</Text>
+                          <Text fontWeight="bold">£{(invoice.amount || 0).toFixed(2)}</Text>
                         </Td>
                         <Td>
                           <Badge colorScheme={getStatusColor(invoice.status)}>
@@ -710,11 +710,11 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                   value={actionData.bookingId}
                   onChange={(e) => setActionData(prev => ({ ...prev, bookingId: e.target.value }))}
                 >
-                  {customer.orders
+                  {(customer.orders || [])
                     .filter(b => b.status === 'completed')
                     .map(booking => (
                       <option key={booking.id} value={booking.id}>
-                        {booking.ref} - £{booking.amount.toFixed(2)}
+                        {booking.ref} - £{(booking.amount || 0).toFixed(2)}
                       </option>
                     ))}
                 </Select>
@@ -813,11 +813,11 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                   value={actionData.bookingId}
                   onChange={(e) => setActionData(prev => ({ ...prev, bookingId: e.target.value }))}
                 >
-                  {customer.orders
+                  {(customer.orders || [])
                     .filter(b => b.status === 'completed')
                     .map(booking => (
                       <option key={booking.id} value={booking.id}>
-                        {booking.ref} - £{booking.amount.toFixed(2)}
+                        {booking.ref} - £{(booking.amount || 0).toFixed(2)}
                       </option>
                     ))}
                 </Select>

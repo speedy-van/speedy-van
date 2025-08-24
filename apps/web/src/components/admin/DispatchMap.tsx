@@ -226,7 +226,7 @@ export default function DispatchMap({
             ref={mapRef}
             position="relative"
             height={isFullscreen ? "100vh" : "600px"}
-            bg="gray.100"
+            bg="bg.surface.elevated"
             borderRadius="md"
             overflow="hidden"
           >
@@ -240,8 +240,8 @@ export default function DispatchMap({
             >
               <VStack spacing={4}>
                 <FaMapMarkedAlt size={48} color="#666" />
-                <Text color="gray.500" fontSize="lg">Interactive Map Component</Text>
-                <Text color="gray.400" fontSize="sm">
+                <Text color="text.secondary" fontSize="lg">Interactive Map Component</Text>
+                <Text color="text.tertiary" fontSize="sm">
                   {filteredDrivers.length} drivers • {filteredJobs.length} jobs • {incidents.length} incidents
                 </Text>
                 <Button colorScheme="blue" size="sm">
@@ -258,7 +258,7 @@ export default function DispatchMap({
                     size="sm"
                     variant={showTraffic ? "solid" : "outline"}
                     colorScheme={showTraffic ? "blue" : "gray"}
-                    bg="white"
+                    bg="bg.surface"
                     boxShadow="md"
                     aria-label="Traffic"
                     icon={<FaRoute />}
@@ -270,7 +270,7 @@ export default function DispatchMap({
                     size="sm"
                     variant={showHeatmap ? "solid" : "outline"}
                     colorScheme={showHeatmap ? "blue" : "gray"}
-                    bg="white"
+                    bg="bg.surface"
                     boxShadow="md"
                     aria-label="Heat Map"
                     icon={<FaLayerGroup />}
@@ -281,7 +281,7 @@ export default function DispatchMap({
                   <IconButton
                     size="sm"
                     variant="outline"
-                    bg="white"
+                    bg="bg.surface"
                     boxShadow="md"
                     aria-label="Center"
                     icon={<FaCrosshairs />}
@@ -291,7 +291,7 @@ export default function DispatchMap({
                   <IconButton
                     size="sm"
                     variant="outline"
-                    bg="white"
+                    bg="bg.surface"
                     boxShadow="md"
                     aria-label="Fullscreen"
                     icon={isFullscreen ? <FaCompress /> : <FaExpand />}
@@ -303,7 +303,7 @@ export default function DispatchMap({
 
             {/* View Toggle */}
             <Box position="absolute" top={4} right={4} zIndex={10}>
-              <HStack spacing={2} bg="white" p={2} borderRadius="md" boxShadow="md">
+              <HStack spacing={2} bg="bg.surface" p={2} borderRadius="md" boxShadow="md">
                 <Button
                   size="sm"
                   variant={mapView === 'drivers' ? 'solid' : 'outline'}
@@ -332,7 +332,7 @@ export default function DispatchMap({
             </Box>
 
             {/* Legend */}
-            <Box position="absolute" bottom={4} right={4} bg="white" p={3} borderRadius="md" boxShadow="md" zIndex={10}>
+            <Box position="absolute" bottom={4} right={4} bg="bg.surface" p={3} borderRadius="md" boxShadow="md" zIndex={10}>
               <VStack spacing={2} align="start">
                 <Text fontSize="sm" fontWeight="bold">Legend</Text>
                 <HStack spacing={2}>
@@ -415,14 +415,14 @@ export default function DispatchMap({
             ))}
 
             {/* Status Bar */}
-            <Box position="absolute" bottom={0} left={0} right={0} bg="white" p={2} borderTop="1px solid" borderColor="gray.200">
+            <Box position="absolute" bottom={0} left={0} right={0} bg="bg.surface" p={2} borderTop="1px solid" borderColor="border.primary">
               <HStack justify="space-between" fontSize="sm">
                 <HStack spacing={4}>
                   <Text>Drivers: {filteredDrivers.length}</Text>
                   <Text>Jobs: {filteredJobs.length}</Text>
                   <Text>Incidents: {incidents.length}</Text>
                 </HStack>
-                <Text color="gray.500">Last updated: {new Date().toLocaleTimeString()}</Text>
+                <Text color="text.tertiary">Last updated: {new Date().toLocaleTimeString()}</Text>
               </HStack>
             </Box>
           </Box>
@@ -444,7 +444,7 @@ export default function DispatchMap({
                       <Avatar size="lg" name={selectedDriver.user.name} />
                       <VStack align="start" spacing={2}>
                         <Text fontWeight="bold" fontSize="lg">{selectedDriver.user.name}</Text>
-                        <Text color="gray.600">{selectedDriver.user.email}</Text>
+                        <Text color="text.secondary">{selectedDriver.user.email}</Text>
                         <HStack spacing={4}>
                           <Badge colorScheme={getStatusColor(selectedDriver.availability.status)}>
                             {selectedDriver.availability.status}
@@ -473,7 +473,7 @@ export default function DispatchMap({
                         </HStack>
                       </VStack>
                     ) : (
-                      <Text color="gray.500">No vehicle information available</Text>
+                      <Text color="text.tertiary">No vehicle information available</Text>
                     )}
                   </CardBody>
                 </Card>
@@ -486,7 +486,7 @@ export default function DispatchMap({
                     <VStack spacing={2} align="stretch">
                       {selectedDriver.Booking.length > 0 ? (
                         selectedDriver.Booking.map(booking => (
-                          <HStack key={booking.id} justify="space-between" p={2} bg="gray.50" borderRadius="md">
+                          <HStack key={booking.id} justify="space-between" p={2} bg="bg.surface.elevated" borderRadius="md">
                             <Text fontSize="sm">Job #{booking.id.slice(-6)}</Text>
                             <Badge colorScheme={getStatusColor(booking.status)} size="sm">
                               {booking.status}
@@ -494,7 +494,7 @@ export default function DispatchMap({
                           </HStack>
                         ))
                       ) : (
-                        <Text color="gray.500">No active jobs</Text>
+                        <Text color="text.tertiary">No active jobs</Text>
                       )}
                     </VStack>
                   </CardBody>
@@ -578,7 +578,7 @@ export default function DispatchMap({
                         <Avatar name={selectedJob.driver.user.name} />
                         <VStack align="start" spacing={1}>
                           <Text fontWeight="bold">{selectedJob.driver.user.name}</Text>
-                          <Text fontSize="sm" color="gray.600">Driver</Text>
+                          <Text fontSize="sm" color="text.secondary">Driver</Text>
                         </VStack>
                       </HStack>
                     </CardBody>

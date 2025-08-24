@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Modal,
@@ -49,23 +49,30 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const router = useRouter();
   const [isMac, setIsMac] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
 
   useEffect(() => {
-    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+    setMounted(true);
+    // Only check platform on client side to prevent hydration mismatch
+    if (typeof window !== 'undefined') {
+      setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+    }
   }, []);
 
-  const handleNavigate = (path: string) => {
+  const handleNavigate = useCallback((path: string) => {
     if (onNavigate) {
       onNavigate(path);
     } else {
       router.push(path);
     }
-  };
+  }, [onNavigate, router]);
 
-  const shortcuts: Shortcut[] = [
+  // Memoize shortcuts to prevent recreation on every render
+  const shortcuts = useMemo(() => [
     // Navigation shortcuts
     {
       key: isMac ? '⌘K' : 'Ctrl+K',
@@ -152,7 +159,7 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
       icon: FiX,
       category: 'actions',
     },
-  ];
+  ], [isMac, handleNavigate, onOpen]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -190,6 +197,24 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [shortcuts, onOpen]);
 
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <Box
+        as="button"
+        p={2}
+        borderRadius="md"
+        _hover={{ bg: 'bg.surface.hover' }}
+        transition="background-color 0.2s"
+        title="Keyboard shortcuts (?)"
+        color="text.secondary"
+        _hover={{ color: 'text.primary' }}
+      >
+        <Icon as={FiHelpCircle} boxSize={4} />
+      </Box>
+    );
+  }
+
   const groupedShortcuts = shortcuts.reduce((acc, shortcut) => {
     if (!acc[shortcut.category]) {
       acc[shortcut.category] = [];
@@ -220,9 +245,11 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
         onClick={onOpen}
         p={2}
         borderRadius="md"
-        _hover={{ bg: useColorModeValue('gray.100', 'gray.700') }}
+        _hover={{ bg: 'bg.surface.hover' }}
         transition="background-color 0.2s"
         title="Keyboard shortcuts (?)"
+        color="text.secondary"
+        _hover={{ color: 'text.primary' }}
       >
         <Icon as={FiHelpCircle} boxSize={4} />
       </Box>
@@ -233,8 +260,8 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
         <ModalContent bg={bgColor} borderColor={borderColor}>
           <ModalHeader>
             <HStack spacing={3}>
-              <Icon as={FiHelpCircle} color="brand.500" />
-              <Text>Keyboard Shortcuts</Text>
+              <Icon as={FiHelpCircle} color="neon.500" />
+              <Text color="text.primary">Keyboard Shortcuts</Text>
             </HStack>
           </ModalHeader>
           <ModalBody pb={6}>
@@ -242,8 +269,8 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
               {Object.entries(groupedShortcuts).map(([category, categoryShortcuts]) => (
                 <Box key={category}>
                   <HStack spacing={2} mb={3}>
-                    <Icon as={categoryIcons[category as keyof typeof categoryIcons]} color="brand.500" />
-                    <Text fontWeight="semibold" fontSize="lg">
+                    <Icon as={categoryIcons[category as keyof typeof categoryIcons]} color="neon.500" />
+                    <Text fontWeight="semibold" fontSize="lg" color="text.primary">
                       {categoryLabels[category as keyof typeof categoryLabels]}
                     </Text>
                   </HStack>
@@ -254,17 +281,17 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
                           spacing={3}
                           p={3}
                           borderRadius="md"
-                          bg={useColorModeValue('gray.50', 'gray.700')}
-                          _hover={{ bg: useColorModeValue('gray.100', 'gray.600') }}
+                          bg="bg.surface.elevated"
+                          _hover={{ bg: 'bg.surface.hover' }}
                           cursor={shortcut.action ? 'pointer' : 'default'}
                           onClick={shortcut.action}
                           transition="background-color 0.2s"
                         >
-                          <Icon as={shortcut.icon} boxSize={4} color="gray.500" />
-                          <Text fontSize="sm" flex={1}>
+                          <Icon as={shortcut.icon} boxSize={4} color="text.tertiary" />
+                          <Text fontSize="sm" flex={1} color="text.secondary">
                             {shortcut.description}
                           </Text>
-                          <Kbd fontSize="xs">{shortcut.key}</Kbd>
+                          <Kbd fontSize="xs" bg="bg.surface.elevated" color="text.secondary" borderColor="border.primary">{shortcut.key}</Kbd>
                         </HStack>
                       </GridItem>
                     ))}
@@ -275,7 +302,7 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
 
             {/* Footer */}
             <Box mt={6} pt={4} borderTop="1px solid" borderColor={borderColor}>
-              <Text fontSize="sm" color="gray.500" textAlign="center">
+              <Text fontSize="sm" color="text.tertiary" textAlign="center">
                 Press ? anytime to show this help
               </Text>
             </Box>

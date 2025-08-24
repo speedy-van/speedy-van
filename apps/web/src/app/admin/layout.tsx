@@ -30,9 +30,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   console.log('✅ Admin Layout - Access granted for admin user');
 
   return (
-    <AdminShell>
-      {children}
-    </AdminShell>
+    <div suppressHydrationWarning>
+      <AdminShell>
+        {children}
+      </AdminShell>
+    </div>
   );
 }
 

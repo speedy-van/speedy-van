@@ -61,14 +61,23 @@ export function AdminShell({
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const { toasts, addToast, dismissToast } = useToasts();
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const contentBg = useColorModeValue('gray.50', 'gray.900');
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
+  const contentBg = 'bg.canvas';
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Monitor online status
   useEffect(() => {
+    if (!mounted) return;
+    
     const handleOnline = () => {
       setIsOnline(true);
       addToast(toastUtils.success('Connection restored', 'You are back online'));
@@ -86,7 +95,7 @@ export function AdminShell({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [addToast]);
+  }, [addToast, mounted]);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/auth/login' });
@@ -103,10 +112,47 @@ export function AdminShell({
   const MotionFlex = motion.create(Flex);
 const MotionBox = motion.create(Box);
 
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <Flex h="100vh" overflow="hidden" bg="bg.canvas">
+        <Box
+          bg={bgColor}
+          borderRight="1px solid"
+          borderColor={borderColor}
+          h="100vh"
+          position="sticky"
+          top={0}
+          left={0}
+          zIndex={20}
+          transition="width 0.2s"
+          width="280px"
+          overflow="hidden"
+        />
+        <Flex direction="column" flex={1} overflow="hidden">
+          <Box
+            bg={bgColor}
+            borderBottom="1px solid"
+            borderColor={borderColor}
+            px={6}
+            py={3}
+            position="sticky"
+            top={0}
+            zIndex={10}
+          />
+          <Box flex={1} bg={contentBg} overflow="auto" p={6}>
+            {children}
+          </Box>
+        </Flex>
+      </Flex>
+    );
+  }
+
   return (
     <MotionFlex 
       h="100vh" 
       overflow="hidden"
+      bg="bg.canvas"
       variants={getMotionVariants(motionVariants.fadeIn)}
       initial="initial"
       animate="animate"
@@ -141,12 +187,12 @@ const MotionBox = motion.create(Box);
             {/* Left side - Title and breadcrumb */}
             <VStack align="start" spacing={0}>
               {title && (
-                <Text fontSize="lg" fontWeight="semibold">
+                <Text fontSize="lg" fontWeight="semibold" color="text.primary">
                   {title}
                 </Text>
               )}
               {subtitle && (
-                <Text fontSize="sm" color="gray.500">
+                <Text fontSize="sm" color="text.tertiary">
                   {subtitle}
                 </Text>
               )}
@@ -167,10 +213,10 @@ const MotionBox = motion.create(Box);
               <HStack spacing={1}>
                 <Icon
                   as={isOnline ? FiWifi : FiWifiOff}
-                  color={isOnline ? 'green.500' : 'red.500'}
+                  color={isOnline ? 'success.500' : 'error.500'}
                   boxSize={4}
                 />
-                <Text fontSize="xs" color={isOnline ? 'green.500' : 'red.500'}>
+                <Text fontSize="xs" color={isOnline ? 'success.500' : 'error.500'}>
                   {isOnline ? 'Online' : 'Offline'}
                 </Text>
               </HStack>
@@ -182,6 +228,8 @@ const MotionBox = motion.create(Box);
                 icon={<Icon as={FiBell} />}
                 aria-label="Notifications"
                 position="relative"
+                color="text.secondary"
+                _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
               >
                 <Badge
                   position="absolute"
@@ -201,6 +249,7 @@ const MotionBox = motion.create(Box);
                   size="sm"
                   leftIcon={<Icon as={FiPlus} />}
                   onClick={handleCreateClick}
+                  variant="primary"
                 >
                   Create
                 </Button>
@@ -220,34 +269,38 @@ const MotionBox = motion.create(Box);
                   size="sm"
                   px={2}
                   py={1}
+                  color="text.secondary"
+                  _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
                 >
                   <HStack spacing={2}>
                     <Avatar
                       size="sm"
                       name={session?.user?.name || 'User'}
                       src={undefined}
+                      bg="neon.500"
+                      color="dark.900"
                     />
                     {!isSidebarCollapsed && (
                       <VStack align="start" spacing={0}>
-                        <Text fontSize="sm" fontWeight="medium">
+                        <Text fontSize="sm" fontWeight="medium" color="text.primary">
                           {session?.user?.name || 'Admin User'}
                         </Text>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="text.tertiary">
                           {session?.user?.email || 'admin@example.com'}
                         </Text>
                       </VStack>
                     )}
                   </HStack>
                 </MenuButton>
-                <MenuList>
-                  <MenuItem icon={<Icon as={FiUser} />}>
+                <MenuList bg="bg.surface" borderColor="border.primary">
+                  <MenuItem icon={<Icon as={FiUser} />} color="text.secondary" _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}>
                     Profile
                   </MenuItem>
-                  <MenuItem icon={<Icon as={FiSettings} />}>
+                  <MenuItem icon={<Icon as={FiSettings} />} color="text.secondary" _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}>
                     Settings
                   </MenuItem>
-                  <MenuDivider />
-                  <MenuItem icon={<Icon as={FiLogOut} />} onClick={handleSignOut}>
+                  <MenuDivider borderColor="border.primary" />
+                  <MenuItem icon={<Icon as={FiLogOut} />} onClick={handleSignOut} color="text.secondary" _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}>
                     Sign out
                   </MenuItem>
                 </MenuList>
@@ -257,17 +310,14 @@ const MotionBox = motion.create(Box);
         </Box>
 
         {/* Content area */}
-        <MotionBox
+        <Box
           flex={1}
-          bg={contentBg}
           overflow="auto"
+          bg={contentBg}
           p={6}
-          variants={getMotionVariants(motionVariants.fadeInUp)}
-          initial="initial"
-          animate="animate"
         >
           {children}
-        </MotionBox>
+        </Box>
       </MotionFlex>
 
       {/* Real-time toasts */}

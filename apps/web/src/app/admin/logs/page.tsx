@@ -141,7 +141,7 @@ export default function LogsPage() {
           <CardBody>
             <Stat>
               <StatLabel>Total Logs</StatLabel>
-              <StatNumber>{stats.totalLogs.toLocaleString()}</StatNumber>
+              <StatNumber>{(stats.totalLogs || 0).toLocaleString()}</StatNumber>
               <StatHelpText>
                 <FiActivity style={{ display: 'inline', marginRight: '4px' }} />
                 Last 24 hours
@@ -262,7 +262,7 @@ export default function LogsPage() {
                       {logs.map((log) => (
                         <Tr key={log.id}>
                           <Td>
-                            <Text fontSize="sm">{new Date(log.timestamp).toLocaleString()}</Text>
+                            <Text fontSize="sm">{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
                           </Td>
                           <Td>
                             <HStack spacing={2}>
@@ -367,7 +367,7 @@ export default function LogsPage() {
                       {logs.map((log) => (
                         <Tr key={log.id}>
                           <Td>
-                            <Text fontSize="sm">{new Date(log.timestamp).toLocaleString()}</Text>
+                            <Text fontSize="sm">{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
                           </Td>
                           <Td>
                             <Badge colorScheme={getLevelColor(log.level || '')} size="sm">
@@ -452,7 +452,7 @@ export default function LogsPage() {
                       {logs.map((log) => (
                         <Tr key={log.id}>
                           <Td>
-                            <Text fontSize="sm">{new Date(log.timestamp).toLocaleString()}</Text>
+                            <Text fontSize="sm">{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
                           </Td>
                           <Td>
                             <Text fontSize="sm" fontWeight="bold">{log.service}</Text>
@@ -508,7 +508,7 @@ export default function LogsPage() {
                 <SimpleGrid columns={2} spacing={4}>
                   <Box>
                     <Text fontWeight="bold">Timestamp</Text>
-                    <Text>{new Date(selectedLog.timestamp).toLocaleString()}</Text>
+                    <Text>{selectedLog.timestamp ? new Date(selectedLog.timestamp).toLocaleString() : 'N/A'}</Text>
                   </Box>
                   {selectedLog.actor && (
                     <Box>

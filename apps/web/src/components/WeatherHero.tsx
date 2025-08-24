@@ -83,17 +83,23 @@ const getWeatherPhrases = (city: string, weather: string, temp: number) => {
   return [...weatherPhrases, ...basePhrases];
 };
 
-export default function WeatherHero() {
+export function WeatherHero() {
   const [wx, setWx] = useState<WeatherPayload | null>(null);
-  const [currentPhrase, setCurrentPhrase] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Changed from true to false for SSR
+  const [currentPhrase, setCurrentPhrase] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Auto-detect location and fetch weather on component mount
   useEffect(() => {
     const fetchWeather = async (lat?: number, lon?: number) => {
       try {
-        setIsLoading(true);
+        setLoading(true);
         const qs = lat && lon ? `?lat=${lat}&lon=${lon}` : "";
         const res = await fetch(`/api/weather/current${qs}`);
         
@@ -115,7 +121,7 @@ export default function WeatherHero() {
           description: "clear sky"
         });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
@@ -145,7 +151,7 @@ export default function WeatherHero() {
 
   // Dynamic sky gradient based on weather and time
   const weatherGradient = useMemo(() => {
-    if (!wx) return "linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%)";
+    if (!wx || !mounted) return "linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%)";
     
     const hour = new Date().getHours();
     const isNight = hour < 6 || hour > 20;
@@ -176,7 +182,7 @@ export default function WeatherHero() {
         }
         return "linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%)";
     }
-  }, [wx?.weather]);
+  }, [wx?.weather, mounted]);
 
   // Get current phrases for display
   const currentPhrases = useMemo(() => {
@@ -339,7 +345,7 @@ export default function WeatherHero() {
           </Text>
 
           {/* Weather Info Display */}
-          {wx && !isLoading && (
+          {wx && !loading && (
             <Box
               mt={4}
               display="inline-block"

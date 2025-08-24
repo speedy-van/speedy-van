@@ -122,10 +122,10 @@ export default function HealthPage() {
       <HStack justify="space-between" mb={6}>
         <VStack align="start" spacing={1}>
           <Heading size="lg">System Health</Heading>
-          <Text color="gray.600">Real-time system monitoring and status</Text>
+          <Text color="text.secondary">Real-time system monitoring and status</Text>
         </VStack>
         <HStack spacing={3}>
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize="sm" color="text.secondary">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </Text>
           <Button 
@@ -168,13 +168,13 @@ export default function HealthPage() {
                     <FiActivity />
                     <Text fontWeight="bold" fontSize="lg">Overall System Status</Text>
                   </HStack>
-                  <Text color="gray.600">All systems operational</Text>
+                  <Text color="text.secondary">All systems operational</Text>
                 </VStack>
                 <VStack align="end" spacing={1}>
                   <Badge colorScheme={getStatusColor(healthData.overall)} size="lg">
                     {healthData.overall.toUpperCase()}
                   </Badge>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color="text.secondary">
                     Uptime: {healthData.uptime}
                   </Text>
                 </VStack>
@@ -201,7 +201,7 @@ export default function HealthPage() {
               <CardBody>
                 <Stat>
                   <StatLabel>Requests/Second</StatLabel>
-                  <StatNumber>{healthData.performanceMetrics.requestsPerSecond.toLocaleString()}</StatNumber>
+                  <StatNumber>{(healthData.performanceMetrics.requestsPerSecond || 0).toLocaleString()}</StatNumber>
                   <StatHelpText>
                     <FiActivity style={{ display: 'inline', marginRight: '4px' }} />
                     Current load
@@ -244,7 +244,7 @@ export default function HealthPage() {
                 <CardBody>
                   <Heading size="md" mb={4}>Service Status</Heading>
                   <VStack spacing={4} align="stretch">
-                    {Object.entries(healthData.services).map(([service, data]: [string, ServiceHealth]) => (
+                    {Object.entries(healthData.services || {}).map(([service, data]: [string, ServiceHealth]) => (
                       <Card key={service} variant="outline">
                         <CardBody>
                           <HStack justify="space-between">
@@ -256,13 +256,13 @@ export default function HealthPage() {
                                 </Badge>
                               </HStack>
                               <Text fontSize="sm" color="gray.600">
-                                Last heartbeat: {new Date(data.lastHeartbeat).toLocaleTimeString()}
+                                Last heartbeat: {data.lastHeartbeat ? new Date(data.lastHeartbeat).toLocaleTimeString() : 'N/A'}
                               </Text>
                             </VStack>
                             <VStack align="end" spacing={1}>
                               {service === "database" && (
                                 <>
-                                  <Text fontSize="sm">Connections: {data.connections}/{data.maxConnections}</Text>
+                                  <Text fontSize="sm">Connections: {data.connections || 0}/{data.maxConnections || 0}</Text>
                                   <Progress 
                                     value={data.connections && data.maxConnections ? (data.connections / data.maxConnections) * 100 : 0} 
                                     size="sm" 
@@ -272,34 +272,34 @@ export default function HealthPage() {
                               )}
                               {service === "cache" && (
                                 <>
-                                  <Text fontSize="sm">Memory: {data.memoryUsage}</Text>
-                                  <Text fontSize="sm">Hit Rate: {data.hitRate}</Text>
+                                  <Text fontSize="sm">Memory: {data.memoryUsage || 'N/A'}</Text>
+                                  <Text fontSize="sm">Hit Rate: {data.hitRate || 'N/A'}</Text>
                                 </>
                               )}
                               {service === "queue" && (
                                 <>
                                   <Text fontSize="sm" color={data.depth && data.maxDepth && data.depth > data.maxDepth ? "red.500" : "gray.600"}>
-                                    Depth: {data.depth?.toLocaleString()}
+                                    Depth: {(data.depth || 0).toLocaleString()}
                                   </Text>
-                                  <Text fontSize="sm">{data.processingRate}</Text>
+                                  <Text fontSize="sm">{data.processingRate || 'N/A'}</Text>
                                 </>
                               )}
                               {service === "webhooks" && (
                                 <>
-                                  <Text fontSize="sm">Success: {data.successRate}</Text>
-                                  <Text fontSize="sm">Pending: {data.pendingWebhooks}</Text>
+                                  <Text fontSize="sm">Success: {data.successRate || 'N/A'}</Text>
+                                  <Text fontSize="sm">Pending: {data.pendingWebhooks || 0}</Text>
                                 </>
                               )}
                               {service === "pusher" && (
                                 <>
-                                  <Text fontSize="sm">Connections: {data.connections?.toLocaleString()}</Text>
-                                  <Text fontSize="sm">Channels: {data.channels}</Text>
+                                  <Text fontSize="sm">Connections: {(data.connections || 0).toLocaleString()}</Text>
+                                  <Text fontSize="sm">Channels: {data.channels || 0}</Text>
                                 </>
                               )}
                               {service === "stripe" && (
                                 <>
-                                  <Text fontSize="sm">Latency: {data.apiLatency}</Text>
-                                  <Text fontSize="sm">Webhooks: {data.webhookSuccess}</Text>
+                                  <Text fontSize="sm">Latency: {data.apiLatency || 'N/A'}</Text>
+                                  <Text fontSize="sm">Webhooks: {data.webhookSuccess || 'N/A'}</Text>
                                 </>
                               )}
                             </VStack>
@@ -319,7 +319,7 @@ export default function HealthPage() {
                 <CardBody>
                   <Heading size="md" mb={4}>Recent Incidents</Heading>
                   <VStack spacing={3} align="stretch">
-                    {healthData.recentIncidents.map((incident) => (
+                    {(healthData.recentIncidents || []).map((incident) => (
                       <Alert key={incident.id} status={getSeverityColor(incident.severity) as any} variant="left-accent">
                         <AlertIcon />
                         <VStack align="start" spacing={1}>
@@ -331,7 +331,7 @@ export default function HealthPage() {
                         </VStack>
                       </Alert>
                     ))}
-                    {healthData.recentIncidents.length === 0 && (
+                    {(healthData.recentIncidents || []).length === 0 && (
                       <Text color="gray.500" textAlign="center" py={4}>
                         No recent incidents
                       </Text>

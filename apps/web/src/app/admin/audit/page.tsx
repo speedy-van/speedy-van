@@ -237,7 +237,7 @@ export default function AuditPage() {
           <CardBody>
             <Stat>
               <StatLabel>Total Logs</StatLabel>
-              <StatNumber>{pagination.total.toLocaleString()}</StatNumber>
+              <StatNumber>{(pagination.total || 0).toLocaleString()}</StatNumber>
               <StatHelpText>
                 <FiActivity style={{ display: 'inline', marginRight: '4px' }} />
                 All time

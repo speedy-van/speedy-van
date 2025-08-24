@@ -137,14 +137,24 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+  
+  // Use neon dark theme colors
+  const bgColor = 'bg.surface';
+  const borderColor = 'border.primary';
+  const hoverBg = 'bg.surface.hover';
 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Auto-expand items based on current path
   useEffect(() => {
+    if (!mounted) return;
+    
     const newExpanded = new Set<string>();
     sidebarItems.forEach(item => {
       if (item.children) {
@@ -155,7 +165,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
       }
     });
     setExpandedItems(newExpanded);
-  }, [pathname]);
+  }, [pathname, mounted]);
 
   const toggleExpanded = (label: string) => {
     const newExpanded = new Set(expandedItems);
@@ -168,6 +178,51 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
   };
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <Box
+        bg={bgColor}
+        borderRight="1px solid"
+        borderColor={borderColor}
+        h="100vh"
+        position="sticky"
+        top={0}
+        left={0}
+        zIndex={20}
+        transition="width 0.2s"
+        width={isCollapsed ? '60px' : '280px'}
+        overflow="hidden"
+      >
+        <VStack spacing={0} h="full">
+          <HStack
+            px={3}
+            py={4}
+            borderBottom="1px solid"
+            borderColor={borderColor}
+            w="full"
+            justify="space-between"
+          >
+            {!isCollapsed && (
+              <Text fontSize="lg" fontWeight="bold" color="neon.500">
+                Admin
+              </Text>
+            )}
+            <IconButton
+              size="sm"
+              variant="ghost"
+              icon={<Icon as={isCollapsed ? FiChevronRight : FiChevronLeft} />}
+              onClick={onToggle}
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              color="text.secondary"
+              _hover={{ bg: hoverBg, color: 'text.primary' }}
+            />
+          </HStack>
+        </VStack>
+      </Box>
+    );
+  }
 
   const renderItem = (item: SidebarItem, isChild = false) => {
     const active = isActive(item.href);
@@ -188,10 +243,11 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                 px={3}
                 py={2}
                 borderRadius="md"
-                bg={active ? 'brand.500' : 'transparent'}
-                color={active ? 'white' : 'inherit'}
+                bg={active ? 'neon.500' : 'transparent'}
+                color={active ? 'dark.900' : 'text.secondary'}
                 _hover={{
-                  bg: active ? 'brand.600' : hoverBg,
+                  bg: active ? 'neon.400' : hoverBg,
+                  color: active ? 'dark.900' : 'text.primary',
                 }}
                 transition="all 0.2s"
                 cursor="pointer"
@@ -200,6 +256,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                   e.preventDefault();
                   toggleExpanded(item.label);
                 } : undefined}
+                onDoubleClick={hasChildren ? undefined : () => router.push(item.href)}
               >
                 <Icon as={item.icon} boxSize={4} />
                 {!isCollapsed && (
@@ -213,7 +270,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                       </Badge>
                     )}
                     {item.shortcut && (
-                      <Text fontSize="xs" opacity={0.6}>
+                      <Text fontSize="xs" opacity={0.6} color="text.tertiary">
                         {item.shortcut}
                       </Text>
                     )}
@@ -260,7 +317,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           justify="space-between"
         >
           {!isCollapsed && (
-            <Text fontSize="lg" fontWeight="bold" color="brand.500">
+            <Text fontSize="lg" fontWeight="bold" color="neon.500">
               Admin
             </Text>
           )}
@@ -270,18 +327,61 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
             icon={<Icon as={isCollapsed ? FiChevronRight : FiChevronLeft} />}
             onClick={onToggle}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            color="text.secondary"
+            _hover={{ bg: hoverBg, color: 'text.primary' }}
           />
         </HStack>
 
+        {/* Double-click area for sidebar toggle */}
+        <Tooltip
+          label="Double-click to toggle sidebar"
+          placement="right"
+          isDisabled={isCollapsed}
+        >
+          <Box
+            position="absolute"
+            top="60px"
+            left="0"
+            right="0"
+            height="40px"
+            cursor="pointer"
+            onDoubleClick={onToggle}
+            transition="all 0.2s ease"
+            zIndex={5}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            pointerEvents="auto"
+            _hover={{
+              bg: 'rgba(255, 255, 255, 0.05)',
+            }}
+            _active={{
+              bg: 'rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            {!isCollapsed && (
+              <Text
+                fontSize="xs"
+                color="text.tertiary"
+                opacity={0.6}
+                userSelect="none"
+                pointerEvents="none"
+              >
+                Double-click to collapse
+              </Text>
+            )}
+          </Box>
+        </Tooltip>
+
         {/* Navigation */}
-        <VStack spacing={1} flex={1} w="full" p={2} overflowY="auto">
+        <VStack spacing={1} flex={1} w="full" p={2} overflowY="auto" position="relative" zIndex={10}>
           {sidebarItems.map(item => renderItem(item))}
         </VStack>
 
         {/* Footer */}
         {!isCollapsed && (
           <Box p={3} borderTop="1px solid" borderColor={borderColor} w="full">
-            <Text fontSize="xs" color="gray.500" textAlign="center">
+            <Text fontSize="xs" color="text.tertiary" textAlign="center">
               Press ? for help
             </Text>
           </Box>

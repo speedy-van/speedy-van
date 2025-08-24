@@ -370,7 +370,7 @@ export default function OrdersClient() {
               <Tr>
                 <Td colSpan={11}>
                   <Flex justify="center" py={8}>
-                    <Text color="gray.500">No orders found</Text>
+                    <Text color="text.tertiary">No orders found</Text>
                   </Flex>
                 </Td>
               </Tr>
@@ -378,7 +378,7 @@ export default function OrdersClient() {
               filteredOrders.map((order) => {
                 const slaStatus = getSLAStatus(order);
                 return (
-                  <Tr key={order.id} _hover={{ bg: 'gray.50' }} cursor="pointer" onClick={() => handleViewOrder(order.reference)}>
+                  <Tr key={order.id} _hover={{ bg: 'bg.surface.hover' }} cursor="pointer" onClick={() => handleViewOrder(order.reference)}>
                     <Td px={4} onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         isChecked={selectedOrders.includes(order.id)}
@@ -399,7 +399,7 @@ export default function OrdersClient() {
                                          <Td>
                        <VStack align="start" spacing={1}>
                          <Text fontWeight="medium">{order.customerName || 'Unknown Customer'}</Text>
-                         <Text fontSize="sm" color="gray.600">{order.customer?.email || order.customerEmail || '-'}</Text>
+                         <Text fontSize="sm" color="text.secondary">{order.customer?.email || order.customerEmail || '-'}</Text>
                        </VStack>
                      </Td>
                     <Td>
@@ -416,7 +416,7 @@ export default function OrdersClient() {
                             {order.dropoffAddress?.label || '-'}
                           </Text>
                         </HStack>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="text.tertiary">
                           {formatDistance(order.distanceMeters)} • {formatDuration(order.durationSeconds)}
                         </Text>
                       </VStack>
@@ -426,7 +426,7 @@ export default function OrdersClient() {
                         <Text fontSize="sm">
                           {order.scheduledAt ? format(new Date(order.scheduledAt), 'MMM dd') : '-'}
                         </Text>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="text.tertiary">
                           {order.timeSlot || '-'}
                         </Text>
                       </VStack>
@@ -446,7 +446,7 @@ export default function OrdersClient() {
                             </Text>
                           </>
                         ) : (
-                          <Text fontSize="sm" color="gray.500">-</Text>
+                          <Text fontSize="sm" color="text.tertiary">-</Text>
                         )}
                       </HStack>
                     </Td>
