@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable no-console */
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Box, 
   Text, 
@@ -18,6 +21,8 @@ import {
 import { FaMapMarkerAlt, FaArrowRight, FaCrosshairs } from 'react-icons/fa';
 import { validateUKPostcode, formatUKPostcode, getCurrentLocation, getAddressFromCoordinates } from '@/lib/addressService';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
+import mapboxgl from "mapbox-gl";
+import { MAPBOX_TOKEN } from "@/lib/mapbox";
 
 interface PickupDropoffStepProps {
   bookingData: any;
@@ -32,15 +37,33 @@ export default function PickupDropoffStep({
   onNext, 
   onBack 
 }: PickupDropoffStepProps) {
+  // FORCE CONSOLE LOGS IN PRODUCTION
   console.log('🚀 [PickupDropoffStep] Component rendered');
   console.log('📋 [PickupDropoffStep] Props:', { bookingData, updateBookingData, onNext, onBack });
   console.log('🔍 [PickupDropoffStep] This should appear in console!');
+  
+  // ADDITIONAL FORCE LOGS
+  console.warn('⚠️ [Step1] WARNING LOG - This should appear!');
+  console.error('❌ [Step1] ERROR LOG - This should appear!');
+  console.info('ℹ️ [Step1] INFO LOG - This should appear!');
+  
+  // States
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [pickupSearch, setPickupSearch] = useState(bookingData.pickupAddress?.line1 || '');
   const [dropoffSearch, setDropoffSearch] = useState(bookingData.dropoffAddress?.line1 || '');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string>('');
+  const [query, setQuery] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
   const toast = useToast();
+
+  // Token must be public in production
+  mapboxgl.accessToken = MAPBOX_TOKEN as string;
+
+  // Debug in prod if token missing
+  if (!MAPBOX_TOKEN) {
+    console.warn("❗ Missing NEXT_PUBLIC_MAPBOX_TOKEN (booking step1)");
+  }
 
   // Sync search fields with booking data
   useEffect(() => {
@@ -54,6 +77,39 @@ export default function PickupDropoffStep({
     setDropoffSearch(bookingData.dropoffAddress?.line1 || '');
     console.log('[PickupDropoffStep] useEffect dropoff - set dropoffSearch to:', bookingData.dropoffAddress?.line1 || '');
   }, [bookingData.dropoffAddress?.line1]);
+
+  // Debounced autocomplete with hard logs to verify handler runs in prod
+  useEffect(() => {
+    if (!query) return;
+    console.log("[Step1] typing:", query);
+    console.warn("⚠️ [Step1] WARNING - typing detected:", query);
+    console.error("❌ [Step1] ERROR - typing detected:", query);
+    
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    const t = setTimeout(async () => {
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?autocomplete=true&limit=5&access_token=${MAPBOX_TOKEN}`;
+        console.log("[Step1] fetch:", url);
+        console.warn("⚠️ [Step1] WARNING - fetch started:", url);
+        const res = await fetch(url, { signal: ac.signal });
+        console.log("[Step1] status:", res.status);
+        console.warn("⚠️ [Step1] WARNING - status:", res.status);
+        if (!res.ok) return;
+        const data = await res.json();
+        console.log("[Step1] features:", data?.features?.length ?? 0);
+        console.warn("⚠️ [Step1] WARNING - features:", data?.features?.length ?? 0);
+        // TODO: set options to your suggestions state here
+      } catch (e) {
+        if ((e as any)?.name !== "AbortError") {
+          console.warn("[Step1] fetch error:", e);
+          console.error("❌ [Step1] ERROR - fetch failed:", e);
+        }
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
 
   const validateForm = () => {
     console.log('[PickupDropoffStep] validateForm - bookingData:', bookingData);
@@ -335,6 +391,9 @@ export default function PickupDropoffStep({
                   console.log('[PickupDropoffStep] Pickup onChange:', value);
                   console.log('[PickupDropoffStep] Pickup onChange type:', typeof value);
                   setPickupSearch(value);
+                  // Add hard log for production debugging
+                  console.log("[Step1] Pickup onChange fired:", value);
+                  setQuery(value);
                 }}
                 onSelect={handlePickupAddressSelect}
                 placeholder="Start typing to search addresses..."
@@ -404,6 +463,9 @@ export default function PickupDropoffStep({
                   console.log('[PickupDropoffStep] Dropoff onChange:', value);
                   console.log('[PickupDropoffStep] Dropoff onChange type:', typeof value);
                   setDropoffSearch(value);
+                  // Add hard log for production debugging
+                  console.log("[Step1] Dropoff onChange fired:", value);
+                  setQuery(value);
                 }}
                 onSelect={handleDropoffAddressSelect}
                 placeholder="Start typing to search addresses..."

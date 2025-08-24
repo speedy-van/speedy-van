@@ -6,6 +6,7 @@ import "@/styles/mobile-fixes.css";
 import "@/styles/booking-fixes.css";
 import "@/styles/ios-safari-fixes.css";
 import "@/styles/video-background.css";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { ConsentProvider } from "@/components/Consent/ConsentProvider";
 import CookieBanner from "@/components/Consent/CookieBanner";
 import CookiePreferencesModal from "@/components/Consent/CookiePreferencesModal";

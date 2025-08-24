@@ -3,6 +3,10 @@ const TOKEN =
   process.env.MAPBOX_ACCESS_TOKEN ||
   process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
   "";
+
+// Export for client-side use (must be NEXT_PUBLIC_ only)
+export const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
 const BASE = "https://api.mapbox.com";
 
 export type MBFeature = { place_name: string; center: [number, number] };
