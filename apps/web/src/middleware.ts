@@ -9,7 +9,7 @@ export function middleware(req: NextRequest) {
     "/", "/book", "/how-it-works", "/about", "/track",
     "/checkout", "/checkout/success", "/checkout/cancel",
     "/api/health", "/api/webhooks/stripe", "/api/places/suggest",
-    "/api/debug/mapbox", "/api/auth", "/favicon.ico", "/robots.txt", "/sitemap.xml",
+    "/api/debug/mapbox", "/test-mapbox", "/api/auth", "/favicon.ico", "/robots.txt", "/sitemap.xml",
     "/auth/forgot", "/auth/reset", "/auth/verify"
   ];
   
