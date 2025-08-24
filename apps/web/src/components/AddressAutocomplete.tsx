@@ -109,7 +109,6 @@ function normalizeSuggestions(data: any): Suggestion[] {
 
 /** Address Autocomplete Input */
 export default function AddressAutocomplete({
-  console.log('[AddressAutocomplete] Component rendered with props:', { value, onChange, onSelect, placeholder, country, limit, minLength, debounceMs });
   value,
   onChange,
   onSelect,
@@ -121,6 +120,7 @@ export default function AddressAutocomplete({
   debounceMs = 250,
   ...unknownProps // Capture any unknown props to prevent them from reaching the DOM
 }: AddressAutocompleteProps) {
+  console.log('[AddressAutocomplete] Component rendered with props:', { value, onChange, onSelect, placeholder, country, limit, minLength, debounceMs });
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<Suggestion[]>([]);
   const [loading, setLoading] = React.useState(false);
