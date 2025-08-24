@@ -32,6 +32,8 @@ export default function PickupDropoffStep({
   onNext, 
   onBack 
 }: PickupDropoffStepProps) {
+  console.log('[PickupDropoffStep] Component rendered');
+  console.log('[PickupDropoffStep] Props:', { bookingData, updateBookingData, onNext, onBack });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [pickupSearch, setPickupSearch] = useState(bookingData.pickupAddress?.line1 || '');
   const [dropoffSearch, setDropoffSearch] = useState(bookingData.dropoffAddress?.line1 || '');
@@ -282,6 +284,7 @@ export default function PickupDropoffStep({
   // Note: AddressAutocomplete handles its own click outside behavior
   // No need for manual click outside handling anymore
 
+  console.log('[PickupDropoffStep] Rendering component');
   return (
     <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
       <VStack spacing={6} align="stretch">
