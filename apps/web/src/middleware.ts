@@ -73,6 +73,7 @@ function addConsentHeaders(req: NextRequest, response: NextResponse) {
     "img-src 'self' data: blob: https://*.mapbox.com",
     "connect-src 'self' https://api.mapbox.com https://events.mapbox.com",
     "font-src 'self' https://api.mapbox.com",
+    "worker-src 'self' blob:",
     "frame-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
