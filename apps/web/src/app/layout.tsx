@@ -90,7 +90,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="icon" type="image/svg+xml" href="/logo/speedy-van-icon.svg" />
         <link rel="apple-touch-icon" href="/logo/speedy-van-icon.svg" />
         <link rel="manifest" href="/manifest.json" />
-        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+        <link href="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css" rel="stylesheet" />
       </head>
       <body>
         <ChakraProviders>
