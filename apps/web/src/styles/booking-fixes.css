@@ -209,6 +209,7 @@
   .simple-booking-display {
     -webkit-font-smoothing: antialiased !important;
     -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
   }
 }
 

@@ -41,7 +41,8 @@ html, body, #__next {
 /* iOS Safari viewport fixes */
 html, body { 
   overflow-x: hidden; 
-  -webkit-text-size-adjust: 100%; 
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* iOS text layout safety - prevent vertical glyphs and text tearing */

@@ -78,7 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" dir="ltr">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
         <meta name="theme-color" content="#0D0D0D" />
         <meta name="color-scheme" content="dark" />
         <meta name="format-detection" content="telephone=no" />
