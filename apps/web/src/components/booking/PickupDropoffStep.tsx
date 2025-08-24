@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Text, 
@@ -33,41 +33,67 @@ export default function PickupDropoffStep({
   onBack 
 }: PickupDropoffStepProps) {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [pickupSearch, setPickupSearch] = useState('');
-  const [dropoffSearch, setDropoffSearch] = useState('');
+  const [pickupSearch, setPickupSearch] = useState(bookingData.pickupAddress?.line1 || '');
+  const [dropoffSearch, setDropoffSearch] = useState(bookingData.dropoffAddress?.line1 || '');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string>('');
   const toast = useToast();
 
+  // Sync search fields with booking data
+  useEffect(() => {
+    console.log('[PickupDropoffStep] useEffect pickup - bookingData.pickupAddress?.line1:', bookingData.pickupAddress?.line1);
+    setPickupSearch(bookingData.pickupAddress?.line1 || '');
+    console.log('[PickupDropoffStep] useEffect pickup - set pickupSearch to:', bookingData.pickupAddress?.line1 || '');
+  }, [bookingData.pickupAddress?.line1]);
+
+  useEffect(() => {
+    console.log('[PickupDropoffStep] useEffect dropoff - bookingData.dropoffAddress?.line1:', bookingData.dropoffAddress?.line1);
+    setDropoffSearch(bookingData.dropoffAddress?.line1 || '');
+    console.log('[PickupDropoffStep] useEffect dropoff - set dropoffSearch to:', bookingData.dropoffAddress?.line1 || '');
+  }, [bookingData.dropoffAddress?.line1]);
+
   const validateForm = () => {
+    console.log('[PickupDropoffStep] validateForm - bookingData:', bookingData);
+    console.log('[PickupDropoffStep] validateForm - pickupAddress:', bookingData.pickupAddress);
+    console.log('[PickupDropoffStep] validateForm - dropoffAddress:', bookingData.dropoffAddress);
+    
     const newErrors: {[key: string]: string} = {};
 
     // Validate pickup address
     if (!bookingData.pickupAddress?.line1?.trim()) {
       newErrors.pickupLine1 = 'Pickup address is required';
+      console.log('[PickupDropoffStep] validateForm - pickup line1 missing');
     }
     if (!bookingData.pickupAddress?.city?.trim()) {
       newErrors.pickupCity = 'Pickup city is required';
+      console.log('[PickupDropoffStep] validateForm - pickup city missing');
     }
     if (!bookingData.pickupAddress?.postcode?.trim()) {
       newErrors.pickupPostcode = 'Pickup postcode is required';
+      console.log('[PickupDropoffStep] validateForm - pickup postcode missing');
     } else if (!validateUKPostcode(bookingData.pickupAddress.postcode)) {
       newErrors.pickupPostcode = 'Please enter a valid UK postcode';
+      console.log('[PickupDropoffStep] validateForm - pickup postcode invalid');
     }
 
     // Validate dropoff address
     if (!bookingData.dropoffAddress?.line1?.trim()) {
       newErrors.dropoffLine1 = 'Dropoff address is required';
+      console.log('[PickupDropoffStep] validateForm - dropoff line1 missing');
     }
     if (!bookingData.dropoffAddress?.city?.trim()) {
       newErrors.dropoffCity = 'Dropoff city is required';
+      console.log('[PickupDropoffStep] validateForm - dropoff city missing');
     }
     if (!bookingData.dropoffAddress?.postcode?.trim()) {
       newErrors.dropoffPostcode = 'Dropoff postcode is required';
+      console.log('[PickupDropoffStep] validateForm - dropoff postcode missing');
     } else if (!validateUKPostcode(bookingData.dropoffAddress.postcode)) {
       newErrors.dropoffPostcode = 'Please enter a valid UK postcode';
+      console.log('[PickupDropoffStep] validateForm - dropoff postcode invalid');
     }
 
+    console.log('[PickupDropoffStep] validateForm - errors:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -106,6 +132,8 @@ export default function PickupDropoffStep({
   // Handle address selection from AddressAutocomplete
   const handlePickupAddressSelect = (selection: any) => {
     console.log('[PickupDropoffStep] Pickup selection:', selection);
+    console.log('[PickupDropoffStep] Selection type:', typeof selection);
+    console.log('[PickupDropoffStep] Selection keys:', Object.keys(selection || {}));
     
     // Extract data from selection
     const parts = selection.label.split(',');
@@ -114,6 +142,7 @@ export default function PickupDropoffStep({
     const postcode = formatUKPostcode(selection.address?.postcode || parts[parts.length - 1]?.trim() || '');
     
     console.log('[PickupDropoffStep] Extracted data:', { line1, city, postcode });
+    console.log('[PickupDropoffStep] Parts array:', parts);
     
     // Update all address fields at once
     const updatedPickupAddress = {
@@ -123,14 +152,21 @@ export default function PickupDropoffStep({
       coordinates: selection.coords
     };
     
+    console.log('[PickupDropoffStep] Updated pickup address:', updatedPickupAddress);
+    
     updateBookingData({
       pickupAddress: updatedPickupAddress
     });
     setPickupSearch(selection.label);
+    
+    console.log('[PickupDropoffStep] After update - pickupSearch:', selection.label);
+    console.log('[PickupDropoffStep] After update - bookingData.pickupAddress:', bookingData.pickupAddress);
   };
 
   const handleDropoffAddressSelect = (selection: any) => {
     console.log('[PickupDropoffStep] Dropoff selection:', selection);
+    console.log('[PickupDropoffStep] Selection type:', typeof selection);
+    console.log('[PickupDropoffStep] Selection keys:', Object.keys(selection || {}));
     
     // Extract data from selection
     const parts = selection.label.split(',');
@@ -139,6 +175,7 @@ export default function PickupDropoffStep({
     const postcode = formatUKPostcode(selection.address?.postcode || parts[parts.length - 1]?.trim() || '');
     
     console.log('[PickupDropoffStep] Extracted data:', { line1, city, postcode });
+    console.log('[PickupDropoffStep] Parts array:', parts);
     
     // Update all address fields at once
     const updatedDropoffAddress = {
@@ -148,10 +185,15 @@ export default function PickupDropoffStep({
       coordinates: selection.coords
     };
     
+    console.log('[PickupDropoffStep] Updated dropoff address:', updatedDropoffAddress);
+    
     updateBookingData({
       dropoffAddress: updatedDropoffAddress
     });
     setDropoffSearch(selection.label);
+    
+    console.log('[PickupDropoffStep] After update - dropoffSearch:', selection.label);
+    console.log('[PickupDropoffStep] After update - bookingData.dropoffAddress:', bookingData.dropoffAddress);
   };
 
   const handlePostcodeChange = (value: string, type: 'pickup' | 'dropoff') => {
@@ -285,7 +327,11 @@ export default function PickupDropoffStep({
               <FormLabel>Street Address</FormLabel>
               <AddressAutocomplete
                 value={pickupSearch}
-                onChange={setPickupSearch}
+                onChange={(value) => {
+                  console.log('[PickupDropoffStep] Pickup onChange:', value);
+                  console.log('[PickupDropoffStep] Pickup onChange type:', typeof value);
+                  setPickupSearch(value);
+                }}
                 onSelect={handlePickupAddressSelect}
                 placeholder="Start typing to search addresses..."
                 country="GB"
@@ -350,7 +396,11 @@ export default function PickupDropoffStep({
               <FormLabel>Street Address</FormLabel>
               <AddressAutocomplete
                 value={dropoffSearch}
-                onChange={setDropoffSearch}
+                onChange={(value) => {
+                  console.log('[PickupDropoffStep] Dropoff onChange:', value);
+                  console.log('[PickupDropoffStep] Dropoff onChange type:', typeof value);
+                  setDropoffSearch(value);
+                }}
                 onSelect={handleDropoffAddressSelect}
                 placeholder="Start typing to search addresses..."
                 country="GB"
