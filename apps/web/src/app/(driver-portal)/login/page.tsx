@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Box, Container, VStack, Heading, Text, FormControl, FormLabel, Input, Button, Alert, AlertIcon, Card, CardBody, Link as ChakraLink } from "@chakra-ui/react";
-import { signIn, getCsrfToken } from "next-auth/react";
+import { signIn, getCsrfToken, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 
@@ -13,6 +13,7 @@ export default function DriverLogin() {
   const [error, setError] = useState("");
   const [csrfToken, setCsrfToken] = useState("");
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   // Get CSRF token on component mount
   React.useEffect(() => {
@@ -26,6 +27,16 @@ export default function DriverLogin() {
     };
     fetchCsrfToken();
   }, []);
+
+  // Monitor session and redirect if already authenticated
+  React.useEffect(() => {
+    if (status === "loading") return; // Still loading
+    
+    if (session?.user && (session.user as any).role === "driver") {
+      console.log("✅ Driver session detected, redirecting to dashboard");
+      router.replace("/driver/dashboard");
+    }
+  }, [session, status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +58,28 @@ export default function DriverLogin() {
       if (result?.error) {
         setError(result.error);
       } else if (result?.ok) {
-        console.log('Sign in successful, redirecting to dashboard');
-        router.push("/driver/dashboard");
+        console.log('Sign in successful, refreshing session...');
+        // Force session refresh and then redirect
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait a bit for session to update
+          console.log('✅ SignIn successful, refreshing session...');
+          await router.refresh(); // Refresh the router
+          console.log('✅ Session refreshed successfully');
+          
+          // Check if session was updated
+          if (session?.user && (session.user as any).role === "driver") {
+            console.log('✅ Session updated, redirecting to dashboard');
+            router.push("/driver/dashboard");
+          } else {
+            console.log('⚠️ Session not updated, attempting direct redirect...');
+            // Force redirect even if session hasn't updated yet
+            router.push("/driver/dashboard");
+          }
+        } catch (error) {
+          console.error('Error during redirect:', error);
+          // Fallback redirect
+          router.push("/driver/dashboard");
+        }
       } else {
         setError("Authentication failed. Please try again.");
       }

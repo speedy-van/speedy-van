@@ -14,7 +14,17 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { reason } = await request.json();
+    // Parse request body with error handling
+    let reason: string | undefined;
+    try {
+      const body = await request.json();
+      reason = body.reason;
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      // If JSON parsing fails, continue with undefined reason
+      reason = undefined;
+    }
+
     const applicationId = params.id;
 
     // Get driver application with current status
@@ -35,9 +45,27 @@ export async function POST(
       return NextResponse.json({ error: "Driver application not found" }, { status: 404 });
     }
 
+    console.log("Processing driver application:", {
+      id: application.id,
+      email: application.email,
+      status: application.status,
+      postcode: application.postcode,
+      phone: application.phone,
+      dateOfBirth: application.dateOfBirth,
+      hasUser: !!application.user
+    });
+
     if (application.status !== 'pending') {
       return NextResponse.json(
         { error: "Driver application is not in pending status" },
+        { status: 400 }
+      );
+    }
+
+    // Validate required fields for driver creation
+    if (!application.postcode || !application.phone || !application.dateOfBirth) {
+      return NextResponse.json(
+        { error: "Missing required fields: postcode, phone, or dateOfBirth" },
         { status: 400 }
       );
     }
@@ -72,6 +100,8 @@ export async function POST(
 
         // Create driver record if it doesn't exist
         if (!existingDriver) {
+          console.log("Creating new driver record for user:", application.user.id);
+          
           const driver = await tx.driver.create({
             data: {
               userId: application.user.id,
@@ -83,17 +113,30 @@ export async function POST(
             }
           });
 
+          console.log("Driver record created:", driver.id);
+
           // Create driver profile with personal information
+          console.log("Creating driver profile...");
+          const addressParts = [
+            application.addressLine1,
+            application.addressLine2,
+            application.city,
+            application.postcode
+          ].filter(Boolean); // Remove null/undefined values
+          
           await tx.driverProfile.create({
             data: {
               driverId: driver.id,
-              phone: application.phone,
-              address: `${application.addressLine1}${application.addressLine2 ? `, ${application.addressLine2}` : ''}, ${application.city}, ${application.postcode}`,
-              dob: application.dateOfBirth,
+              phone: application.phone || null,
+              address: addressParts.length > 0 ? addressParts.join(', ') : null,
+              dob: application.dateOfBirth || null,
             }
           });
 
+          console.log("Driver profile created");
+
           // Create driver vehicle information
+          console.log("Creating driver vehicle...");
           await tx.driverVehicle.create({
             data: {
               driverId: driver.id,
@@ -103,17 +146,22 @@ export async function POST(
             }
           });
 
+          console.log("Driver vehicle created");
+
           // Create driver checks with insurance and license information
+          console.log("Creating driver checks...");
           await tx.driverChecks.create({
             data: {
               driverId: driver.id,
-              insurancePolicyNo: application.insurancePolicyNumber,
-              insurer: application.insuranceProvider,
-              policyEnd: application.insuranceExpiry,
-              licenceExpiry: application.drivingLicenseExpiry,
+              insurancePolicyNo: application.insurancePolicyNumber || null,
+              insurer: application.insuranceProvider || null,
+              policyEnd: application.insuranceExpiry || null,
+              licenceExpiry: application.drivingLicenseExpiry || null,
               fileIds: [], // Empty array for now
             }
           });
+
+          console.log("Driver checks created");
         }
       }
 
@@ -162,8 +210,24 @@ export async function POST(
 
   } catch (error) {
     console.error("Driver application approval error:", error);
+    
+    // Log more detailed error information
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
+    // Check if it's a Prisma error
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error("Prisma error code:", (error as any).code);
+      console.error("Prisma error meta:", (error as any).meta);
+    }
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }

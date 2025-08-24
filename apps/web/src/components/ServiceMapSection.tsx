@@ -12,21 +12,7 @@ export default function ServiceMapSection() {
   const mapInstance = useRef<mapboxgl.Map | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  // Ensure Mapbox CSS is loaded
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css';
-    link.type = 'text/css';
-    document.head.appendChild(link);
-
-    return () => {
-      const existingLink = document.querySelector('link[href*="mapbox-gl.css"]');
-      if (existingLink) {
-        existingLink.remove();
-      }
-    };
-  }, []);
+  // Mapbox CSS is loaded globally in globals.css
 
   useEffect(() => {
     // Add JSON-LD structured data for SEO

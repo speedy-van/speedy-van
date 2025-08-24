@@ -114,7 +114,15 @@ export default function DriverApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTab, setSelectedTab] = useState(0);
+  const [approvalReason, setApprovalReason] = useState('');
   const toast = useToast();
+
+  // Custom close handler to reset form state
+  const handleClose = () => {
+    onClose();
+    setApprovalReason('');
+    setSelectedTab(0);
+  };
 
   useEffect(() => {
     fetchApplications();
@@ -167,7 +175,7 @@ export default function DriverApplicationsPage() {
         
         // Refresh applications list
         await fetchApplications();
-        onClose();
+        handleClose();
       } else {
         throw new Error('Failed to process application');
       }
@@ -331,6 +339,7 @@ export default function DriverApplicationsPage() {
               onClick={() => {
                 setSelectedApplication(application);
                 onOpen();
+                setApprovalReason(''); // Reset reason when selecting a new application
               }}
               _hover={{ shadow: "neon.glow", borderLeftColor: "neon.500", transform: "translateY(-2px)" }}
               transition="all 0.3s ease"
@@ -421,7 +430,7 @@ export default function DriverApplicationsPage() {
       </VStack>
 
       {/* Application Detail Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="6xl">
+      <Modal isOpen={isOpen} onClose={handleClose} size="6xl">
         <ModalOverlay bg="rgba(0, 0, 0, 0.8)" />
         <ModalContent 
           bg="dark.800" 
@@ -790,41 +799,58 @@ export default function DriverApplicationsPage() {
             borderRadius="0 0 xl xl"
             color="white"
           >
-            <HStack spacing={3}>
-              <Button
-                leftIcon={<FiThumbsUp />}
-                colorScheme="green"
-                onClick={() => handleApplicationAction('approve')}
-                isLoading={processing}
-                variant="solid"
-                _hover={{ bg: "green.600", shadow: "green.glow" }}
-              >
-                Approve
-              </Button>
-              <Button
-                leftIcon={<FiThumbsDown />}
-                colorScheme="red"
-                onClick={() => handleApplicationAction('reject')}
-                isLoading={processing}
-                variant="solid"
-                _hover={{ bg: "red.600", shadow: "red.glow" }}
-              >
-                Reject
-              </Button>
-              <Button
-                leftIcon={<FiAlertTriangle />}
-                colorScheme="orange"
-                onClick={() => handleApplicationAction('request_info')}
-                isLoading={processing}
-                variant="solid"
-                _hover={{ bg: "orange.600", shadow: "orange.glow" }}
-              >
-                Request More Info
-              </Button>
-              <Button variant="ghost" onClick={onClose}>
-                Cancel
-              </Button>
-            </HStack>
+            <VStack spacing={4} align="stretch" w="full">
+              <VStack align="start" spacing={2}>
+                <Text fontWeight="medium" color="white">Review Notes (Optional):</Text>
+                <Textarea
+                  value={approvalReason}
+                  onChange={(e) => setApprovalReason(e.target.value)}
+                  placeholder="Add any notes about this decision..."
+                  bg="dark.800"
+                  borderColor="neon.500"
+                  color="white"
+                  _placeholder={{ color: "gray.400" }}
+                  _focus={{ borderColor: "neon.400", boxShadow: "0 0 0 1px var(--chakra-colors-neon-400)" }}
+                  resize="vertical"
+                  minH="80px"
+                />
+              </VStack>
+              <HStack spacing={3} justify="flex-end">
+                <Button
+                  leftIcon={<FiThumbsUp />}
+                  colorScheme="green"
+                  onClick={() => handleApplicationAction('approve', approvalReason)}
+                  isLoading={processing}
+                  variant="solid"
+                  _hover={{ bg: "green.600", shadow: "green.glow" }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  leftIcon={<FiThumbsDown />}
+                  colorScheme="red"
+                  onClick={() => handleApplicationAction('reject', approvalReason)}
+                  isLoading={processing}
+                  variant="solid"
+                  _hover={{ bg: "red.600", shadow: "red.glow" }}
+                >
+                  Reject
+                </Button>
+                <Button
+                  leftIcon={<FiAlertTriangle />}
+                  colorScheme="orange"
+                  onClick={() => handleApplicationAction('request_info', approvalReason)}
+                  isLoading={processing}
+                  variant="solid"
+                  _hover={{ bg: "orange.600", shadow: "orange.glow" }}
+                >
+                  Request More Info
+                </Button>
+                <Button variant="ghost" onClick={handleClose}>
+                  Cancel
+                </Button>
+              </HStack>
+            </VStack>
           </ModalFooter>
         </ModalContent>
       </Modal>

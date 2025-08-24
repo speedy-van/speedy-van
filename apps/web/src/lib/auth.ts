@@ -82,6 +82,16 @@ export const authOptions: AuthOptions = {
           const user = await prisma.user.findUnique({ where: { email: creds.email } });
           console.log('👤 User found:', user ? { id: user.id, email: user.email, role: user.role } : 'Not found');
           
+          if (user) {
+            console.log('👤 Full user data:', {
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              name: user.name,
+              adminRole: (user as any).adminRole
+            });
+          }
+          
           if (!user) {
             console.log('❌ User not found');
             return null;
@@ -89,6 +99,11 @@ export const authOptions: AuthOptions = {
           
           const ok = await bcrypt.compare(creds.password, user.password);
           console.log('🔑 Password comparison result:', ok);
+          console.log('🔑 Password details:', {
+            providedPassword: creds.password ? '***' : 'undefined',
+            hashedPassword: user.password ? '***' : 'undefined',
+            passwordLength: user.password?.length || 0
+          });
           
           if (!ok) {
             console.log('❌ Password mismatch');
@@ -96,13 +111,15 @@ export const authOptions: AuthOptions = {
           }
           
           console.log('✅ Authentication successful for user:', { id: user.id, email: user.email, role: user.role });
-          return { 
+          const userData = { 
             id: user.id, 
             email: user.email, 
             name: user.name ?? "", 
             role: user.role, 
             adminRole: (user as any).adminRole ?? null 
-          } as any;
+          };
+          console.log('🔐 Returning user data:', userData);
+          return userData as any;
         } catch (error) {
           console.error('❌ Authentication error:', error);
           return null;
@@ -133,6 +150,14 @@ export const authOptions: AuthOptions = {
         token.adminRole = (user as any).adminRole ?? null;
         token.email = user.email;
         token.name = user.name;
+        
+        console.log('🔐 JWT callback - Token updated:', {
+          id: token.id,
+          role: token.role,
+          adminRole: token.adminRole,
+          email: token.email,
+          name: token.name
+        });
       }
       
       // Log token data for debugging
@@ -167,7 +192,10 @@ export const authOptions: AuthOptions = {
           role: (session.user as any).role,
           adminRole: (session.user as any).adminRole
         });
+      } else {
+        console.log('⚠️ Session callback - No session.user found');
       }
+      console.log('🔐 Session callback - Final session:', session);
       return session;
     },
     async redirect({ url, baseUrl }) {

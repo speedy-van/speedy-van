@@ -132,7 +132,6 @@ export default function UserAvatarMenu() {
   return (
     <Menu>
       <MenuButton
-        as="button"
         display="flex"
         alignItems="center"
         gap={2}
