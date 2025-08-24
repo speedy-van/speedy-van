@@ -64,6 +64,22 @@ function addConsentHeaders(req: NextRequest, response: NextResponse) {
     response.headers.set("x-consent-ts", "0");
     response.headers.set("x-consent-region", "UK");
   }
+  
+  // Add Content Security Policy headers to allow Mapbox
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com",
+    "style-src 'self' 'unsafe-inline' https://api.mapbox.com",
+    "img-src 'self' data: blob: https://*.mapbox.com",
+    "connect-src 'self' https://api.mapbox.com https://events.mapbox.com",
+    "font-src 'self' https://api.mapbox.com",
+    "frame-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ];
+  
+  response.headers.set("Content-Security-Policy", cspDirectives.join("; "));
 }
 
 export const config = { 
