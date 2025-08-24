@@ -14,7 +14,7 @@ import {
   Badge,
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   FiHome,
   FiPackage,
@@ -137,6 +137,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   
   // Use neon dark theme colors
   const bgColor = 'bg.surface';

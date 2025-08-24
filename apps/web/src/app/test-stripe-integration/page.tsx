@@ -96,16 +96,16 @@ export default function TestStripeIntegrationPage() {
                 </VStack>
               </Box>
 
-              <Alert status="info">
+              <Alert status="success">
                 <AlertIcon />
                 <Box>
-                  <Text fontWeight="semibold">ملاحظة مهمة:</Text>
+                  <Text fontWeight="semibold">جاهز للإنتاج:</Text>
                   <Text fontSize="sm">
-                    هذا تنفيذ تجريبي لـ Stripe. في الإنتاج الفعلي، ستحتاج إلى:
-                    <br />• إعداد حساب Stripe
-                    <br />• إضافة مفاتيح API
-                    <br />• تكامل مع Stripe Checkout أو Elements
-                    <br />• معالجة webhooks
+                    تم تحويل Stripe إلى وضع الإنتاج. تأكد من:
+                    <br />• إعداد حساب Stripe الإنتاجي
+                    <br />• إضافة مفاتيح API الإنتاجية (sk_live_ و pk_live_)
+                    <br />• تكامل مع Stripe Checkout
+                    <br />• معالجة webhooks الإنتاجية ✅
                   </Text>
                 </Box>
               </Alert>

@@ -9,15 +9,30 @@ let stripe: Stripe | null = null;
 
 try {
   if (process.env.STRIPE_SECRET_KEY) {
-    // Only validate keys in production environment, not during build
+    // Validate keys in production environment
     if (process.env.NODE_ENV === 'production') {
       if (process.env.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
-        console.warn('⚠️  WARNING: Using Stripe test keys in production environment!');
-        console.warn('   Please update STRIPE_SECRET_KEY to use live keys (sk_live_...)');
+        console.error('❌ ERROR: Using Stripe test keys in production environment!');
+        console.error('   Please update STRIPE_SECRET_KEY to use live keys (sk_live_...)');
+        throw new Error('Stripe test keys cannot be used in production');
       }
       
       if (process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
         console.log('✅ Stripe configured with production keys');
+      } else {
+        console.error('❌ ERROR: Invalid Stripe secret key format in production');
+        console.error('   Expected: sk_live_..., got:', process.env.STRIPE_SECRET_KEY.substring(0, 7));
+        throw new Error('Invalid Stripe secret key format in production');
+      }
+    } else {
+      // Development/Staging environment - allow both test and live keys
+      if (process.env.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
+        console.log('🔧 Stripe configured with test keys (development mode)');
+      } else if (process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
+        console.log('🔧 Stripe configured with live keys (development mode)');
+      } else {
+        console.error('❌ ERROR: Invalid Stripe secret key format');
+        throw new Error('Invalid Stripe secret key format');
       }
     }
     
@@ -27,6 +42,10 @@ try {
   }
 } catch (error) {
   console.error('Failed to initialize Stripe:', error);
+  // In production, fail fast if Stripe is not properly configured
+  if (process.env.NODE_ENV === 'production') {
+    throw error;
+  }
 }
 
 /**

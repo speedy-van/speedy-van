@@ -204,11 +204,10 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
         as="button"
         p={2}
         borderRadius="md"
-        _hover={{ bg: 'bg.surface.hover' }}
+        _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
         transition="background-color 0.2s"
         title="Keyboard shortcuts (?)"
         color="text.secondary"
-        _hover={{ color: 'text.primary' }}
       >
         <Icon as={FiHelpCircle} boxSize={4} />
       </Box>
@@ -221,7 +220,7 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
     }
     acc[shortcut.category].push(shortcut);
     return acc;
-  }, {} as Record<string, Shortcut[]>);
+  }, {} as Record<'navigation' | 'search' | 'actions' | 'help', Shortcut[]>);
 
   const categoryLabels = {
     navigation: 'Navigation',
@@ -245,11 +244,10 @@ export function KeyboardShortcuts({ onNavigate }: KeyboardShortcutsProps) {
         onClick={onOpen}
         p={2}
         borderRadius="md"
-        _hover={{ bg: 'bg.surface.hover' }}
+        _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
         transition="background-color 0.2s"
         title="Keyboard shortcuts (?)"
         color="text.secondary"
-        _hover={{ color: 'text.primary' }}
       >
         <Icon as={FiHelpCircle} boxSize={4} />
       </Box>

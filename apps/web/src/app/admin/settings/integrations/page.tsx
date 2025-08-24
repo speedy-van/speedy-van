@@ -63,8 +63,8 @@ const mockIntegrations: Integration[] = [
     status: 'connected',
     isEnabled: true,
     config: {
-      publishableKey: 'pk_test_...',
-      secretKey: 'sk_test_...',
+      publishableKey: 'pk_live_...',
+      secretKey: 'sk_live_...',
       webhookSecret: 'whsec_...',
     },
   },

@@ -28,6 +28,7 @@
     "test:admin-security": "playwright test e2e/admin-security.spec.ts",
     "test:all": "npm run test:unit && npm run test:e2e && npm run test:telemetry && npm run test:qa-acceptance",
     "test:stripe-config": "tsx scripts/test-stripe-config.ts",
+    "verify:stripe-production": "tsx scripts/verify-stripe-production.ts",
     "get-stripe-account-id": "tsx scripts/get-stripe-account-id.ts",
     "setup:stripe": "tsx scripts/setup-stripe.ts",
     "telemetry:test": "tsx scripts/test-telemetry.ts",

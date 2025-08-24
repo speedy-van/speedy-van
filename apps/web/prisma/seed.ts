@@ -142,7 +142,7 @@ async function main() {
       customerPhone: '+447700900001',
       customerEmail: 'sarah.johnson@example.com',
       status: 'CONFIRMED',
-      stripePaymentIntentId: 'pi_test_confirmed_123',
+      stripePaymentIntentId: 'pi_live_confirmed_123',
       paidAt: new Date('2024-09-08T10:30:00Z'),
     },
   });

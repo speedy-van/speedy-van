@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // Stripe keys - support both test and production
-const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
+const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Validate that Stripe keys are configured
     if (!STRIPE_SECRET_KEY) {
       console.error('❌ Stripe secret key not configured');
-      console.error('❌ Please add STRIPE_SECRET_KEY to your .env.local file');
+      console.error('❌ Please add STRIPE_SECRET_KEY to your environment variables');
       return NextResponse.json(
         { 
           error: 'Payment service not configured',
@@ -37,11 +38,11 @@ export async function POST(request: NextRequest) {
 
     if (!STRIPE_PUBLISHABLE_KEY) {
       console.error('❌ Stripe publishable key not configured');
-      console.error('❌ Please add STRIPE_PUBLISHABLE_KEY to your .env.local file');
+      console.error('❌ Please add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your environment variables');
       return NextResponse.json(
         { 
           error: 'Payment service not configured',
-          details: 'STRIPE_PUBLISHABLE_KEY environment variable is missing'
+          details: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable is missing'
         },
         { status: 500 }
       );
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     console.log('🔧 Expected secret prefix:', expectedSecretPrefix);
     console.log('🔧 Expected publishable prefix:', expectedPublishablePrefix);
 
-    // Allow both test and live keys in development for flexibility
+    // In production, only allow live keys
     const validSecretPrefixes = isProduction ? ['sk_live_'] : ['sk_test_', 'sk_live_'];
     const validPublishablePrefixes = isProduction ? ['pk_live_'] : ['pk_test_', 'pk_live_'];
 
@@ -96,28 +97,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In production, you would:
-    // 1. Create a payment intent with Stripe
-    // 2. Store booking data in your database
-    // 3. Return the payment intent client secret
-
-    // For demo purposes, we'll simulate Stripe Checkout redirect
-    const mockPaymentIntent = {
-      id: `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      client_secret: `pi_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`,
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: 'gbp',
-      status: 'requires_payment_method'
-    };
-
-    // Create Stripe Checkout session URL
+    // Create Stripe Checkout session
     const checkoutUrl = await createStripeCheckoutSession(amount, bookingData);
 
-    console.log('✅ Payment intent created successfully:', mockPaymentIntent.id);
+    console.log('✅ Stripe checkout session created successfully');
 
     return NextResponse.json({
       success: true,
-      paymentIntent: mockPaymentIntent,
       checkoutUrl
     });
 
@@ -132,36 +118,37 @@ export async function POST(request: NextRequest) {
 
 async function createStripeCheckoutSession(amount: number, bookingData: any) {
   try {
-    // In production, you would use Stripe SDK:
-    // const stripe = new Stripe(STRIPE_SECRET_KEY);
-    
-    // const session = await stripe.checkout.sessions.create({
-    //   payment_method_types: ['card'],
-    //   line_items: [{
-    //     price_data: {
-    //       currency: 'gbp',
-    //       product_data: {
-    //         name: 'Speedy Van Move',
-    //         description: `Move from ${bookingData.pickupAddress?.city || 'Unknown'} to ${bookingData.dropoffAddress?.city || 'Unknown'}`,
-    //       },
-    //       unit_amount: Math.round(amount * 100), // Convert to cents
-    //     },
-    //     quantity: 1,
-    //   }],
-    //   mode: 'payment',
-    //   success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-    //   cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/booking/cancel`,
-    //   metadata: {
-    //     bookingId: bookingData.bookingId || 'pending',
-    //     customerEmail: bookingData.customerEmail || '',
-    //   },
-    // });
+    if (!STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY not configured');
+    }
 
-    // For demo purposes, redirect to a mock Stripe page
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk';
-    const mockStripeUrl = `${baseUrl}/mock-stripe-checkout?amount=${amount}&bookingId=${bookingData.bookingId || 'pending'}`;
+    const stripe = new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2024-04-10',
+    });
     
-    return mockStripeUrl;
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'gbp',
+          product_data: {
+            name: 'Speedy Van Moving Service',
+            description: `Move from ${bookingData.pickupAddress?.city || 'Unknown'} to ${bookingData.dropoffAddress?.city || 'Unknown'}`,
+          },
+          unit_amount: Math.round(amount * 100), // Convert to cents
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk'}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk'}/booking/cancel`,
+      metadata: {
+        bookingId: bookingData.bookingId || 'pending',
+        customerEmail: bookingData.customerEmail || '',
+      },
+    });
+    
+    return session.url;
 
   } catch (error) {
     console.error('Error creating Stripe checkout session:', error);

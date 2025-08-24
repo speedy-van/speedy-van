@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import WeatherHero from '../../components/WeatherHero';
+import { WeatherHero } from '../../components/WeatherHero';
 
 export const metadata: Metadata = {
   title: "Test Weather Hero | Speedy Van",
