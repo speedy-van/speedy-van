@@ -141,10 +141,11 @@ async function createStripeCheckoutSession(amount: number, bookingData: any) {
       }],
       mode: 'payment',
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk'}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk'}/booking/cancel`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk'}/booking/cancel?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         bookingId: bookingData.bookingId || 'pending',
         customerEmail: bookingData.customerEmail || '',
+        sessionId: '{CHECKOUT_SESSION_ID}',
       },
     });
     

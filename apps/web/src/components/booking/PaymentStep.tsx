@@ -45,7 +45,6 @@ import {
   FaCrown
 } from 'react-icons/fa';
 import PricingDisplay from './PricingDisplay';
-import StripePaymentButton from './StripePaymentButton';
 
 interface PaymentStepProps {
   bookingData: any;
@@ -98,11 +97,6 @@ export default function PaymentStep({
     console.log('PaymentStep - totalAmount:', totalAmount);
   }, [bookingData.calculatedTotal, totalAmount]);
 
-  const handlePaymentError = (error: string) => {
-    console.error('Payment error:', error);
-    // Payment error is already handled by StripePaymentButton
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
@@ -152,6 +146,7 @@ export default function PaymentStep({
       boxShadow="xl"
       position="relative"
       overflow="hidden"
+      className="booking-step-card"
     >
       {/* Background Pattern */}
       <Box
@@ -223,7 +218,7 @@ export default function PaymentStep({
           </VStack>
         </Box>
 
-        {/* Enhanced Payment Amount Display */}
+        {/* Enhanced Payment Amount Display with Pay Button */}
         <Box 
           p={6} 
           borderWidth="2px" 
@@ -238,6 +233,7 @@ export default function PaymentStep({
             borderColor: 'brand.400'
           }}
           transition="all 300ms"
+          className="booking-form-section"
         >
           {/* Shimmer Effect */}
           <Box
@@ -251,36 +247,153 @@ export default function PaymentStep({
             zIndex={0}
           />
           
-          <HStack justify="space-between" position="relative" zIndex={1}>
-            <VStack align="start" spacing={2}>
-              <HStack spacing={3}>
-                <Icon as={FaPoundSign} color="brand.500" boxSize={6} />
-                <Text fontSize="xl" fontWeight="bold" color="text.primary">
-                  Total Amount to Pay
+          <VStack spacing={4} position="relative" zIndex={1}>
+            <HStack justify="space-between" w="full">
+              <VStack align="start" spacing={2}>
+                <HStack spacing={3}>
+                  <Icon as={FaPoundSign} color="brand.500" boxSize={6} />
+                  <Text fontSize="xl" fontWeight="bold" color="text.primary">
+                    Total Amount to Pay
+                  </Text>
+                </HStack>
+                <Text fontSize="sm" color="text.secondary">
+                  Secure payment via Stripe - instant confirmation
                 </Text>
-              </HStack>
-              <Text fontSize="sm" color="text.secondary">
-                Secure payment via Stripe - instant confirmation
-              </Text>
-            </VStack>
-            <Badge 
-              colorScheme="brand" 
-              fontSize="2xl" 
-              p={4}
-              borderRadius="xl"
-              borderWidth="2px"
-              borderColor="brand.400"
-              bg="linear-gradient(135deg, rgba(0,209,143,0.9), rgba(0,209,143,0.7))"
-              color="white"
-              _hover={{
-                transform: 'scale(1.05)',
-                boxShadow: '0 0 30px rgba(0,209,143,0.5)'
-              }}
-              transition="all 300ms"
-            >
-              {formatCurrency(totalAmount)}
-            </Badge>
-          </HStack>
+              </VStack>
+              <Badge 
+                colorScheme="brand" 
+                fontSize="2xl" 
+                p={4}
+                borderRadius="xl"
+                borderWidth="2px"
+                borderColor="brand.400"
+                bg="linear-gradient(135deg, rgba(0,209,143,0.9), rgba(0,209,143,0.7))"
+                color="white"
+                _hover={{
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 0 30px rgba(0,209,143,0.5)'
+                }}
+                transition="all 300ms"
+              >
+                {formatCurrency(totalAmount)}
+              </Badge>
+            </HStack>
+
+            {/* Pay Button */}
+            {totalAmount > 0 && (
+              <Button
+                onClick={async () => {
+                  if (acceptedTerms) {
+                    setIsProcessing(true);
+                    try {
+                      // Create payment intent and get Stripe checkout URL
+                      const response = await fetch('/api/stripe/create-payment-intent', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          amount: totalAmount,
+                          bookingData: bookingData,
+                        }),
+                      });
+
+                      if (!response.ok) {
+                        throw new Error('Failed to create payment intent');
+                      }
+
+                      const data = await response.json();
+                      
+                      if (data.checkoutUrl) {
+                        // Redirect to Stripe Checkout
+                        window.location.href = data.checkoutUrl;
+                      } else {
+                        throw new Error('No checkout URL received');
+                      }
+                    } catch (error) {
+                      console.error('Payment error:', error);
+                      toast({
+                        title: 'Payment Failed',
+                        description: error instanceof Error ? error.message : 'Payment processing failed. Please try again.',
+                        status: 'error',
+                        duration: 5000,
+                        isClosable: true,
+                      });
+                    } finally {
+                      setIsProcessing(false);
+                    }
+                  } else {
+                    // Show terms acceptance message
+                    toast({
+                      title: 'Please accept terms and conditions',
+                      description: 'You must accept the terms and conditions to proceed with payment.',
+                      status: 'warning',
+                      duration: 3000,
+                      isClosable: true,
+                    });
+                  }
+                }}
+                isLoading={isProcessing}
+                loadingText="Processing Payment..."
+                size="lg"
+                colorScheme="brand"
+                bg="linear-gradient(135deg, rgba(0,209,143,0.9), rgba(0,209,143,0.7))"
+                color="white"
+                fontWeight="bold"
+                fontSize="lg"
+                px={8}
+                py={6}
+                borderRadius="xl"
+                borderWidth="2px"
+                borderColor="brand.400"
+                _hover={{
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 10px 25px rgba(0,209,143,0.4)',
+                  bg: 'linear-gradient(135deg, rgba(0,209,143,1), rgba(0,209,143,0.8))'
+                }}
+                _active={{
+                  transform: 'translateY(0)',
+                  boxShadow: '0 5px 15px rgba(0,209,143,0.3)'
+                }}
+                transition="all 300ms"
+                w={{ base: 'full', md: 'auto' }}
+                minH={{ base: '56px', md: 'auto' }}
+                className="booking-primary-button"
+              >
+                <HStack spacing={3}>
+                  <Icon as={FaCreditCard} boxSize={5} />
+                  <Text>{isProcessing ? 'Processing...' : `Pay Now - ${formatCurrency(totalAmount)}`}</Text>
+                </HStack>
+              </Button>
+            )}
+
+            {/* Terms & Conditions Checkbox */}
+            <Box w="full" pt={4} borderTopWidth="1px" borderColor="border.primary">
+              <FormControl className="booking-form-control">
+                <Checkbox
+                  isChecked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  size={{ base: 'lg', md: 'md' }}
+                  colorScheme="brand"
+                  _checked={{
+                    bg: 'brand.500',
+                    borderColor: 'brand.500',
+                    color: 'white'
+                  }}
+                  className="booking-checkbox"
+                >
+                  <VStack align="start" spacing={1}>
+                    <Text fontSize={{ base: 'md', md: 'sm' }} fontWeight="medium" color="text.primary">
+                      I accept the terms and conditions and agree to proceed with payment
+                    </Text>
+                    <Text fontSize={{ base: 'sm', md: 'xs' }} color="text.secondary">
+                      By accepting, you agree to our terms of service, privacy policy, and payment processing
+                    </Text>
+                  </VStack>
+                </Checkbox>
+              </FormControl>
+            </Box>
+          </VStack>
         </Box>
 
         {/* Enhanced Stripe Payment Method */}
@@ -465,88 +578,6 @@ export default function PaymentStep({
           </SimpleGrid>
         </Box>
 
-        {/* Enhanced Terms and Conditions */}
-        <Box 
-          p={6} 
-          borderWidth="2px" 
-          borderRadius="xl" 
-          bg="bg.surface" 
-          borderColor="border.primary"
-          _hover={{
-            borderColor: 'neon.400',
-            transform: 'translateY(-2px)',
-            boxShadow: 'xl'
-          }}
-          transition="all 300ms"
-          onMouseEnter={() => setHoveredSection('terms')}
-          onMouseLeave={() => setHoveredSection('')}
-        >
-          <HStack spacing={4} mb={6} justify="center">
-            <Box
-              p={3}
-              borderRadius="full"
-              bg="linear-gradient(135deg, rgba(0,194,255,0.15), rgba(0,209,143,0.15))"
-              borderWidth="2px"
-              borderColor="neon.500"
-            >
-              <Icon as={FaHandshake} color="neon.500" boxSize={7} />
-            </Box>
-            <Text fontSize="xl" fontWeight="semibold" color="text.primary">
-              Terms & Conditions
-            </Text>
-          </HStack>
-          
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
-            <VStack align="start" spacing={3} fontSize="md" color="text.secondary">
-              <HStack spacing={3}>
-                <Icon as={FaCheckCircle} color="brand.500" boxSize={4} />
-                <Text>By proceeding, you agree to our terms of service and privacy policy</Text>
-              </HStack>
-              <HStack spacing={3}>
-                <Icon as={FaCreditCard} color="neon.500" boxSize={4} />
-                <Text>Payment will be processed immediately upon confirmation</Text>
-              </HStack>
-              <HStack spacing={3}>
-                <Icon as={FaClock} color="brand.500" boxSize={4} />
-                <Text>Free cancellation up to 24 hours before your move</Text>
-              </HStack>
-            </VStack>
-            
-            <VStack align="start" spacing={3} fontSize="md" color="text.secondary">
-              <HStack spacing={3}>
-                <Icon as={FaShieldAlt} color="neon.500" boxSize={4} />
-                <Text>Insurance coverage is included for all moves</Text>
-              </HStack>
-              <HStack spacing={3}>
-                <Icon as={FaHandshake} color="brand.500" boxSize={4} />
-                <Text>Our team will contact you within 2 hours to confirm details</Text>
-              </HStack>
-              <HStack spacing={3}>
-                <Icon as={FaStar} color="neon.500" boxSize={4} />
-                <Text>100% satisfaction guarantee on all services</Text>
-              </HStack>
-            </VStack>
-          </SimpleGrid>
-
-          <FormControl>
-            <Checkbox
-              isChecked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              size="lg"
-              colorScheme="brand"
-              _checked={{
-                bg: 'brand.500',
-                borderColor: 'brand.500',
-                color: 'white'
-              }}
-            >
-              <Text fontSize="md" fontWeight="medium" color="text.primary">
-                I accept the terms and conditions and agree to proceed with payment
-              </Text>
-            </Checkbox>
-          </FormControl>
-        </Box>
-
         {/* Enhanced Booking Summary */}
         <Box 
           p={6} 
@@ -728,60 +759,6 @@ export default function PaymentStep({
               </AlertDescription>
             </Box>
           </Alert>
-        )}
-
-        {/* Enhanced Stripe Payment Button */}
-        {acceptedTerms && totalAmount > 0 ? (
-          <Box
-            p={6}
-            borderWidth="2px"
-            borderRadius="xl"
-            bg="linear-gradient(135deg, rgba(0,209,143,0.1), rgba(0,194,255,0.1))"
-            borderColor="brand.500"
-            textAlign="center"
-          >
-            <VStack spacing={4}>
-              <HStack spacing={3}>
-                <Icon as={FaCheckCircle} color="brand.500" boxSize={6} />
-                <Text fontSize="lg" fontWeight="bold" color="text.primary">
-                  Ready to Complete Payment
-                </Text>
-              </HStack>
-              <Text fontSize="md" color="text.secondary" maxW="500px">
-                Click the button below to securely process your payment via Stripe. 
-                You'll receive instant confirmation and our team will contact you within 2 hours.
-              </Text>
-              <StripePaymentButton
-                amount={totalAmount}
-                onSuccess={() => {}} // Not needed as we redirect to Stripe
-                onError={handlePaymentError}
-                isDisabled={!acceptedTerms}
-                bookingData={bookingData}
-              />
-            </VStack>
-          </Box>
-        ) : (
-          <Box
-            p={6}
-            borderWidth="2px"
-            borderRadius="xl"
-            bg="bg.surface"
-            borderColor="border.primary"
-            textAlign="center"
-          >
-            <VStack spacing={4}>
-              <Icon as={FaExclamationTriangle} color="text.tertiary" boxSize={8} />
-              <Text fontSize="lg" fontWeight="bold" color="text.tertiary">
-                {!acceptedTerms ? 'Accept Terms to Continue' : 'Invalid Total Amount'}
-              </Text>
-              <Text fontSize="md" color="text.secondary">
-                {!acceptedTerms 
-                  ? 'Please read and accept the terms and conditions above to proceed with payment.'
-                  : 'Please complete the pricing step to get a valid total amount.'
-                }
-              </Text>
-            </VStack>
-          </Box>
         )}
 
         {/* Enhanced Navigation Buttons */}

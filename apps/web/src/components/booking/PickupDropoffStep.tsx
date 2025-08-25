@@ -8,7 +8,6 @@ import {
   VStack, 
   HStack, 
   Input, 
-  Button, 
   FormControl, 
   FormLabel, 
   FormErrorMessage,
@@ -21,6 +20,8 @@ import {
 import { FaMapMarkerAlt, FaArrowRight, FaCrosshairs } from 'react-icons/fa';
 import { validateUKPostcode, formatUKPostcode, getCurrentLocation, getAddressFromCoordinates } from '@/lib/addressService';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
+import BookingNavigationButtons from './BookingNavigationButtons';
+import Button from '@/components/common/Button';
 import mapboxgl from "mapbox-gl";
 import { MAPBOX_TOKEN } from "@/lib/mapbox";
 
@@ -348,7 +349,7 @@ export default function PickupDropoffStep({
 
   console.log('[PickupDropoffStep] Rendering component');
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
           <Text fontSize="xl" fontWeight="bold" color="neon.500">
@@ -367,7 +368,7 @@ export default function PickupDropoffStep({
         )}
 
         {/* Pickup Address */}
-        <Box>
+        <Box className="booking-form-section">
           <HStack spacing={3} mb={4} justify="space-between">
             <HStack spacing={3}>
               <Icon as={FaMapMarkerAlt} color="brand.500" />
@@ -382,13 +383,14 @@ export default function PickupDropoffStep({
               onClick={() => useCurrentLocation('pickup')}
               isLoading={isGettingLocation}
               loadingText="Detecting..."
+              isMobileFriendly={true}
             >
               Use Current Location
             </Button>
           </HStack>
           
           <VStack spacing={4}>
-            <FormControl isInvalid={!!errors.pickupLine1}>
+            <FormControl isInvalid={!!errors.pickupLine1} className="booking-form-control">
               <FormLabel>Street Address</FormLabel>
               <AddressAutocomplete
                 value={pickupSearch}
@@ -408,25 +410,27 @@ export default function PickupDropoffStep({
               <FormErrorMessage>{errors.pickupLine1}</FormErrorMessage>
             </FormControl>
 
-            <HStack spacing={4} w="full">
-              <FormControl isInvalid={!!errors.pickupCity}>
+            <HStack spacing={4} w="full" className="booking-form-row">
+              <FormControl isInvalid={!!errors.pickupCity} className="booking-form-control">
                 <FormLabel>City</FormLabel>
                 <Input
                   placeholder="e.g., London"
                   value={bookingData.pickupAddress?.city || ''}
                   onChange={(e) => updatePickupAddress('city', e.target.value)}
                   size="lg"
+                  className="booking-input"
                 />
                 <FormErrorMessage>{errors.pickupCity}</FormErrorMessage>
               </FormControl>
 
-              <FormControl isInvalid={!!errors.pickupPostcode}>
+              <FormControl isInvalid={!!errors.pickupPostcode} className="booking-form-control">
                 <FormLabel>Postcode</FormLabel>
                 <Input
                   placeholder="e.g., SW1A 2AA"
                   value={bookingData.pickupAddress?.postcode || ''}
                   onChange={(e) => handlePostcodeChange(e.target.value, 'pickup')}
                   size="lg"
+                  className="booking-input"
                 />
                 <FormErrorMessage>{errors.pickupPostcode}</FormErrorMessage>
               </FormControl>
@@ -434,10 +438,10 @@ export default function PickupDropoffStep({
           </VStack>
         </Box>
 
-        <Divider />
+        <Divider className="booking-divider" />
 
         {/* Dropoff Address */}
-        <Box>
+        <Box className="booking-form-section">
           <HStack spacing={3} mb={4} justify="space-between">
             <HStack spacing={3}>
               <Icon as={FaArrowRight} color="neon.500" />
@@ -452,13 +456,14 @@ export default function PickupDropoffStep({
               onClick={() => useCurrentLocation('dropoff')}
               isLoading={isGettingLocation}
               loadingText="Detecting..."
+              isMobileFriendly={true}
             >
               Use Current Location
             </Button>
           </HStack>
           
           <VStack spacing={4}>
-            <FormControl isInvalid={!!errors.dropoffLine1}>
+            <FormControl isInvalid={!!errors.dropoffLine1} className="booking-form-control">
               <FormLabel>Street Address</FormLabel>
               <AddressAutocomplete
                 value={dropoffSearch}
@@ -478,25 +483,27 @@ export default function PickupDropoffStep({
               <FormErrorMessage>{errors.dropoffLine1}</FormErrorMessage>
             </FormControl>
 
-            <HStack spacing={4} w="full">
-              <FormControl isInvalid={!!errors.dropoffCity}>
+            <HStack spacing={4} w="full" className="booking-form-row">
+              <FormControl isInvalid={!!errors.dropoffCity} className="booking-form-control">
                 <FormLabel>City</FormLabel>
                 <Input
                   placeholder="e.g., Manchester"
                   value={bookingData.dropoffAddress?.city || ''}
                   onChange={(e) => updateDropoffAddress('city', e.target.value)}
                   size="lg"
+                  className="booking-input"
                 />
                 <FormErrorMessage>{errors.dropoffCity}</FormErrorMessage>
               </FormControl>
 
-              <FormControl isInvalid={!!errors.dropoffPostcode}>
+              <FormControl isInvalid={!!errors.dropoffPostcode} className="booking-form-control">
                 <FormLabel>Postcode</FormLabel>
                 <Input
                   placeholder="e.g., M1 1AA"
                   value={bookingData.dropoffAddress?.postcode || ''}
                   onChange={(e) => handlePostcodeChange(e.target.value, 'dropoff')}
                   size="lg"
+                  className="booking-input"
                 />
                 <FormErrorMessage>{errors.dropoffPostcode}</FormErrorMessage>
               </FormControl>
@@ -505,24 +512,13 @@ export default function PickupDropoffStep({
         </Box>
 
         {/* Navigation Buttons */}
-        <HStack spacing={4} justify="space-between" pt={4}>
-          <Button
-            onClick={onBack}
-            variant="outline"
-            size="lg"
-            isDisabled={!onBack}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleNext}
-            variant="primary"
-            size="lg"
-            rightIcon={<FaArrowRight />}
-          >
-            Continue to Property Details
-          </Button>
-        </HStack>
+        <BookingNavigationButtons
+          onNext={handleNext}
+          onBack={onBack}
+          nextText="Continue to Property Details"
+          nextDisabled={false}
+          backDisabled={!onBack}
+        />
       </VStack>
     </Box>
   );

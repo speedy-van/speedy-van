@@ -141,7 +141,7 @@ export default function BookingPage() {
   ];
 
   return (
-    <Box minH="100vh" bg="bg.canvas" py={8}>
+    <Box minH="100vh" bg="bg.canvas" py={8} className="booking-page-container">
       <Container maxW="4xl">
         <VStack spacing={8}>
           {/* Header */}
@@ -155,7 +155,7 @@ export default function BookingPage() {
           </Box>
 
           {/* Progress Bar */}
-          <Box w="full" bg="bg.card" p={6} borderRadius="xl" borderWidth="1px" borderColor="border.primary" boxShadow="md">
+          <Box w="full" bg="bg.card" p={6} borderRadius="xl" borderWidth="1px" borderColor="border.primary" boxShadow="md" className="booking-progress">
             <VStack spacing={4}>
               <HStack justify="space-between" w="full">
                 <Text fontSize="sm" color="text.tertiary">
@@ -185,6 +185,7 @@ export default function BookingPage() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
               w="full"
+              className="booking-step-content"
             >
               {renderStep()}
             </MotionBox>

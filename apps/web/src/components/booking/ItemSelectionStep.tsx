@@ -43,6 +43,7 @@ import {
 } from '@chakra-ui/react';
 import { FaBox, FaArrowRight, FaArrowLeft, FaPlus, FaTrash, FaSearch, FaFilter } from 'react-icons/fa';
 import PricingDisplay from './PricingDisplay';
+import BookingNavigationButtons from './BookingNavigationButtons';
 import { 
   ITEM_CATALOG, 
   ITEM_CATEGORIES, 
@@ -236,7 +237,7 @@ export default function ItemSelectionStep({
   );
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
           <Text fontSize="xl" fontWeight="bold" color="neon.500">
@@ -377,25 +378,13 @@ export default function ItemSelectionStep({
         )}
 
         {/* Navigation Buttons */}
-        <HStack spacing={4} justify="space-between" pt={4}>
-          <Button
-            onClick={onBack}
-            variant="secondary"
-            size="lg"
-            leftIcon={<FaArrowLeft />}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleNext}
-            variant="primary"
-            size="lg"
-            rightIcon={<FaArrowRight />}
-            isDisabled={!bookingData.items || bookingData.items.length === 0}
-          >
-            Continue to Date & Time
-          </Button>
-        </HStack>
+        <BookingNavigationButtons
+          onNext={handleNext}
+          onBack={onBack}
+          nextText="Continue to Date & Time"
+          nextDisabled={!bookingData.items || bookingData.items.length === 0}
+          backVariant="secondary"
+        />
       </VStack>
 
       {/* Add Item Modal */}

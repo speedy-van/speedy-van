@@ -22,6 +22,7 @@ import {
   Spacer
 } from '@chakra-ui/react';
 import { FaCalendar, FaClock, FaArrowRight, FaArrowLeft, FaExclamationTriangle, FaInfoCircle, FaCalendarAlt } from 'react-icons/fa';
+import BookingNavigationButtons from './BookingNavigationButtons';
 
 interface DateTimeStepProps {
   bookingData: any;
@@ -165,7 +166,7 @@ export default function DateTimeStep({
   };
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
       <VStack spacing={8} align="stretch">
         {/* Header */}
         <Box textAlign="center">
@@ -451,24 +452,12 @@ export default function DateTimeStep({
         )}
 
         {/* Navigation Buttons */}
-        <HStack spacing={4} justify="space-between" pt={4}>
-          <Button
-            onClick={onBack}
-            variant="secondary"
-            size="lg"
-            leftIcon={<FaArrowLeft />}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleNext}
-            variant="primary"
-            size="lg"
-            rightIcon={<FaArrowRight />}
-          >
-            Continue to Customer Details
-          </Button>
-        </HStack>
+        <BookingNavigationButtons
+          onNext={handleNext}
+          onBack={onBack}
+          nextText="Continue to Customer Details"
+          backVariant="secondary"
+        />
       </VStack>
     </Box>
   );

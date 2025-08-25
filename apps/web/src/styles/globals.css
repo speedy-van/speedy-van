@@ -637,4 +637,413 @@ textarea:focus-visible {
   }
 }
 
+/* Mobile-friendly cookie components */
+#cookie-bar {
+  /* Ensure proper safe area handling */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Touch-friendly cookie buttons on mobile */
+@media (max-width: 768px) {
+  #cookie-bar button {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 16px; /* Prevent zoom on iOS */
+    touch-action: manipulation;
+  }
+  
+  #cookie-bar .chakra-button {
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  /* Improve modal touch targets */
+  .chakra-modal__content button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better modal spacing on mobile */
+  .chakra-modal__body {
+    padding: 20px 16px;
+  }
+  
+  .chakra-modal__header {
+    padding: 16px 16px 8px;
+  }
+  
+  .chakra-modal__footer {
+    padding: 8px 16px 16px;
+  }
+}
+
+/* Enhanced cookie modal for mobile */
+@media (max-width: 768px) {
+  .chakra-modal__content {
+    margin: 0;
+    border-radius: 0;
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+  
+  /* Better switch touch targets */
+  .chakra-switch {
+    min-width: 44px;
+    min-height: 24px;
+  }
+  
+  .chakra-switch__track {
+    min-width: 44px;
+    min-height: 24px;
+  }
+  
+  .chakra-switch__thumb {
+    min-width: 20px;
+    min-height: 20px;
+  }
+}
+
+/* Improved cookie text readability on mobile */
+@media (max-width: 768px) {
+  #cookie-bar .chakra-text {
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  
+  /* Better spacing for cookie preferences */
+  .chakra-stack {
+    gap: 16px;
+  }
+}
+
+/* Safe area support for cookie components */
+@supports (padding: max(0px)) {
+  #cookie-bar {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  
+  .chakra-modal__content {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Mobile-friendly booking steps */
+@media (max-width: 768px) {
+  /* Booking page container */
+  .booking-page-container {
+    padding: 16px 12px;
+  }
+  
+  /* Booking step cards */
+  .booking-step-card {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+  
+  /* Progress bar improvements */
+  .booking-progress {
+    padding: 16px 12px;
+    margin-bottom: 20px;
+  }
+  
+  /* Step content spacing */
+  .booking-step-content {
+    padding: 0;
+  }
+  
+  /* Form controls */
+  .booking-form-control {
+    margin-bottom: 16px;
+  }
+  
+  /* Input fields */
+  .booking-input {
+    height: 48px;
+    font-size: 16px;
+  }
+  
+  /* Select dropdowns */
+  .booking-select {
+    height: 48px;
+    font-size: 16px;
+  }
+  
+  /* Checkboxes */
+  .booking-checkbox {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+  
+  /* Number inputs */
+  .booking-number-input {
+    height: 48px;
+  }
+  
+  /* Text areas */
+  .booking-textarea {
+    min-height: 80px;
+    font-size: 16px;
+  }
+}
+
+/* Enhanced booking buttons */
+@media (max-width: 768px) {
+  /* Navigation buttons container */
+  .booking-navigation {
+    padding-top: 24px;
+    margin-top: 16px;
+  }
+  
+  /* Primary action buttons */
+  .booking-primary-button {
+    min-height: 48px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Secondary buttons */
+  .booking-secondary-button {
+    min-height: 48px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 8px;
+  }
+  
+  /* Button hover effects */
+  .booking-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .booking-button:active {
+    transform: translateY(0);
+  }
+}
+
+/* Improved form layout on mobile */
+@media (max-width: 768px) {
+  /* Stack form fields vertically */
+  .booking-form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Full width inputs on mobile */
+  .booking-form-row .chakra-form-control {
+    width: 100%;
+  }
+  
+  /* Better spacing for form sections */
+  .booking-form-section {
+    margin-bottom: 24px;
+  }
+  
+  /* Improved divider spacing */
+  .booking-divider {
+    margin: 24px 0;
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (max-width: 768px) {
+  /* All interactive elements */
+  button, 
+  input, 
+  select, 
+  textarea,
+  [role="button"],
+  [tabindex] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Prevent zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  
+  /* Better focus states */
+  *:focus-visible {
+    outline: 2px solid #00C2FF;
+    outline-offset: 2px;
+  }
+}
+
+/* Safe area support for booking pages */
+@supports (padding: max(0px)) {
+  .booking-page-container {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  
+  .booking-navigation {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Mobile-friendly styles for booking radio options */
+.booking-radio-option {
+  min-height: 44px;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.booking-radio-option:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.booking-radio-option:active {
+  transform: translateY(0);
+}
+
+/* Enhanced radio button styles for mobile */
+.booking-radio-option .chakra-radio {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.booking-radio-option .chakra-radio__control {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+/* Mobile-specific improvements for radio options */
+@media (max-width: 768px) {
+  .booking-radio-option {
+    padding: 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+  }
+  
+  .booking-radio-option .chakra-radio {
+    min-height: 48px;
+  }
+  
+  .booking-radio-option .chakra-radio__control {
+    min-height: 28px;
+    min-width: 28px;
+  }
+  
+  .booking-radio-option .chakra-text {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  
+  .booking-radio-option .chakra-badge {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+/* Ensure proper spacing for radio option content */
+.booking-radio-option .chakra-stack {
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .booking-radio-option .chakra-stack {
+    gap: 16px;
+  }
+}
+
+/* Mobile-friendly styles for payment step */
+.booking-step-card .booking-primary-button {
+  min-height: 56px;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: none;
+}
+
+.booking-step-card .booking-primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 209, 143, 0.4);
+}
+
+.booking-step-card .booking-primary-button:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 15px rgba(0, 209, 143, 0.3);
+}
+
+/* Enhanced checkbox styles for payment step */
+.booking-step-card .booking-checkbox {
+  min-height: 44px;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.booking-step-card .booking-checkbox .chakra-checkbox__control {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+.booking-step-card .booking-checkbox .chakra-checkbox__label {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Mobile-specific improvements for payment step */
+@media (max-width: 768px) {
+  .booking-step-card .booking-primary-button {
+    min-height: 60px;
+    font-size: 18px;
+    padding: 16px 24px;
+  }
+  
+  .booking-step-card .booking-checkbox {
+    min-height: 48px;
+  }
+  
+  .booking-step-card .booking-checkbox .chakra-checkbox__control {
+    min-height: 28px;
+    min-width: 28px;
+  }
+  
+  .booking-step-card .booking-checkbox .chakra-checkbox__label {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  /* Improve payment amount display on mobile */
+  .booking-step-card .booking-form-section {
+    padding: 16px;
+  }
+  
+  .booking-step-card .booking-form-section .chakra-badge {
+    font-size: 20px;
+    padding: 12px 16px;
+  }
+  
+  .booking-step-card .booking-form-section .chakra-text {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+}
+
+/* Ensure proper spacing for payment step content */
+.booking-step-card .booking-form-section .chakra-vstack {
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .booking-step-card .booking-form-section .chakra-vstack {
+    gap: 20px;
+  }
+}
+
 

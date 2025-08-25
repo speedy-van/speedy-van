@@ -3,6 +3,7 @@ import { Box, Text, VStack, HStack, Badge, Spinner, Alert, AlertIcon, Divider } 
 import { FaArrowRight, FaArrowLeft } from 'react-icons/fa';
 import Button from '../common/Button';
 import PricingDisplay from './PricingDisplay';
+import BookingNavigationButtons from './BookingNavigationButtons';
 
 interface BookingSummaryProps {
   bookingData: any;
@@ -49,7 +50,7 @@ export default function BookingSummary({
   }, [currentPrice]);
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
           <Text fontSize="xl" fontWeight="bold" color="neon.500">
@@ -61,7 +62,7 @@ export default function BookingSummary({
         </Box>
 
         {/* Total Amount Display */}
-        <Box p={4} borderWidth="2px" borderRadius="lg" borderColor="brand.500" bg="bg.surface">
+        <Box p={4} borderWidth="2px" borderRadius="lg" borderColor="brand.500" bg="bg.surface" className="booking-form-section">
           <HStack justify="space-between">
             <Text fontSize="xl" fontWeight="bold" color="brand.500">
               Total Amount
@@ -80,7 +81,7 @@ export default function BookingSummary({
         />
 
         {/* Booking Details Summary */}
-        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
+        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary" className="booking-form-section">
           <Text fontSize="lg" fontWeight="semibold" mb={3}>
             Booking Details
           </Text>
@@ -113,7 +114,7 @@ export default function BookingSummary({
         </Box>
 
         {/* Address Summary */}
-        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
+        <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary" className="booking-form-section">
           <Text fontSize="lg" fontWeight="semibold" mb={3}>
             Address Details
           </Text>
@@ -145,7 +146,7 @@ export default function BookingSummary({
 
         {/* Items Summary */}
         {bookingData.items && bookingData.items.length > 0 && (
-          <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary">
+          <Box p={4} borderWidth="1px" borderRadius="lg" bg="bg.surface" borderColor="border.primary" className="booking-form-section">
             <Text fontSize="lg" fontWeight="semibold" mb={3}>
               Items to Move ({bookingData.items.length})
             </Text>
@@ -164,24 +165,12 @@ export default function BookingSummary({
         )}
 
         {/* Navigation Buttons */}
-        <HStack spacing={4} justify="space-between" pt={4}>
-          <Button
-            onClick={onBack}
-            variant="secondary"
-            size="lg"
-            leftIcon={<FaArrowLeft />}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleContinue}
-            variant="primary"
-            size="lg"
-            rightIcon={<FaArrowRight />}
-          >
-            Continue to Payment
-          </Button>
-        </HStack>
+        <BookingNavigationButtons
+          onNext={handleContinue}
+          onBack={onBack}
+          nextText="Continue to Payment"
+          backVariant="secondary"
+        />
       </VStack>
     </Box>
   );

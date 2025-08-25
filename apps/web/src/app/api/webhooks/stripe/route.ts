@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
         await handleCheckoutSessionCompleted(event.data.object);
         break;
       
+      case 'checkout.session.expired':
+        await handleCheckoutSessionExpired(event.data.object);
+        break;
+      
       case 'payment_intent.succeeded':
         await handlePaymentIntentSucceeded(event.data.object);
         break;
@@ -105,6 +109,54 @@ async function handleCheckoutSessionCompleted(session: any) {
     
   } catch (error) {
     console.error('❌ Error handling checkout session completed:', error);
+  }
+}
+
+async function handleCheckoutSessionExpired(session: any) {
+  try {
+    console.log('⏰ Checkout session expired:', session.id);
+    
+    const bookingId = session.metadata?.bookingId;
+    if (!bookingId) {
+      console.warn('⚠️ No booking ID in session metadata');
+      return;
+    }
+
+    // Find and update the booking status to cancelled
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (booking && !['CANCELLED', 'COMPLETED'].includes(booking.status)) {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CANCELLED',
+        },
+      });
+
+      // Create a cancellation log entry
+      await prisma.auditLog.create({
+        data: {
+          actorId: 'system',
+          actorRole: 'system',
+          action: 'booking_cancelled',
+          targetType: 'booking',
+          targetId: booking.id,
+          userId: booking.customerId,
+          details: {
+            reason: 'Checkout session expired',
+            cancelledAt: new Date().toISOString(),
+            previousStatus: booking.status,
+            source: 'stripe_session_expired'
+          }
+        }
+      });
+
+      console.log('🚫 Booking cancelled due to expired session:', bookingId);
+    }
+  } catch (error) {
+    console.error('❌ Error handling checkout session expired:', error);
   }
 }
 

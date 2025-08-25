@@ -52,6 +52,7 @@ import {
   FaBolt
 } from 'react-icons/fa';
 import EmailInputWithSuggestions from './EmailInputWithSuggestions';
+import BookingNavigationButtons from './BookingNavigationButtons';
 
 interface CustomerDetailsStepProps {
   bookingData: any;
@@ -281,7 +282,7 @@ export default function CustomerDetailsStep({
   };
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
       <VStack spacing={8} align="stretch">
         {/* Enhanced Header with Animated Icons */}
         <Box textAlign="center">
@@ -980,31 +981,13 @@ export default function CustomerDetailsStep({
         )}
 
         {/* Navigation Buttons */}
-        <HStack spacing={4} justify="space-between" pt={4}>
-          <Button
-            onClick={onBack}
-            variant="secondary"
-            size="lg"
-            leftIcon={<FaArrowLeft />}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleNext}
-            variant="primary"
-            size="lg"
-            rightIcon={<FaArrowRight />}
-            isDisabled={!isFormComplete()}
-            _disabled={{
-              opacity: 0.5,
-              cursor: 'not-allowed',
-              transform: 'none',
-              boxShadow: 'none',
-            }}
-          >
-            Continue to Crew Selection
-          </Button>
-        </HStack>
+        <BookingNavigationButtons
+          onNext={handleNext}
+          onBack={onBack}
+          nextText="Continue to Crew Selection"
+          nextDisabled={!isFormComplete()}
+          backVariant="secondary"
+        />
       </VStack>
     </Box>
   );

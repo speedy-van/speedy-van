@@ -23,7 +23,16 @@ import {
   AlertTitle,
   AlertDescription,
   useColorModeValue,
-  Spinner
+  Spinner,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useToast
 } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { CheckCircleIcon, TimeIcon, InfoIcon } from "@chakra-ui/icons";
@@ -81,6 +90,9 @@ export default function OrderDetails() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
   useEffect(() => {
     if (params.code) {
@@ -101,6 +113,50 @@ export default function OrderDetails() {
       setError(err instanceof Error ? err.message : 'Failed to fetch booking');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!booking) return;
+    
+    try {
+      setCancelling(true);
+      const response = await fetch(`/api/customer/orders/${booking.code}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to cancel booking');
+      }
+
+      const result = await response.json();
+      
+      // Update local state
+      setBooking(prev => prev ? { ...prev, status: 'cancelled' } : null);
+      
+      toast({
+        title: "Booking Cancelled",
+        description: "Your booking has been cancelled successfully.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      onClose();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Failed to cancel booking',
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -158,8 +214,8 @@ export default function OrderDetails() {
   return (
     <Stack spacing={6}>
       {/* Header */}
-      <HStack justify="space-between" align="start">
-        <VStack align="start" spacing={1}>
+      <VStack align="start" spacing={4}>
+        <VStack align="start" spacing={1} width="full">
           <Heading size="lg">Order {booking.code}</Heading>
           <Text color="gray.600">
             Created on {new Date(booking.createdAt).toLocaleDateString('en-GB', {
@@ -169,7 +225,7 @@ export default function OrderDetails() {
             })}
           </Text>
         </VStack>
-        <HStack spacing={3}>
+        <HStack spacing={3} flexWrap="wrap">
           <Badge size="lg" colorScheme={getStatusColor(booking.status)}>
             {booking.status.replace(/_/g, " ").toUpperCase()}
           </Badge>
@@ -177,7 +233,7 @@ export default function OrderDetails() {
             {booking.paymentStatus.toUpperCase()}
           </Badge>
         </HStack>
-      </HStack>
+      </VStack>
 
       {/* Status Timeline */}
       <Box borderWidth="1px" borderRadius="lg" p={6} bg="white">
@@ -365,14 +421,15 @@ export default function OrderDetails() {
 
               <Divider />
 
-              <VStack spacing={2}>
+              <VStack spacing={3}>
                 {booking.paymentStatus !== "paid" && (
                   <Button
                     as={NextLink as any}
                     href={`/checkout?code=${booking.code}`}
                     colorScheme="blue"
-                    size="sm"
+                    size="md"
                     width="full"
+                    height="48px"
                   >
                     Complete Payment
                   </Button>
@@ -382,8 +439,9 @@ export default function OrderDetails() {
                   as={NextLink as any}
                   href={`/api/customer/orders/${booking.code}/receipt`}
                   variant="outline"
-                  size="sm"
+                  size="md"
                   width="full"
+                  height="48px"
                 >
                   Download Receipt
                 </Button>
@@ -393,8 +451,9 @@ export default function OrderDetails() {
                     as={NextLink as any}
                     href={`/api/customer/orders/${booking.code}/invoice`}
                     variant="outline"
-                    size="sm"
+                    size="md"
                     width="full"
+                    height="48px"
                   >
                     Download Invoice
                   </Button>
@@ -406,12 +465,13 @@ export default function OrderDetails() {
           {/* Actions */}
           <Box borderWidth="1px" borderRadius="lg" p={6} bg="white">
             <Heading size="md" mb={4}>Actions</Heading>
-            <VStack spacing={3}>
+            <VStack spacing={4}>
               {canReschedule && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   width="full"
+                  height="48px"
                   isDisabled={true} // TODO: Implement reschedule functionality
                 >
                   Reschedule
@@ -422,9 +482,10 @@ export default function OrderDetails() {
                 <Button
                   variant="outline"
                   colorScheme="red"
-                  size="sm"
+                  size="md"
                   width="full"
-                  isDisabled={true} // TODO: Implement cancellation functionality
+                  height="48px"
+                  onClick={onOpen}
                 >
                   Cancel Order
                 </Button>
@@ -435,8 +496,9 @@ export default function OrderDetails() {
                   as={NextLink as any}
                   href={`/customer-portal/track/${booking.id}`}
                   colorScheme="blue"
-                  size="sm"
+                  size="md"
                   width="full"
+                  height="48px"
                 >
                   Track Live
                 </Button>
@@ -446,16 +508,18 @@ export default function OrderDetails() {
                 as={NextLink as any}
                 href={`/customer-portal/support?order=${booking.code}`}
                 variant="outline"
-                size="sm"
+                size="md"
                 width="full"
+                height="48px"
               >
                 Get Support
               </Button>
 
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 width="full"
+                height="48px"
                 isDisabled={true} // TODO: Implement add note functionality
               >
                 Add Note
@@ -464,6 +528,72 @@ export default function OrderDetails() {
           </Box>
         </GridItem>
       </Grid>
+
+      {/* Cancel Order Confirmation Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay />
+        <ModalContent mx={4}>
+          <ModalHeader>Cancel Order</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} textAlign="center">
+              <Box
+                bg="red.50"
+                p={4}
+                borderRadius="md"
+                border="1px solid"
+                borderColor="red.200"
+              >
+                <Text fontWeight="medium" color="red.700" mb={2}>
+                  Are you sure you want to cancel this order?
+                </Text>
+                <Text fontSize="sm" color="red.600">
+                  This action cannot be undone. You may be charged a cancellation fee depending on your booking terms.
+                </Text>
+              </Box>
+              
+              <VStack spacing={3} align="stretch">
+                <Box>
+                  <Text fontWeight="medium" mb={1}>Order Details:</Text>
+                  <Text fontSize="sm" color="gray.600">
+                    Order: {booking.code}
+                  </Text>
+                  <Text fontSize="sm" color="gray.600">
+                    Amount: {booking.amountPence ? formatCurrency(booking.amountPence) : "—"}
+                  </Text>
+                  <Text fontSize="sm" color="gray.600">
+                    Date: {new Date(booking.preferredDate).toLocaleDateString('en-GB')}
+                  </Text>
+                </Box>
+              </VStack>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <VStack spacing={3} width="full">
+              <Button
+                colorScheme="red"
+                width="full"
+                height="48px"
+                onClick={handleCancelOrder}
+                isLoading={cancelling}
+                loadingText="Cancelling..."
+              >
+                Yes, Cancel Order
+              </Button>
+              <Button
+                variant="outline"
+                width="full"
+                height="48px"
+                onClick={onClose}
+                isDisabled={cancelling}
+              >
+                Keep Order
+              </Button>
+            </VStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Stack>
   );
 }

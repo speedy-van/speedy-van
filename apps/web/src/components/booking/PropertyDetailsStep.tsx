@@ -17,10 +17,14 @@ import {
   NumberDecrementStepper,
   Divider,
   Icon,
-  useToast
+  useToast,
+  Alert,
+  AlertIcon,
+  AlertDescription
 } from '@chakra-ui/react';
-import { FaBuilding, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+import { FaBuilding, FaArrowRight, FaArrowLeft, FaInfoCircle } from 'react-icons/fa';
 import Button from '../common/Button';
+import BookingNavigationButtons from './BookingNavigationButtons';
 
 interface PropertyDetailsStepProps {
   bookingData: any;
@@ -41,17 +45,17 @@ export default function PropertyDetailsStep({
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
 
-    // Validate pickup property
-    if (bookingData.pickupProperty?.floor === undefined || bookingData.pickupProperty?.floor < 0) {
-      newErrors.pickupFloor = 'Please enter a valid floor number';
+    // Validate pickup property - floor is now optional
+    if (bookingData.pickupProperty?.floor !== undefined && bookingData.pickupProperty?.floor < 0) {
+      newErrors.pickupFloor = 'Please enter a valid floor number (0 or higher)';
     }
     if (!bookingData.pickupProperty?.propertyType) {
       newErrors.pickupPropertyType = 'Please select property type';
     }
 
-    // Validate dropoff property
-    if (bookingData.dropoffProperty?.floor === undefined || bookingData.dropoffProperty?.floor < 0) {
-      newErrors.dropoffFloor = 'Please enter a valid floor number';
+    // Validate dropoff property - floor is now optional
+    if (bookingData.dropoffProperty?.floor !== undefined && bookingData.dropoffProperty?.floor < 0) {
+      newErrors.dropoffFloor = 'Please enter a valid floor number (0 or higher)';
     }
     if (!bookingData.dropoffProperty?.propertyType) {
       newErrors.dropoffPropertyType = 'Please select property type';
@@ -93,7 +97,7 @@ export default function PropertyDetailsStep({
   };
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md">
+    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
           <Text fontSize="xl" fontWeight="bold" color="neon.500">
@@ -104,8 +108,17 @@ export default function PropertyDetailsStep({
           </Text>
         </Box>
 
+        {/* Floor Number Info Alert */}
+        <Alert status="info" borderRadius="md" className="booking-form-control">
+          <AlertIcon as={FaInfoCircle} />
+          <AlertDescription fontSize={{ base: 'sm', md: 'md' }}>
+            <Text fontWeight="semibold" mb={1}>Floor Number Information:</Text>
+            <Text>Please ensure your floor number is correct as our drivers will deliver your items to the specified floor. Use 0 for ground floor, 1 for first floor, etc.</Text>
+          </AlertDescription>
+        </Alert>
+
         {/* Pickup Property */}
-        <Box>
+        <Box className="booking-form-section">
           <HStack spacing={3} mb={4}>
             <Icon as={FaBuilding} color="brand.500" />
             <Text fontSize="lg" fontWeight="semibold" color="brand.500">
@@ -114,13 +127,14 @@ export default function PropertyDetailsStep({
           </HStack>
           
           <VStack spacing={4}>
-            <FormControl isInvalid={!!errors.pickupPropertyType}>
-              <FormLabel>Property Type</FormLabel>
+            <FormControl isInvalid={!!errors.pickupPropertyType} className="booking-form-control">
+              <FormLabel>Property Type *</FormLabel>
               <Select
                 placeholder="Select property type"
                 value={bookingData.pickupProperty?.propertyType || ''}
                 onChange={(e) => updatePickupProperty('propertyType', e.target.value)}
                 size="lg"
+                className="booking-select"
               >
                 <option value="FLAT">Flat/Apartment</option>
                 <option value="HOUSE">House</option>
@@ -132,29 +146,37 @@ export default function PropertyDetailsStep({
               <FormErrorMessage>{errors.pickupPropertyType}</FormErrorMessage>
             </FormControl>
 
-            <FormControl isInvalid={!!errors.pickupFloor}>
-              <FormLabel>Floor Number</FormLabel>
+            <FormControl isInvalid={!!errors.pickupFloor} className="booking-form-control">
+              <FormLabel>Floor Number (Optional)</FormLabel>
               <NumberInput
                 min={0}
                 max={100}
-                value={bookingData.pickupProperty?.floor || 0}
-                onChange={(value) => updatePickupProperty('floor', parseInt(value) || 0)}
+                value={bookingData.pickupProperty?.floor !== undefined ? bookingData.pickupProperty.floor : ''}
+                onChange={(value) => {
+                  const numValue = parseInt(value);
+                  updatePickupProperty('floor', isNaN(numValue) ? undefined : numValue);
+                }}
                 size="lg"
+                className="booking-number-input"
               >
-                <NumberInputField placeholder="0 for ground floor" />
+                <NumberInputField placeholder="0 for ground floor (optional)" />
                 <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
                 </NumberInputStepper>
               </NumberInput>
+              <Text fontSize="xs" color="text.secondary" mt={1}>
+                Leave empty if unsure. Driver will confirm on arrival.
+              </Text>
               <FormErrorMessage>{errors.pickupFloor}</FormErrorMessage>
             </FormControl>
 
-            <FormControl>
+            <FormControl className="booking-form-control">
               <Checkbox
                 isChecked={bookingData.pickupProperty?.hasLift || false}
                 onChange={(e) => updatePickupProperty('hasLift', e.target.checked)}
                 size="lg"
+                className="booking-checkbox"
               >
                 Building has a lift/elevator
               </Checkbox>
@@ -162,10 +184,10 @@ export default function PropertyDetailsStep({
           </VStack>
         </Box>
 
-        <Divider />
+        <Divider className="booking-divider" />
 
         {/* Dropoff Property */}
-        <Box>
+        <Box className="booking-form-section">
           <HStack spacing={3} mb={4}>
             <Icon as={FaBuilding} color="neon.500" />
             <Text fontSize="lg" fontWeight="semibold" color="neon.500">
@@ -174,13 +196,14 @@ export default function PropertyDetailsStep({
           </HStack>
           
           <VStack spacing={4}>
-            <FormControl isInvalid={!!errors.dropoffPropertyType}>
-              <FormLabel>Property Type</FormLabel>
+            <FormControl isInvalid={!!errors.dropoffPropertyType} className="booking-form-control">
+              <FormLabel>Property Type *</FormLabel>
               <Select
                 placeholder="Select property type"
                 value={bookingData.dropoffProperty?.propertyType || ''}
                 onChange={(e) => updateDropoffProperty('propertyType', e.target.value)}
                 size="lg"
+                className="booking-select"
               >
                 <option value="FLAT">Flat/Apartment</option>
                 <option value="HOUSE">House</option>
@@ -192,29 +215,37 @@ export default function PropertyDetailsStep({
               <FormErrorMessage>{errors.dropoffPropertyType}</FormErrorMessage>
             </FormControl>
 
-            <FormControl isInvalid={!!errors.dropoffFloor}>
-              <FormLabel>Floor Number</FormLabel>
+            <FormControl isInvalid={!!errors.dropoffFloor} className="booking-form-control">
+              <FormLabel>Floor Number (Optional)</FormLabel>
               <NumberInput
                 min={0}
                 max={100}
-                value={bookingData.dropoffProperty?.floor || 0}
-                onChange={(value) => updateDropoffProperty('floor', parseInt(value) || 0)}
+                value={bookingData.dropoffProperty?.floor !== undefined ? bookingData.dropoffProperty.floor : ''}
+                onChange={(value) => {
+                  const numValue = parseInt(value);
+                  updateDropoffProperty('floor', isNaN(numValue) ? undefined : numValue);
+                }}
                 size="lg"
+                className="booking-number-input"
               >
-                <NumberInputField placeholder="0 for ground floor" />
+                <NumberInputField placeholder="0 for ground floor (optional)" />
                 <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
                 </NumberInputStepper>
               </NumberInput>
+              <Text fontSize="xs" color="text.secondary" mt={1}>
+                Leave empty if unsure. Driver will confirm on arrival.
+              </Text>
               <FormErrorMessage>{errors.dropoffFloor}</FormErrorMessage>
             </FormControl>
 
-            <FormControl>
+            <FormControl className="booking-form-control">
               <Checkbox
                 isChecked={bookingData.dropoffProperty?.hasLift || false}
                 onChange={(e) => updateDropoffProperty('hasLift', e.target.checked)}
                 size="lg"
+                className="booking-checkbox"
               >
                 Building has a lift/elevator
               </Checkbox>
@@ -223,25 +254,12 @@ export default function PropertyDetailsStep({
         </Box>
 
         {/* Navigation Buttons */}
-        <HStack spacing={4} justify="space-between" pt={4}>
-          <Button
-            onClick={onBack}
-            variant="secondary"
-            size="lg"
-            leftIcon={<FaArrowLeft />}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleNext}
-            variant="primary"
-            size="lg"
-            isCTA={true}
-            rightIcon={<FaArrowRight />}
-          >
-            Continue to Items
-          </Button>
-        </HStack>
+        <BookingNavigationButtons
+          onNext={handleNext}
+          onBack={onBack}
+          nextText="Continue to Items"
+          backVariant="secondary"
+        />
       </VStack>
     </Box>
   );
