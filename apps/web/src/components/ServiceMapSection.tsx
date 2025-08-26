@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Heading, Text, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, SimpleGrid, Badge } from '@chakra-ui/react';
 import mapboxgl from 'mapbox-gl';
 
 // Set the access token
@@ -10,11 +10,18 @@ if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
 }
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
+const serviceCities = [
+  'London', 'Manchester', 'Birmingham', 'Glasgow', 'Edinburgh', 
+  'Leeds', 'Liverpool', 'Sheffield', 'Newcastle', 'Nottingham', 
+  'Bristol', 'Cardiff', 'Inverness'
+];
+
 export default function ServiceMapSection() {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Debug: Log component mount
   useEffect(() => {
@@ -102,21 +109,7 @@ export default function ServiceMapSection() {
       "url": "https://speedyvan.co.uk",
       "image": "https://speedyvan.co.uk/og/cover.png",
       "description": "Speedy Van offers premium man and van services across the UK with real-time tracking and neon-dark experience.",
-      "areaServed": [
-        "London",
-        "Manchester",
-        "Birmingham",
-        "Glasgow",
-        "Edinburgh",
-        "Leeds",
-        "Liverpool",
-        "Sheffield",
-        "Newcastle",
-        "Nottingham",
-        "Bristol",
-        "Cardiff",
-        "Inverness"
-      ],
+      "areaServed": serviceCities,
       "address": {
         "@type": "PostalAddress",
         "addressCountry": "UK"
@@ -287,10 +280,10 @@ export default function ServiceMapSection() {
   }, []);
 
   return (
-    <Box as="section" py={20} textAlign="center" bg="bg.canvas">
-      <VStack spacing={8} maxW="6xl" mx="auto" px={4}>
+    <Box as="section" py={{ base: 12, md: 20 }} textAlign="center" bg="bg.canvas">
+      <VStack spacing={{ base: 6, md: 8 }} maxW="6xl" mx="auto" px={4}>
         <Heading 
-          size="2xl" 
+          size={{ base: "xl", md: "2xl" }} 
           mb={4} 
           bgGradient="linear(to-r, neon.400, neon.500, neon.600)" 
           bgClip="text"
@@ -300,11 +293,11 @@ export default function ServiceMapSection() {
         </Heading>
         
         <Text 
-          fontSize="xl" 
+          fontSize={{ base: "md", md: "xl" }} 
           color="text.secondary" 
           maxW="800px" 
           mx="auto" 
-          mb={12}
+          mb={{ base: 8, md: 12 }}
           lineHeight="tall"
         >
           Speedy Van operates across major UK cities including London, Manchester, Birmingham, 
@@ -314,7 +307,7 @@ export default function ServiceMapSection() {
         </Text>
         
         <Box 
-          h={{ base: "300px", md: "400px", lg: "500px" }}
+          h={{ base: "250px", sm: "300px", md: "400px", lg: "500px" }}
           w="full"
           borderRadius="2xl" 
           overflow="hidden" 
@@ -384,34 +377,44 @@ export default function ServiceMapSection() {
             </Box>
           )}
           
-          {/* Overlay with service cities */}
+          {/* Mobile-friendly cities overlay */}
           <Box
             position="absolute"
             top={4}
             left={4}
+            right={4}
             bg="rgba(13, 13, 13, 0.9)"
             backdropFilter="blur(10px)"
             borderRadius="lg"
-            p={4}
+            p={{ base: 3, md: 4 }}
             border="1px solid"
             borderColor="border.neon"
-            maxW="200px"
             textAlign="left"
             zIndex={10}
+            maxW={{ base: "none", md: "200px" }}
           >
-            <Text fontSize="sm" color="neon.400" fontWeight="semibold" mb={2}>
+            <Text fontSize={{ base: "xs", md: "sm" }} color="neon.400" fontWeight="semibold" mb={2}>
               Service Cities
             </Text>
-            <Text fontSize="xs" color="text.secondary" lineHeight="tall">
-              London • Manchester • Birmingham • Glasgow • Edinburgh • Leeds • Liverpool • 
-              Sheffield • Newcastle • Nottingham • Bristol • Cardiff • Inverness
+            <Text fontSize={{ base: "xs", md: "xs" }} color="text.secondary" lineHeight="tall" mb={2}>
+              {serviceCities.slice(0, 6).join(' • ')}
             </Text>
+            <Button
+              size="xs"
+              variant="outline"
+              colorScheme="neon"
+              onClick={onOpen}
+              w="full"
+              mt={2}
+            >
+              View All Cities
+            </Button>
           </Box>
         </Box>
         
         {/* Additional coverage information */}
         <Text 
-          fontSize="md" 
+          fontSize={{ base: "sm", md: "md" }} 
           color="text.tertiary" 
           maxW="600px" 
           mx="auto"
@@ -422,6 +425,39 @@ export default function ServiceMapSection() {
           same-day and next-day delivery options available.
         </Text>
       </VStack>
+
+      {/* Cities Modal for Mobile */}
+      <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "md" }}>
+        <ModalOverlay />
+        <ModalContent bg="dark.900" border="1px solid" borderColor="border.neon">
+          <ModalHeader color="neon.500">Service Cities</ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody pb={6}>
+            <VStack spacing={4} align="stretch">
+              <Text color="text.secondary" fontSize="sm">
+                Speedy Van operates in these major UK cities and surrounding areas:
+              </Text>
+              <SimpleGrid columns={{ base: 2, sm: 3 }} spacing={3}>
+                {serviceCities.map((city, index) => (
+                  <Badge
+                    key={index}
+                    colorScheme="neon"
+                    variant="outline"
+                    p={2}
+                    textAlign="center"
+                    fontSize="sm"
+                  >
+                    {city}
+                  </Badge>
+                ))}
+              </SimpleGrid>
+              <Text color="text.tertiary" fontSize="xs" textAlign="center" mt={4}>
+                Don't see your city? Contact us to check availability in your area.
+              </Text>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

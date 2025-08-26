@@ -121,21 +121,28 @@ export default function AddressAutocomplete({
   debounceMs = 100,
   ...unknownProps // Capture any unknown props to prevent them from reaching the DOM
 }: AddressAutocompleteProps) {
-  const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<Suggestion[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
   const [searchAttempted, setSearchAttempted] = React.useState(false);
+  
+  // Refs to prevent double selection and API calls during selection
   const isSelectingRef = React.useRef(false);
   const lastSelectedIdRef = React.useRef<string | null>(null);
+  const isValueUpdateFromSelectionRef = React.useRef(false);
   const ctrlRef = React.useRef<AbortController | null>(null);
 
   // Fetch suggestions
   React.useEffect(() => {
-    if (!value || value.length < minLength || disabled || isSelectingRef.current) {
+    if (!value || value.length < minLength || disabled || isSelectingRef.current || isValueUpdateFromSelectionRef.current) {
       if (isSelectingRef.current) {
         // API call blocked - selecting in progress
         console.log('[AddressAutocomplete] API call blocked - selection in progress');
+      }
+      if (isValueUpdateFromSelectionRef.current) {
+        // API call blocked - value update from selection
+        console.log('[AddressAutocomplete] API call blocked - value update from selection');
       }
       setItems([]);
       setOpen(false);
@@ -268,11 +275,14 @@ export default function AddressAutocomplete({
     
     console.log('AddressAutocomplete selecting:', selection);
     
-    // Call onSelect with the prepared selection FIRST
+    // Call onSelect with the prepared selection
     onSelect(selection);
     
-    // Then update the input value to show the selected address
-    onChange(item.label);
+    // Set flag to prevent API calls when parent updates the value
+    isValueUpdateFromSelectionRef.current = true;
+    
+    // Don't call onChange here - let the parent component handle updating the search field
+    // This prevents the search effect from being triggered when an item is selected
     
     // Close the dropdown and clear items
     setOpen(false);
@@ -283,6 +293,11 @@ export default function AddressAutocomplete({
     setTimeout(() => {
       isSelectingRef.current = false;
     }, 100);
+    
+    // Reset the value update flag after a longer delay to allow parent to update value
+    setTimeout(() => {
+      isValueUpdateFromSelectionRef.current = false;
+    }, 200);
     
     // Reset the last selected ID after a longer delay
     setTimeout(() => {

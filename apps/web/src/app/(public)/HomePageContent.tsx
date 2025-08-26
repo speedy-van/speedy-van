@@ -93,9 +93,9 @@ export default function HomePageContent() {
   const textColor = useColorModeValue('gray.600', 'gray.300');
 
   return (
-    <Box bg={bgColor} py={16}>
+    <Box bg={bgColor} py={{ base: 8, md: 16 }}>
       <Container maxW="6xl">
-        <VStack spacing={16}>
+        <VStack spacing={{ base: 8, md: 16 }}>
           {/* Hero Section */}
           <Hero />
 
@@ -107,25 +107,24 @@ export default function HomePageContent() {
 
           {/* Features Grid */}
           <Box w="full">
-            <VStack spacing={12}>
+            <VStack spacing={{ base: 8, md: 12 }}>
               <MotionBox
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 textAlign="center"
               >
-                <Heading size="lg" mb={4}>
+                <Heading size={{ base: "lg", md: "xl" }} mb={4}>
                   Why Choose Speedy Van?
                 </Heading>
-                <Text color={textColor} maxW="2xl" mx="auto">
+                <Text color={textColor} maxW="2xl" mx="auto" fontSize={{ base: "sm", md: "md" }}>
                   We provide comprehensive moving solutions tailored to your needs
                 </Text>
               </MotionBox>
 
-              <Box
-                display="grid"
-                gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }}
-                gap={8}
+              <SimpleGrid 
+                columns={{ base: 1, sm: 2, lg: 4 }} 
+                spacing={{ base: 4, md: 8 }} 
                 w="full"
               >
                 {features.map((feature, index) => (
@@ -135,43 +134,47 @@ export default function HomePageContent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
                     textAlign="center"
-                    p={6}
+                    p={{ base: 4, md: 6 }}
                     borderRadius="lg"
                     borderWidth="1px"
                     borderColor="gray.200"
                     _hover={{ shadow: "lg", transform: "translateY(-2px)" }}
                   >
-                    <Icon as={feature.icon} boxSize={8} color="blue.500" mb={4} />
-                    <Heading size="md" mb={3}>
+                    <Icon as={feature.icon} boxSize={{ base: 6, md: 8 }} color="blue.500" mb={4} />
+                    <Heading size={{ base: "sm", md: "md" }} mb={3}>
                       {feature.title}
                     </Heading>
-                    <Text color={textColor} fontSize="sm">
+                    <Text color={textColor} fontSize={{ base: "xs", md: "sm" }}>
                       {feature.description}
                     </Text>
                   </MotionBox>
                 ))}
-              </Box>
+              </SimpleGrid>
             </VStack>
           </Box>
 
           {/* Services Section */}
           <Box w="full">
-            <VStack spacing={12}>
+            <VStack spacing={{ base: 8, md: 12 }}>
               <MotionBox
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 textAlign="center"
               >
-                <Heading size="xl" mb={4} color="text.primary">
+                <Heading size={{ base: "lg", md: "xl" }} mb={4} color="text.primary">
                   Our Premium Services
                 </Heading>
-                <Text color={textColor} maxW="2xl" mx="auto" fontSize="lg">
+                <Text color={textColor} maxW="2xl" mx="auto" fontSize={{ base: "sm", md: "lg" }}>
                   Professional moving solutions for every need
                 </Text>
               </MotionBox>
 
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8} w="full">
+              <SimpleGrid 
+                columns={{ base: 1, md: 2, lg: 3 }} 
+                spacing={{ base: 4, md: 8 }} 
+                w="full"
+              >
                 {services.map((service, index) => (
                   <MotionBox
                     key={index}
@@ -180,7 +183,7 @@ export default function HomePageContent() {
                     transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
                   >
                     <Card
-                      p={6}
+                      p={{ base: 4, md: 6 }}
                       borderRadius="xl"
                       borderWidth="1px"
                       borderColor="neon.500"
@@ -208,22 +211,22 @@ export default function HomePageContent() {
                         transition="opacity 0.3s ease"
                       />
                       
-                      <VStack spacing={4} align="center" textAlign="center">
+                      <VStack spacing={{ base: 3, md: 4 }} align="center" textAlign="center">
                         <Box
-                          p={3}
+                          p={{ base: 2, md: 3 }}
                           borderRadius="full"
                           bg="neon.500"
                           color="white"
-                          fontSize="2xl"
+                          fontSize={{ base: "xl", md: "2xl" }}
                           mb={2}
                         >
                           {service.emoji}
                         </Box>
-                        <Icon as={service.icon} boxSize={8} color="neon.400" />
-                        <Heading size="md" color="white" mb={2}>
+                        <Icon as={service.icon} boxSize={{ base: 6, md: 8 }} color="neon.400" />
+                        <Heading size={{ base: "sm", md: "md" }} color="white" mb={2}>
                           {service.title}
                         </Heading>
-                        <Text color="gray.300" fontSize="sm" lineHeight="tall">
+                        <Text color="gray.300" fontSize={{ base: "xs", md: "sm" }} lineHeight="tall">
                           {service.description}
                         </Text>
                       </VStack>
@@ -236,22 +239,26 @@ export default function HomePageContent() {
 
           {/* Customer Trust (Testimonials) */}
           <Box w="full">
-            <VStack spacing={12}>
+            <VStack spacing={{ base: 8, md: 12 }}>
               <MotionBox
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
                 textAlign="center"
               >
-                <Heading size="xl" mb={4} color="text.primary">
+                <Heading size={{ base: "lg", md: "xl" }} mb={4} color="text.primary">
                   Trusted by Thousands
                 </Heading>
-                <Text color={textColor} maxW="2xl" mx="auto" fontSize="lg">
+                <Text color={textColor} maxW="2xl" mx="auto" fontSize={{ base: "sm", md: "lg" }}>
                   Real customers, real experiences
                 </Text>
               </MotionBox>
 
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} w="full">
+              <SimpleGrid 
+                columns={{ base: 1, md: 3 }} 
+                spacing={{ base: 4, md: 8 }} 
+                w="full"
+              >
                 {testimonials.map((testimonial, index) => (
                   <MotionBox
                     key={index}
@@ -260,7 +267,7 @@ export default function HomePageContent() {
                     transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
                   >
                     <Card
-                      p={6}
+                      p={{ base: 4, md: 6 }}
                       borderRadius="xl"
                       borderWidth="1px"
                       borderColor="neon.500"
@@ -288,16 +295,16 @@ export default function HomePageContent() {
                         pointerEvents="none"
                       />
                       
-                      <VStack spacing={4} align="stretch">
+                      <VStack spacing={{ base: 3, md: 4 }} align="stretch">
                         <HStack spacing={2} mb={2}>
                           {[...Array(testimonial.rating)].map((_, i) => (
-                            <Icon key={i} as={FaStar} color="neon.400" boxSize={4} />
+                            <Icon key={i} as={FaStar} color="neon.400" boxSize={{ base: 3, md: 4 }} />
                           ))}
                         </HStack>
                         
                         <Text
                           color="gray.200"
-                          fontSize="md"
+                          fontSize={{ base: "sm", md: "md" }}
                           lineHeight="tall"
                           fontStyle="italic"
                           mb={4}
@@ -306,12 +313,12 @@ export default function HomePageContent() {
                         </Text>
                         
                         <HStack spacing={3}>
-                          <Avatar size="sm" name={testimonial.name} bg="neon.500" />
+                          <Avatar size={{ base: "xs", md: "sm" }} name={testimonial.name} bg="neon.500" />
                           <VStack spacing={0} align="start">
-                            <Text fontWeight="semibold" color="white" fontSize="sm">
+                            <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
                               {testimonial.name}
                             </Text>
-                            <Text color="neon.400" fontSize="xs">
+                            <Text color="neon.400" fontSize={{ base: "xs", md: "xs" }}>
                               {testimonial.city}
                             </Text>
                           </VStack>
@@ -331,8 +338,8 @@ export default function HomePageContent() {
             transition={{ duration: 0.6, delay: 0.8 }}
             w="full"
             textAlign="center"
-            py={16}
-            px={8}
+            py={{ base: 8, md: 16 }}
+            px={{ base: 4, md: 8 }}
             borderRadius="2xl"
             borderWidth="2px"
             borderColor="neon.500"
@@ -351,16 +358,16 @@ export default function HomePageContent() {
               opacity={0.8}
             />
             
-            <VStack spacing={8} position="relative" zIndex={1}>
-              <Heading size="2xl" color="white" mb={4}>
+            <VStack spacing={{ base: 6, md: 8 }} position="relative" zIndex={1}>
+              <Heading size={{ base: "xl", md: "2xl" }} color="white" mb={4}>
                 Ready to Move with Confidence?
               </Heading>
-              <Text color="gray.300" fontSize="xl" maxW="2xl" mx="auto">
+              <Text color="gray.300" fontSize={{ base: "md", md: "xl" }} maxW="2xl" mx="auto">
                 Join thousands of satisfied customers who trust Speedy Van for their moving needs. 
                 Get your instant quote today and experience the difference.
               </Text>
               <Button
-                size="lg"
+                size={{ base: "lg", md: "lg" }}
                 variant="primary"
                 bg="neon.500"
                 color="white"
@@ -372,12 +379,13 @@ export default function HomePageContent() {
                 _active={{
                   bg: "neon.600"
                 }}
-                px={8}
-                py={6}
-                fontSize="lg"
+                px={{ base: 6, md: 8 }}
+                py={{ base: 4, md: 6 }}
+                fontSize={{ base: "md", md: "lg" }}
                 fontWeight="semibold"
                 borderRadius="xl"
                 transition="all 0.3s ease"
+                w={{ base: "full", sm: "auto" }}
               >
                 Get Your Quote →
               </Button>

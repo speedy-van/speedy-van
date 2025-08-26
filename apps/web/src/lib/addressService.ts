@@ -163,7 +163,7 @@ async function searchRealAddresses(query: string): Promise<AddressSuggestion[]> 
 }
 
 /**
- * Get current location using browser geolocation
+ * Get current location using browser geolocation with mobile browser support
  */
 export function getCurrentLocation(): Promise<{coords: {latitude: number, longitude: number}}> {
   return new Promise((resolve, reject) => {
@@ -172,8 +172,27 @@ export function getCurrentLocation(): Promise<{coords: {latitude: number, longit
       return;
     }
 
+    // Check if we're on HTTPS (required for geolocation on mobile)
+    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      reject(new Error('Geolocation requires HTTPS. Please use a secure connection or enter address manually.'));
+      return;
+    }
+
+    // Mobile-specific options
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 15000, // Increased timeout for mobile
+      maximumAge: 60000 // 1 minute cache for better mobile performance
+    };
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('Geolocation successful:', {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+        
         resolve({
           coords: {
             latitude: position.coords.latitude,
@@ -182,14 +201,15 @@ export function getCurrentLocation(): Promise<{coords: {latitude: number, longit
         });
       },
       (error) => {
+        console.error('Geolocation error:', error);
         let errorMessage = 'Failed to get current location';
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied. Please allow location access or enter address manually.';
+            errorMessage = 'Location permission denied. Please allow location access in your browser settings or enter address manually.';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable. Please enter address manually.';
+            errorMessage = 'Location information unavailable. Please check your GPS/network connection or enter address manually.';
             break;
           case error.TIMEOUT:
             errorMessage = 'Location request timed out. Please try again or enter address manually.';
@@ -200,11 +220,7 @@ export function getCurrentLocation(): Promise<{coords: {latitude: number, longit
         
         reject(new Error(errorMessage));
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5 minutes
-      }
+      options
     );
   });
 }

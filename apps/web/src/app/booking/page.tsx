@@ -141,27 +141,36 @@ export default function BookingPage() {
   ];
 
   return (
-    <Box minH="100vh" bg="bg.canvas" py={8} className="booking-page-container">
-      <Container maxW="4xl">
-        <VStack spacing={8}>
+    <Box minH="100vh" bg="bg.canvas" py={{ base: 4, md: 8 }} className="booking-page-container">
+      <Container maxW={{ base: "100%", md: "4xl" }} px={{ base: 4, md: 6 }}>
+        <VStack spacing={{ base: 6, md: 8 }}>
           {/* Header */}
           <Box textAlign="center" w="full">
-            <Heading size="xl" color="neon.500" mb={2}>
+            <Heading size={{ base: "lg", md: "xl" }} color="neon.500" mb={2}>
               Book Your Move
             </Heading>
-            <Text color="text.secondary" fontSize="lg">
+            <Text color="text.secondary" fontSize={{ base: "sm", md: "lg" }}>
               Complete your booking in {9 - currentStep + 1} simple steps
             </Text>
           </Box>
 
           {/* Progress Bar */}
-          <Box w="full" bg="bg.card" p={6} borderRadius="xl" borderWidth="1px" borderColor="border.primary" boxShadow="md" className="booking-progress">
-            <VStack spacing={4}>
+          <Box 
+            w="full" 
+            bg="bg.card" 
+            p={{ base: 4, md: 6 }} 
+            borderRadius="xl" 
+            borderWidth="1px" 
+            borderColor="border.primary" 
+            boxShadow="md" 
+            className="booking-progress"
+          >
+            <VStack spacing={{ base: 3, md: 4 }}>
               <HStack justify="space-between" w="full">
-                <Text fontSize="sm" color="text.tertiary">
+                <Text fontSize={{ base: "xs", md: "sm" }} color="text.tertiary">
                   Step {currentStep} of 9
                 </Text>
-                <Text fontSize="sm" color="neon.500" fontWeight="semibold">
+                <Text fontSize={{ base: "xs", md: "sm" }} color="neon.500" fontWeight="semibold">
                   {stepTitles[currentStep - 1]}
                 </Text>
               </HStack>
@@ -169,7 +178,7 @@ export default function BookingPage() {
                 value={(currentStep / 9) * 100} 
                 w="full" 
                 colorScheme="neon" 
-                size="lg"
+                size={{ base: "sm", md: "lg" }}
                 borderRadius="full"
                 bg="bg.surface"
               />

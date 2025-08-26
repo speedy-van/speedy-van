@@ -157,55 +157,32 @@ export default function PickupDropoffStep({
     });
   }, [bookingData.dropoffAddress, updateBookingData]);
 
-  // Handle address selection from AddressAutocomplete
-  const handlePickupAddressSelect = useCallback((selection: any) => {
-    console.log('Pickup selection:', selection);
-    
-    // Use the structured address data from the selection
-    const line1 = selection.address?.line1 || selection.label.split(',')[0]?.trim() || selection.label;
-    const city = selection.address?.city || '';
-    const postcode = selection.address?.postcode ? formatUKPostcode(selection.address.postcode) : '';
-    
-    // Update all address fields at once
-    const updatedPickupAddress = {
-      line1,
-      city,
-      postcode,
-      coordinates: selection.coords
-    };
-    
-    console.log('Updated pickup address:', updatedPickupAddress);
-    
+  const handlePickupAddressSelect = useCallback((address: any) => {
+    console.log('Pickup address selected:', address);
     updateBookingData({
-      pickupAddress: updatedPickupAddress
+      pickupAddress: {
+        line1: address.address?.line1 || address.line1 || '',
+        city: address.address?.city || address.city || '',
+        postcode: address.address?.postcode || address.postcode || '',
+        coordinates: address.coords || address.coordinates
+      }
     });
-    setPickupSearch(selection.label);
-    setPickupManualMode(false);
+    // Update the search field with the selected address label
+    setPickupSearch(address.label || address.address?.line1 || '');
   }, [updateBookingData]);
 
-  const handleDropoffAddressSelect = useCallback((selection: any) => {
-    console.log('Dropoff selection:', selection);
-    
-    // Use the structured address data from the selection
-    const line1 = selection.address?.line1 || selection.label.split(',')[0]?.trim() || selection.label;
-    const city = selection.address?.city || '';
-    const postcode = selection.address?.postcode ? formatUKPostcode(selection.address.postcode) : '';
-    
-    // Update all address fields at once
-    const updatedDropoffAddress = {
-      line1,
-      city,
-      postcode,
-      coordinates: selection.coords
-    };
-    
-    console.log('Updated dropoff address:', updatedDropoffAddress);
-    
+  const handleDropoffAddressSelect = useCallback((address: any) => {
+    console.log('Dropoff address selected:', address);
     updateBookingData({
-      dropoffAddress: updatedDropoffAddress
+      dropoffAddress: {
+        line1: address.address?.line1 || address.line1 || '',
+        city: address.address?.city || address.city || '',
+        postcode: address.address?.postcode || address.postcode || '',
+        coordinates: address.coords || address.coordinates
+      }
     });
-    setDropoffSearch(selection.label);
-    setDropoffManualMode(false);
+    // Update the search field with the selected address label
+    setDropoffSearch(address.label || address.address?.line1 || '');
   }, [updateBookingData]);
 
   const handlePostcodeChange = useCallback((value: string, type: 'pickup' | 'dropoff') => {
@@ -222,76 +199,86 @@ export default function PickupDropoffStep({
     setLocationError('');
     
     try {
+      // Check if we're on a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Show mobile-specific guidance
+        toast({
+          title: 'Getting your location...',
+          description: 'Please allow location access when prompted by your browser',
+          status: 'info',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+      
       const position = await getCurrentLocation();
-      
-      // Check if position and coordinates exist
-      if (!position || !position.coords) {
-        throw new Error('Could not get current location coordinates');
-      }
-      
-      const { latitude, longitude } = position.coords;
-      if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-        throw new Error('Invalid coordinates received');
-      }
-      
-      const address = await getAddressFromCoordinates(latitude, longitude);
+      const address = await getAddressFromCoordinates(position.coords.latitude, position.coords.longitude);
       
       if (address) {
         if (type === 'pickup') {
-          // Update the search field to show the address
-          const fullAddress = `${address.line1}, ${address.city}, ${address.postcode}`;
-          setPickupSearch(fullAddress);
-          
-          // Update the booking data with the full address
-          const updatedPickupAddress = {
-            line1: address.line1,
-            city: address.city,
-            postcode: formatUKPostcode(address.postcode),
-            coordinates: { lat: address.lat, lng: address.lng }
-          };
-          
           updateBookingData({
-            pickupAddress: updatedPickupAddress
+            pickupAddress: {
+              line1: address.line1 || '',
+              city: address.city || '',
+              postcode: address.postcode || '',
+              coordinates: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              }
+            }
           });
-          
+          setPickupSearch(address.line1 || '');
         } else {
-          // Update the search field to show the address
-          const fullAddress = `${address.line1}, ${address.city}, ${address.postcode}`;
-          setDropoffSearch(fullAddress);
-          
-          // Update the booking data with the full address
-          const updatedDropoffAddress = {
-            line1: address.line1,
-            city: address.city,
-            postcode: formatUKPostcode(address.postcode),
-            coordinates: { lat: address.lat, lng: address.lng }
-          };
-          
           updateBookingData({
-            dropoffAddress: updatedDropoffAddress
+            dropoffAddress: {
+              line1: address.line1 || '',
+              city: address.city || '',
+              postcode: address.postcode || '',
+              coordinates: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              }
+            }
           });
+          setDropoffSearch(address.line1 || '');
         }
-
-        // Show success toast
+        
         toast({
-          title: 'Location Detected!',
-          description: `Successfully set ${type} address to your current location.`,
+          title: 'Location detected successfully',
+          description: `Using your current location for ${type} address`,
           status: 'success',
           duration: 3000,
           isClosable: true,
         });
-
       } else {
-        throw new Error('Could not find address for current location');
+        throw new Error('Could not resolve address from coordinates');
       }
     } catch (error) {
-      console.error('Error getting current location:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to get current location';
-      setLocationError(errorMessage);
+      console.error('Error getting location:', error);
       
+      let errorMessage = 'Could not detect your location. Please enter manually or check your browser permissions.';
+      
+      // Provide more specific error messages for mobile
+      if (error instanceof Error) {
+        if (error.message.includes('HTTPS')) {
+          errorMessage = 'Location access requires a secure connection (HTTPS). Please use a secure connection or enter address manually.';
+        } else if (error.message.includes('permission denied')) {
+          errorMessage = 'Location permission denied. Please allow location access in your browser settings or enter address manually.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Location request timed out. Please check your GPS/network connection or enter address manually.';
+        } else if (error.message.includes('unavailable')) {
+          errorMessage = 'Location information unavailable. Please check your GPS/network connection or enter address manually.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setLocationError(errorMessage);
       toast({
-        title: 'Location Error',
-        description: 'Could not detect your current location. Please enter the address manually.',
+        title: 'Location detection failed',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -302,37 +289,26 @@ export default function PickupDropoffStep({
   }, [updateBookingData, toast]);
 
   return (
-    <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="neon.500">
-            Step 1: Pickup & Dropoff Addresses
-          </Text>
-          <Text fontSize="sm" color="text.secondary" mt={2}>
-            Enter the addresses for pickup and delivery
-          </Text>
-        </Box>
-
+    <Box className="booking-step-pickup-dropoff">
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+        {/* Location Error Alert */}
         {locationError && (
           <Alert status="error" borderRadius="md">
             <AlertIcon />
             <Text fontSize="sm">{locationError}</Text>
-            <Text fontSize="xs" color="text.secondary" mt={1}>
-              💡 You can still enter your address manually using the fields below
-            </Text>
           </Alert>
         )}
 
         {/* Pickup Address */}
         <Box className="booking-form-section">
-          <HStack spacing={3} mb={4} justify="space-between">
+          <HStack spacing={3} mb={4} justify="space-between" flexWrap={{ base: "wrap", md: "nowrap" }}>
             <HStack spacing={3}>
-              <Icon as={FaMapMarkerAlt} color="brand.500" />
-              <Text fontSize="lg" fontWeight="semibold" color="brand.500">
+              <Icon as={FaMapMarkerAlt} color="neon.500" />
+              <Text fontSize="lg" fontWeight="semibold" color="neon.500">
                 Pickup Address
               </Text>
             </HStack>
-            <HStack spacing={2}>
+            <HStack spacing={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
               <Button
                 size="sm"
                 leftIcon={<FaCrosshairs />}
@@ -377,8 +353,9 @@ export default function PickupDropoffStep({
                   onChange={(value) => {
                     console.log('Pickup search onChange:', value);
                     setPickupSearch(value);
-                    // Only update line1 during search, not during selection
-                    if (!value.includes(',')) {
+                    // Only update line1 during search if it's a short query (not a full address)
+                    // This prevents overwriting selected address data
+                    if (value.length < 50 && !value.includes(',')) {
                       updatePickupAddress('line1', value);
                     }
                   }}
@@ -407,7 +384,7 @@ export default function PickupDropoffStep({
               </FormControl>
             )}
 
-            <HStack spacing={4} w="full" className="booking-form-row">
+            <VStack spacing={4} w="full" className="booking-form-row">
               <FormControl isInvalid={!!errors.pickupCity} className="booking-form-control">
                 <FormLabel>City</FormLabel>
                 <InputGroup>
@@ -445,9 +422,9 @@ export default function PickupDropoffStep({
                 </InputGroup>
                 <FormErrorMessage>{errors.pickupPostcode}</FormErrorMessage>
               </FormControl>
-            </HStack>
+            </VStack>
 
-            <HStack mt={2} spacing={2}>
+            <HStack mt={2} spacing={2} flexWrap="wrap">
               {pickupValidation.line1 && (
                 <Badge colorScheme="green" size="sm">
                   <Icon as={FaCheck} mr={1} /> Street Address
@@ -471,14 +448,14 @@ export default function PickupDropoffStep({
 
         {/* Dropoff Address */}
         <Box className="booking-form-section">
-          <HStack spacing={3} mb={4} justify="space-between">
+          <HStack spacing={3} mb={4} justify="space-between" flexWrap={{ base: "wrap", md: "nowrap" }}>
             <HStack spacing={3}>
               <Icon as={FaArrowRight} color="neon.500" />
               <Text fontSize="lg" fontWeight="semibold" color="neon.500">
                 Dropoff Address
               </Text>
             </HStack>
-            <HStack spacing={2}>
+            <HStack spacing={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
               <Button
                 size="sm"
                 leftIcon={<FaCrosshairs />}
@@ -553,7 +530,7 @@ export default function PickupDropoffStep({
               </FormControl>
             )}
 
-            <HStack spacing={4} w="full" className="booking-form-row">
+            <VStack spacing={4} w="full" className="booking-form-row">
               <FormControl isInvalid={!!errors.dropoffCity} className="booking-form-control">
                 <FormLabel>City</FormLabel>
                 <InputGroup>
@@ -591,9 +568,9 @@ export default function PickupDropoffStep({
                 </InputGroup>
                 <FormErrorMessage>{errors.dropoffPostcode}</FormErrorMessage>
               </FormControl>
-            </HStack>
+            </VStack>
 
-            <HStack mt={2} spacing={2}>
+            <HStack mt={2} spacing={2} flexWrap="wrap">
               {dropoffValidation.line1 && (
                 <Badge colorScheme="green" size="sm">
                   <Icon as={FaCheck} mr={1} /> Street Address
@@ -615,7 +592,7 @@ export default function PickupDropoffStep({
 
         {/* Form Completion Status */}
         <Box textAlign="center" p={4} bg="gray.50" borderRadius="md">
-          <Text fontSize="sm" color="text.secondary">
+          <Text fontSize="xs" color="text.secondary">
             💡 Complete both pickup and dropoff addresses to continue
           </Text>
           <Text fontSize="xs" color="text.secondary" mt={1}>

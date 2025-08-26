@@ -99,19 +99,21 @@ export default function DriverDashboard() {
           },
           alerts: data.alerts || [],
           shifts: data.shifts || [],
+          locationStatus: data.locationStatus || { hasConsent: false },
           availableJobs: data.availableJobs || [],
-          locationStatus: {
-            hasConsent: data.locationStatus?.hasConsent || false,
-            lastSeen: data.locationStatus?.lastSeen,
-            coordinates: data.locationStatus?.coordinates,
-          },
           claimedJob: data.claimedJob || null,
         };
-        console.log('Safe dashboard data created:', safeData);
+        
         setDashboardData(safeData);
       } else {
-        console.error('Dashboard fetch failed:', { status: response.status });
-        throw new Error('Failed to fetch dashboard data');
+        console.error('Failed to fetch dashboard data:', response.status);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -129,74 +131,19 @@ export default function DriverDashboard() {
 
   const updateAvailability = async (newStatus: string) => {
     setUpdatingAvailability(true);
-    console.log('Starting availability update:', {
-      newStatus,
-      currentAvailability: dashboardData?.kpis?.availability,
-      dashboardData: dashboardData
-    });
-    
     try {
-      // Get current location if available and consent is given
-      let locationData: { lat: number; lng: number } | null = null;
-      console.log('Location consent check:', {
-        hasGeolocation: !!navigator.geolocation,
-        hasConsent: dashboardData?.locationStatus?.hasConsent,
-        locationStatus: dashboardData?.locationStatus
-      });
+      console.log('Updating availability to:', newStatus);
       
-      if (navigator.geolocation && dashboardData?.locationStatus?.hasConsent) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 300000 // 5 minutes
-            });
-          });
-          
-          locationData = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          console.log('Location obtained:', locationData);
-        } catch (locationError) {
-          console.warn('Could not get location:', locationError);
-        }
-      } else {
-        console.log('No location data - geolocation or consent not available');
-      }
-
-      // Use offline-aware availability update
-      const requestBody: any = { 
-        status: newStatus,
-        locationConsent: dashboardData?.locationStatus?.hasConsent || false
-      };
-      
-      // Only include location if we have valid coordinates
-      if (locationData && locationData.lat && locationData.lng && typeof locationData.lat === 'number' && typeof locationData.lng === 'number') {
-        requestBody.location = locationData;
-      }
-
-      console.log('Sending availability update request:', {
-        newStatus,
-        newStatusType: typeof newStatus,
-        requestBody,
-        requestBodyString: JSON.stringify(requestBody),
-        locationData,
-        hasLocationConsent: dashboardData?.locationStatus?.hasConsent
-      });
-
-      const response = await offlineFetch('/api/driver/availability', {
-        method: 'PUT',
+      const response = await fetch('/api/driver/availability', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
-      }, 'availability_update');
-
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
       const data = await response.json();
-      console.log('Availability update response:', { status: response.status, data });
-
+      
       if (response.ok || response.status === 202) {
         const isQueued = data.queued;
         
@@ -290,7 +237,7 @@ export default function DriverDashboard() {
   }
 
   return (
-    <Box>
+    <Box p={{ base: 4, md: 6 }}>
       <OfflineStatus variant="compact" />
       {/* Background location tracker */}
       <LocationTracker 
@@ -303,10 +250,10 @@ export default function DriverDashboard() {
         }}
       />
       
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={{ base: 4, md: 6 }} align="stretch">
         <Box>
-          <Heading size="lg" mb={2}>Driver Dashboard</Heading>
-          <Text color="gray.600">Welcome back, {dashboardData.driver?.name || "Driver"}</Text>
+          <Heading size={{ base: "md", md: "lg" }} mb={2}>Driver Dashboard</Heading>
+          <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Welcome back, {dashboardData.driver?.name || "Driver"}</Text>
         </Box>
 
         {/* Claimed Job Handler - shows when driver has claimed a job */}
@@ -322,13 +269,16 @@ export default function DriverDashboard() {
         />
 
         {/* KPI Cards */}
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6}>
+        <Grid 
+          templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} 
+          gap={{ base: 4, md: 6 }}
+        >
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 4, md: 6 }}>
               <Stat>
-                <StatLabel>Today's Earnings</StatLabel>
-                <StatNumber>£{(dashboardData.kpis.todayEarnings || 0).toFixed(2)}</StatNumber>
-                <StatHelpText>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Today's Earnings</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "xl" }}>£{(dashboardData.kpis.todayEarnings || 0).toFixed(2)}</StatNumber>
+                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
                   {(dashboardData.kpis.todayEarnings || 0) > 0 ? "Great work today!" : "No jobs completed today"}
                 </StatHelpText>
               </Stat>
@@ -336,18 +286,18 @@ export default function DriverDashboard() {
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 4, md: 6 }}>
               <Stat>
-                <StatLabel>Active Job</StatLabel>
-                <StatNumber>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Active Job</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "xl" }}>
                   {dashboardData.kpis.activeJob ? "In Progress" : "None"}
                 </StatNumber>
-                <StatHelpText>
+                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
                   {dashboardData.kpis.activeJob ? (
                     <VStack align="start" spacing={2}>
-                      <Badge colorScheme="green">Active</Badge>
+                      <Badge colorScheme="green" size={{ base: "sm", md: "md" }}>Active</Badge>
                       <Button 
-                        size="sm" 
+                        size={{ base: "xs", md: "sm" }} 
                         colorScheme="blue" 
                         variant="outline"
                         onClick={() => router.push('/driver/jobs/active')}
@@ -356,7 +306,7 @@ export default function DriverDashboard() {
                       </Button>
                     </VStack>
                   ) : (
-                    <Badge colorScheme="gray">No Active Job</Badge>
+                    <Badge colorScheme="gray" size={{ base: "sm", md: "md" }}>No Active Job</Badge>
                   )}
                 </StatHelpText>
               </Stat>
@@ -364,13 +314,13 @@ export default function DriverDashboard() {
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 4, md: 6 }}>
               <Stat>
-                <StatLabel>Rating</StatLabel>
-                <StatNumber>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Rating</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "xl" }}>
                   {(dashboardData.kpis.rating || 0) > 0 ? `${(dashboardData.kpis.rating || 0).toFixed(1)} ⭐` : "--"}
                 </StatNumber>
-                <StatHelpText>
+                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
                   {(dashboardData.kpis.rating || 0) > 0 ? "Average customer rating" : "No ratings yet"}
                 </StatHelpText>
               </Stat>
@@ -378,17 +328,17 @@ export default function DriverDashboard() {
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 4, md: 6 }}>
               <Stat>
-                <StatLabel>Availability</StatLabel>
-                <StatNumber>
-                  <Badge colorScheme={getAvailabilityColor(dashboardData.kpis.availability || 'offline')}>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Availability</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "xl" }}>
+                  <Badge colorScheme={getAvailabilityColor(dashboardData.kpis.availability || 'offline')} size={{ base: "sm", md: "md" }}>
                     {(dashboardData.kpis.availability || 'offline').charAt(0).toUpperCase() + (dashboardData.kpis.availability || 'offline').slice(1)}
                   </Badge>
                 </StatNumber>
-                <StatHelpText>
+                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
                   <Button 
-                    size="sm" 
+                    size={{ base: "xs", md: "sm" }} 
                     colorScheme={getAvailabilityButtonColor(dashboardData.kpis.availability || 'offline')} 
                     variant="outline"
                     onClick={() => {
@@ -398,6 +348,7 @@ export default function DriverDashboard() {
                     }}
                     isLoading={updatingAvailability}
                     loadingText="Updating..."
+                    w={{ base: "full", sm: "auto" }}
                   >
                     {getAvailabilityButtonText(dashboardData.kpis.availability || 'offline')}
                   </Button>
@@ -410,20 +361,21 @@ export default function DriverDashboard() {
         {/* Alerts Section */}
         {dashboardData.alerts && dashboardData.alerts.length > 0 && (
           <Card>
-            <CardBody>
-              <Heading size="md" mb={4}>Alerts & Notifications</Heading>
+            <CardBody p={{ base: 4, md: 6 }}>
+              <Heading size={{ base: "sm", md: "md" }} mb={4}>Alerts & Notifications</Heading>
               <VStack align="stretch" spacing={3}>
                 {dashboardData.alerts.map((alert, index) => (
                   <Alert 
                     key={index}
                     status={alert.type === 'expired' ? 'error' : alert.type === 'expiring' ? 'warning' : 'info'}
+                    borderRadius="md"
                   >
                     <AlertIcon />
                     <Box flex="1">
-                      <AlertTitle>{alert.category.toUpperCase()}</AlertTitle>
-                      <AlertDescription>{alert.message}</AlertDescription>
+                      <AlertTitle fontSize={{ base: "xs", md: "sm" }}>{alert.category.toUpperCase()}</AlertTitle>
+                      <AlertDescription fontSize={{ base: "xs", md: "sm" }}>{alert.message}</AlertDescription>
                     </Box>
-                    <Button size="sm" colorScheme="blue">
+                    <Button size={{ base: "xs", md: "sm" }} colorScheme="blue">
                       {alert.type === 'missing' ? 'Upload' : 'Renew'}
                     </Button>
                   </Alert>
@@ -436,24 +388,24 @@ export default function DriverDashboard() {
         {/* Location Status Section */}
         {dashboardData.locationStatus && (
           <Card>
-            <CardBody>
-              <Heading size="md" mb={4}>Location Status</Heading>
+            <CardBody p={{ base: 4, md: 6 }}>
+              <Heading size={{ base: "sm", md: "md" }} mb={4}>Location Status</Heading>
               <VStack align="stretch" spacing={3}>
-                <HStack justify="space-between">
-                  <Text>
+                <HStack justify="space-between" flexWrap={{ base: "wrap", md: "nowrap" }}>
+                  <Text fontSize={{ base: "sm", md: "md" }}>
                     <strong>Location Sharing:</strong> {dashboardData.locationStatus.hasConsent ? "Enabled" : "Disabled"}
                   </Text>
-                  <Badge colorScheme={dashboardData.locationStatus.hasConsent ? "green" : "gray"}>
+                  <Badge colorScheme={dashboardData.locationStatus.hasConsent ? "green" : "gray"} size={{ base: "sm", md: "md" }}>
                     {dashboardData.locationStatus.hasConsent ? "Active" : "Inactive"}
                   </Badge>
                 </HStack>
                 {dashboardData.locationStatus.lastSeen && (
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                     <strong>Last Updated:</strong> {new Date(dashboardData.locationStatus.lastSeen).toLocaleString()}
                   </Text>
                 )}
                 {dashboardData.locationStatus.coordinates && (
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                     <strong>Coordinates:</strong> {dashboardData.locationStatus.coordinates.lat.toFixed(6)}, {dashboardData.locationStatus.coordinates.lng.toFixed(6)}
                   </Text>
                 )}
@@ -465,34 +417,34 @@ export default function DriverDashboard() {
         {/* Upcoming Shifts Section */}
         {dashboardData.shifts && dashboardData.shifts.length > 0 && (
           <Card>
-            <CardBody>
-              <Heading size="md" mb={4}>Upcoming Shifts</Heading>
+            <CardBody p={{ base: 4, md: 6 }}>
+              <Heading size={{ base: "sm", md: "md" }} mb={4}>Upcoming Shifts</Heading>
               <VStack align="stretch" spacing={3}>
                 {dashboardData.shifts.slice(0, 3).map((shift) => (
                   <Box 
                     key={shift.id} 
-                    p={3} 
+                    p={{ base: 3, md: 4 }} 
                     border="1px solid" 
                     borderColor="gray.200" 
                     borderRadius="md"
                   >
-                    <HStack justify="space-between">
+                    <HStack justify="space-between" flexWrap={{ base: "wrap", md: "nowrap" }}>
                       <VStack align="start" spacing={1}>
-                        <Text fontWeight="bold">
+                        <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>
                           {new Date(shift.startTime).toLocaleDateString()} - {new Date(shift.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </Text>
-                        <Text fontSize="sm" color="gray.600">
+                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                           {shift.isRecurring ? shift.recurringDays.join(", ") : "One-time"}
                         </Text>
                       </VStack>
-                      <Badge colorScheme={shift.isActive ? "green" : "gray"}>
+                      <Badge colorScheme={shift.isActive ? "green" : "gray"} size={{ base: "sm", md: "md" }}>
                         {shift.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </HStack>
                   </Box>
                 ))}
                 {dashboardData.shifts && dashboardData.shifts.length > 3 && (
-                  <Text fontSize="sm" color="gray.600" textAlign="center">
+                  <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600" textAlign="center">
                     +{dashboardData.shifts.length - 3} more shifts
                   </Text>
                 )}
@@ -503,50 +455,50 @@ export default function DriverDashboard() {
 
         {/* Available Jobs Section */}
         <Card>
-          <CardBody>
-            <Heading size="md" mb={4}>Available Jobs Near You</Heading>
+          <CardBody p={{ base: 4, md: 6 }}>
+            <Heading size={{ base: "sm", md: "md" }} mb={4}>Available Jobs Near You</Heading>
             {dashboardData.availableJobs && dashboardData.availableJobs.length > 0 ? (
               <VStack align="stretch" spacing={3}>
                 {dashboardData.availableJobs.map((job) => (
                   <Box 
                     key={job.id} 
-                    p={4} 
+                    p={{ base: 3, md: 4 }} 
                     border="1px solid" 
                     borderColor="gray.200" 
                     borderRadius="md"
                     _hover={{ bg: "gray.50" }}
                   >
-                    <HStack justify="space-between" mb={2}>
-                      <Text fontWeight="bold">Job #{job.reference}</Text>
-                      <Badge colorScheme="green">£{(job.totalGBP / 100).toFixed(2)}</Badge>
+                    <HStack justify="space-between" mb={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
+                      <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>Job #{job.reference}</Text>
+                      <Badge colorScheme="green" size={{ base: "sm", md: "md" }}>£{(job.totalGBP / 100).toFixed(2)}</Badge>
                     </HStack>
                     <VStack align="stretch" spacing={1}>
-                      <Text fontSize="sm">
+                      <Text fontSize={{ base: "xs", md: "sm" }}>
                         <strong>Pickup:</strong> {job.pickupAddress}
                       </Text>
-                      <Text fontSize="sm">
+                      <Text fontSize={{ base: "xs", md: "sm" }}>
                         <strong>Dropoff:</strong> {job.dropoffAddress}
                       </Text>
-                      <HStack>
-                        <Text fontSize="sm">
+                      <VStack align="start" spacing={1}>
+                        <Text fontSize={{ base: "xs", md: "sm" }}>
                           <strong>Date:</strong> {new Date(job.scheduledAt).toLocaleDateString()}
                         </Text>
-                        <Text fontSize="sm">
+                        <Text fontSize={{ base: "xs", md: "sm" }}>
                           <strong>Time:</strong> {job.timeSlot}
                         </Text>
-                        <Text fontSize="sm">
+                        <Text fontSize={{ base: "xs", md: "sm" }}>
                           <strong>Van:</strong> {job.vanSize}
                         </Text>
-                      </HStack>
+                      </VStack>
                     </VStack>
-                    <Button size="sm" colorScheme="blue" mt={3} width="full">
+                    <Button size={{ base: "sm", md: "md" }} colorScheme="blue" mt={3} width="full">
                       View Details
                     </Button>
                   </Box>
                 ))}
               </VStack>
             ) : (
-              <Text color="gray.600">
+              <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
                 No jobs available in your area. Make sure you're online and in a service area.
               </Text>
             )}
