@@ -1,119 +1,94 @@
-<svg width="240" height="80" viewBox="0 0 240 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="400" height="140" viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Light background -->
-    <linearGradient id="lightBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#F8F9FA;stop-opacity:1" />
+    <!-- Dark Blue to Teal Gradient for light backgrounds -->
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0066CC;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#0088CC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00AACC;stop-opacity:1" />
     </linearGradient>
     
-    <!-- Neon glow effects for light background -->
-    <filter id="neonGlowLight" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#00E0FF" flood-opacity="0.6"/>
-      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00E0FF" flood-opacity="0.3"/>
-    </filter>
-    
-    <filter id="textGlowLight" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="0" stdDeviation="1" flood-color="#00E0FF" flood-opacity="0.4"/>
-    </filter>
-    
-    <!-- Motion trails gradient for light -->
-    <linearGradient id="motionTrailLight" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#00E0FF;stop-opacity:0.2" />
-      <stop offset="50%" style="stop-color:#00E0FF;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#B026FF;stop-opacity:1" />
+    <!-- Dark Purple Gradient -->
+    <linearGradient id="secondaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8A2BE2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A020F0;stop-opacity:1" />
     </linearGradient>
+    
+    <!-- Dark for contrast -->
+    <linearGradient id="darkGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1A1A1A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#333333;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Drop shadow filter for light backgrounds -->
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+    
+    <!-- Subtle glow effect -->
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feFlood flood-color="#0066CC" flood-opacity="0.4" result="glowColor"/>
+      <feComposite in="glowColor" in2="coloredBlur" operator="in" result="coloredGlow"/>
+      <feMerge> 
+        <feMergeNode in="coloredGlow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
   
-  <!-- Light background -->
-  <rect width="240" height="80" fill="url(#lightBg)" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- Background (transparent for light backgrounds) -->
   
-  <!-- Van icon -->
-  <g transform="translate(16, 20)">
-    <!-- Van body -->
-    <path d="M4 28 L28 28 L32 24 L36 24 L36 32 L32 36 L8 36 L4 32 Z" 
-          fill="none" 
-          stroke="#0066CC" 
-          stroke-width="2.5" 
-          filter="url(#neonGlowLight)"/>
+  <!-- Van Icon - Left side -->
+  <g transform="translate(20, 30)">
+    <!-- Van Body -->
+    <rect x="0" y="20" width="60" height="40" rx="8" fill="url(#primaryGradient)" filter="url(#dropShadow)"/>
     
-    <!-- Van windows -->
-    <rect x="6" y="18" width="8" height="6" 
-          fill="none" 
-          stroke="#0066CC" 
-          stroke-width="1.5" 
-          opacity="0.8"/>
-    <rect x="16" y="18" width="8" height="6" 
-          fill="none" 
-          stroke="#0066CC" 
-          stroke-width="1.5" 
-          opacity="0.8"/>
+    <!-- Van Cab -->
+    <rect x="0" y="20" width="25" height="25" rx="6" fill="url(#primaryGradient)" filter="url(#dropShadow)"/>
+    
+    <!-- Windows -->
+    <rect x="3" y="22" width="19" height="12" rx="3" fill="url(#darkGradient)" opacity="0.8"/>
+    <rect x="3" y="36" width="19" height="7" rx="2" fill="url(#darkGradient)" opacity="0.6"/>
     
     <!-- Wheels -->
-    <circle cx="12" cy="36" r="4" 
-            fill="none" 
-            stroke="#8B2FCC" 
-            stroke-width="2.5" 
-            filter="url(#neonGlowLight)"/>
-    <circle cx="28" cy="36" r="4" 
-            fill="none" 
-            stroke="#8B2FCC" 
-            stroke-width="2.5" 
-            filter="url(#neonGlowLight)"/>
+    <circle cx="15" cy="65" r="8" fill="#333333" stroke="url(#primaryGradient)" stroke-width="2"/>
+    <circle cx="15" cy="65" r="4" fill="url(#darkGradient)"/>
     
-    <!-- Motion trails -->
-    <path d="M0 30 L8 30" 
-          stroke="url(#motionTrailLight)" 
-          stroke-width="2" 
-          opacity="0.8"/>
-    <path d="M0 32 L6 32" 
-          stroke="url(#motionTrailLight)" 
-          stroke-width="1.5" 
-          opacity="0.6"/>
-    <path d="M0 34 L4 34" 
-          stroke="url(#motionTrailLight)" 
-          stroke-width="1" 
-          opacity="0.4"/>
-  </g>
-  
-  <!-- "Speedy Van" text -->
-  <g transform="translate(60, 20)">
-    <!-- "Speedy" text -->
-    <text x="0" y="18" 
-          font-family="Inter, system-ui, sans-serif" 
-          font-weight="900" 
-          font-size="18" 
-          fill="#0066CC" 
-          filter="url(#textGlowLight)">Speedy</text>
+    <circle cx="55" cy="65" r="8" fill="#333333" stroke="url(#primaryGradient)" stroke-width="2"/>
+    <circle cx="55" cy="65" r="4" fill="url(#darkGradient)"/>
     
-    <!-- "Van" text with special "V" -->
-    <g transform="translate(0, 25)">
-      <!-- Special "V" with arrow styling -->
-      <path d="M0 0 L8 18 L16 0" 
-            fill="none" 
-            stroke="#8B2FCC" 
-            stroke-width="3" 
-            stroke-linecap="round" 
-            stroke-linejoin="round" 
-            filter="url(#neonGlowLight)"/>
-      
-      <!-- Arrow tip on V -->
-      <path d="M14 2 L16 0 L18 2" 
-            fill="none" 
-            stroke="#8B2FCC" 
-            stroke-width="2" 
-            stroke-linecap="round" 
-            filter="url(#neonGlowLight)"/>
-      
-      <!-- "an" text -->
-      <text x="22" y="15" 
-            font-family="Inter, system-ui, sans-serif" 
-            font-weight="900" 
-            font-size="18" 
-            fill="#0066CC" 
-            filter="url(#textGlowLight)">an</text>
+    <!-- Speed Lines -->
+    <g opacity="0.8" filter="url(#glow)">
+      <line x1="70" y1="25" x2="85" y2="20" stroke="url(#secondaryGradient)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="70" y1="35" x2="80" y2="32" stroke="url(#secondaryGradient)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="70" y1="45" x2="82" y2="42" stroke="url(#secondaryGradient)" stroke-width="2" stroke-linecap="round"/>
     </g>
   </g>
   
-  <!-- Subtle accent line -->
-  <rect x="16" y="68" width="208" height="2" fill="url(#motionTrailLight)" opacity="0.6"/>
+  <!-- Text - Right side -->
+  <g transform="translate(120, 35)">
+    <!-- Speedy - Bold and italic for speed -->
+    <text x="0" y="35" font-family="Montserrat, Arial, sans-serif" font-size="32" font-weight="700" font-style="italic" fill="url(#primaryGradient)" filter="url(#dropShadow)">
+      Speedy
+    </text>
+    
+    <!-- Van - Normal weight for balance -->
+    <text x="0" y="65" font-family="Montserrat, Arial, sans-serif" font-size="28" font-weight="400" fill="url(#darkGradient)" filter="url(#dropShadow)">
+      Van
+    </text>
+    
+    <!-- Tagline -->
+    <text x="0" y="85" font-family="Poppins, Arial, sans-serif" font-size="14" font-weight="300" fill="url(#secondaryGradient)" opacity="0.8">
+      Fast • Reliable • Professional
+    </text>
+  </g>
+  
+  <!-- Decorative elements -->
+  <g opacity="0.4">
+    <!-- Top accent line -->
+    <line x1="20" y1="15" x2="380" y2="15" stroke="url(#primaryGradient)" stroke-width="1" stroke-dasharray="5,5"/>
+    
+    <!-- Bottom accent line -->
+    <line x1="20" y1="125" x2="380" y2="125" stroke="url(#secondaryGradient)" stroke-width="1" stroke-dasharray="5,5"/>
+  </g>
 </svg>

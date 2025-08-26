@@ -3,14 +3,31 @@
 /* Neon Dark Design Language - Speedy Van */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* Mapbox GL JS CSS - Required for proper map display */
+@import url('https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css');
+
 
 
 /* Custom Mapbox styles for Speedy Van neon dark theme */
 .mapboxgl-map {
   border-radius: 16px;
   overflow: hidden;
+  width: 100% !important;
+  height: 100% !important;
 }
 
+/* Ensure map container is properly sized */
+.mapboxgl-canvas-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Hide default controls */
 .mapboxgl-ctrl-bottom-right {
   display: none;
 }
@@ -25,6 +42,63 @@
 
 .mapboxgl-ctrl-top-left {
   display: none;
+}
+
+/* Ensure map markers are visible */
+.mapboxgl-marker {
+  z-index: 1;
+}
+
+/* Map popup styling */
+.mapboxgl-popup {
+  z-index: 2;
+}
+
+.mapboxgl-popup-content {
+  background: rgba(13, 13, 13, 0.95);
+  color: #FFFFFF;
+  border: 1px solid #00C2FF;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Mobile-specific map styles */
+@media (max-width: 768px) {
+  .mapboxgl-map {
+    border-radius: 12px;
+  }
+  
+  .mapboxgl-popup-content {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+/* Ensure map works in different color schemes */
+@media (prefers-color-scheme: light) {
+  .mapboxgl-popup-content {
+    background: rgba(255, 255, 255, 0.95);
+    color: #000000;
+    border: 1px solid #00C2FF;
+  }
+}
+
+/* Map loading state styles */
+.mapboxgl-map.loading {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.mapboxgl-map.loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure map container is always visible */
+.mapboxgl-map-container {
+  min-height: 300px;
+  min-width: 100%;
 }
 
 html, body, #__next { 

@@ -1,6 +1,6 @@
 import React from "react";
 
-type Variant = "auto" | "logo" | "wordmark" | "icon" | "icon-min";
+type Variant = "auto" | "logo" | "wordmark" | "icon" | "icon-min" | "responsive" | "mobile";
 type Mode = "auto" | "dark" | "light";
 
 type Props = {
@@ -10,10 +10,16 @@ type Props = {
   height?: number | string;
   className?: string;
   ariaLabel?: string;
+  responsive?: boolean;
 };
 
 const paths = {
-  logo: { dark: "/logo/speedy-van-logo-dark.svg", light: "/logo/speedy-van-logo-light.svg" },
+  logo: { 
+    dark: "/logo/speedy-van-logo-dark.svg", 
+    light: "/logo/speedy-van-logo-light.svg",
+    responsive: "/logo/speedy-van-logo-responsive.svg",
+    mobile: "/logo/speedy-van-logo-mobile.svg"
+  },
   wordmark: "/logo/speedy-van-wordmark.svg",
   icon: "/logo/speedy-van-icon.svg",
   iconMin: "/logo/speedy-van-icon-min.svg"
@@ -25,7 +31,8 @@ export function Logo({
   width,
   height,
   className,
-  ariaLabel = "Speedy Van"
+  ariaLabel = "Speedy Van",
+  responsive = true
 }: Props) {
   // Handle specific variants that don't need dark/light switching
   if (variant === "wordmark") {
@@ -63,6 +70,35 @@ export function Logo({
         alt={ariaLabel} 
         width={width} 
         height={height} 
+        className={className}
+        role="img"
+        aria-label={ariaLabel}
+      />
+    );
+  }
+
+  // Handle responsive variants
+  if (variant === "responsive") {
+    return (
+      <img 
+        src={paths.logo.responsive} 
+        alt={ariaLabel} 
+        width={width || 320} 
+        height={height || 120} 
+        className={className}
+        role="img"
+        aria-label={ariaLabel}
+      />
+    );
+  }
+
+  if (variant === "mobile") {
+    return (
+      <img 
+        src={paths.logo.mobile} 
+        alt={ariaLabel} 
+        width={width || 160} 
+        height={height || 60} 
         className={className}
         role="img"
         aria-label={ariaLabel}

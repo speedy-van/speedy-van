@@ -72,7 +72,7 @@ export default function Hero() {
   }, [videoLoaded, videoError]);
 
   return (
-    <Box as="section" bg={bgColor} py={16} textAlign="center" position="relative" overflow="hidden" minH="80vh">
+    <Box as="section" bg="transparent" py={16} textAlign="center" position="relative" overflow="hidden" minH="80vh">
       {/* Video Background */}
       <Box className="hero-video-background">
         <video

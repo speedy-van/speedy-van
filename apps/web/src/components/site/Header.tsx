@@ -10,6 +10,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import UserAvatarMenu from "@/components/UserAvatarMenu";
 import HeaderButton from "@/components/common/HeaderButton";
 
+
 export default function Header() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -141,24 +142,39 @@ export default function Header() {
       >
         <Container maxW="container.lg" h="full">
           <HStack justify="space-between" h="full">
-            <HStack align="center" gap={2}>
-              <Sidebar />
+            <HStack align="center" gap={4} flex="0 0 auto">
+              {/* Logo - Positioned at left edge */}
               <NextLink href="/">
-                <img 
-                  src="/logo/speedy-van-logo-dark.svg" 
-                  alt="Speedy Van" 
-                  width="120" 
-                  height="40"
-                  style={{ height: '40px', width: 'auto' }}
-                />
+                <Box
+                  p={1}
+                  borderRadius="lg"
+                  transition="all 0.3s ease-in-out"
+                  _hover={{
+                    transform: "scale(1.05)",
+                    filter: "drop-shadow(0 0 20px rgba(0,194,255,0.6))"
+                  }}
+                  ml={-4}
+                  position="relative"
+                  left="-16px"
+                >
+                  <img 
+                    src="/logo/speedy-van-logo-dark.svg" 
+                    alt="Speedy Van" 
+                    width="140" 
+                    height="49"
+                    style={{ display: 'block' }}
+                  />
+                </Box>
               </NextLink>
+
+              <Sidebar />
             </HStack>
 
             {/* Desktop navigation */}
             <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
-              <HeaderButton href="/book" label="Book" />
               <HeaderButton href="/track" label="Track" />
-              <NextLink href="/how-it-works">How it works</NextLink>
+              <HeaderButton href="/how-it-works" label="How it works" />
+              <HeaderButton href="/pricing" label="Pricing" />
               
               <HeaderButton 
                 href="/driver-application" 

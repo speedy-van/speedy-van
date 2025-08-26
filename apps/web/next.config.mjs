@@ -48,17 +48,51 @@ const nextConfig = {
 			config.resolve.alias['@/lib/__tests__'] = false;
 		}
 		
+		// Ensure CSS files are handled properly and not processed as JavaScript
+		config.module.rules.forEach((rule) => {
+			if (rule.test && rule.test.test && rule.test.test('.css')) {
+				// Ensure CSS files are treated as CSS, not JavaScript
+				if (rule.use && Array.isArray(rule.use)) {
+					rule.use.forEach((useItem) => {
+						if (useItem.loader && useItem.loader.includes('css-loader')) {
+							useItem.options = {
+								...useItem.options,
+								modules: false, // Disable CSS modules for global CSS
+								importLoaders: 1,
+							};
+						}
+					});
+				}
+			}
+		});
+		
 		// Performance optimizations (client-side only)
 		if (!isServer) {
+			// Ensure optimization and splitChunks exist
+			config.optimization = config.optimization || {};
+			config.optimization.splitChunks = config.optimization.splitChunks || {};
+			config.optimization.splitChunks.cacheGroups = config.optimization.splitChunks.cacheGroups || {};
+			
 			config.optimization = {
 				...config.optimization,
 				splitChunks: {
 					chunks: 'all',
 					cacheGroups: {
+						// CSS chunk to prevent bundling issues
+						styles: {
+							name: 'styles',
+							test: /\.css$/,
+							chunks: 'all',
+							enforce: true,
+							priority: 30,
+						},
 						vendor: {
 							test: /[\\/]node_modules[\\/]/,
 							name: 'vendors',
 							chunks: 'all',
+							// Exclude CSS files from vendor chunk to prevent CSS-as-JS errors
+							enforce: true,
+							reuseExistingChunk: true,
 						},
 						chakra: {
 							test: /[\\/]node_modules[\\/]@chakra-ui[\\/]/,

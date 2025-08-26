@@ -1,20 +1,23 @@
 import React from "react";
+import { Box, useColorModeValue } from "@chakra-ui/react";
 
-type Variant = "auto" | "logo" | "wordmark" | "icon" | "icon-min";
-type Mode = "auto" | "dark" | "light";
+type Variant = "auto" | "logo" | "wordmark" | "icon" | "iconMin" | "responsive" | "mobile";
 
 type Props = {
   variant?: Variant;
-  mode?: Mode;
   width?: number | string;
   height?: number | string;
   className?: string;
   ariaLabel?: string;
-  boxProps?: any;
 };
 
 const paths = {
-  logo: { dark: "/logo/speedy-van-logo-dark.svg", light: "/logo/speedy-van-logo-light.svg" },
+  logo: { 
+    dark: "/logo/speedy-van-logo-dark.svg", 
+    light: "/logo/speedy-van-logo-light.svg",
+    responsive: "/logo/speedy-van-logo-responsive.svg",
+    mobile: "/logo/speedy-van-logo-mobile.svg"
+  },
   wordmark: "/logo/speedy-van-wordmark.svg",
   icon: "/logo/speedy-van-icon.svg",
   iconMin: "/logo/speedy-van-icon-min.svg"
@@ -22,17 +25,18 @@ const paths = {
 
 export function LogoChakra({
   variant = "logo",
-  mode = "auto",
   width,
   height,
   className,
-  ariaLabel = "Speedy Van",
-  boxProps = {}
+  ariaLabel = "Speedy Van"
 }: Props) {
+  const logo = useColorModeValue(paths.logo.light, paths.logo.dark);
+
   // Handle specific variants that don't need dark/light switching
   if (variant === "wordmark") {
     return (
-      <img
+      <Box
+        as="img"
         src={paths.wordmark}
         alt={ariaLabel}
         width={width}
@@ -40,14 +44,14 @@ export function LogoChakra({
         className={className}
         role="img"
         aria-label={ariaLabel}
-        style={boxProps}
       />
     );
   }
   
   if (variant === "icon") {
     return (
-      <img
+      <Box
+        as="img"
         src={paths.icon}
         alt={ariaLabel}
         width={width}
@@ -55,14 +59,14 @@ export function LogoChakra({
         className={className}
         role="img"
         aria-label={ariaLabel}
-        style={boxProps}
       />
     );
   }
   
-  if (variant === "icon-min") {
+  if (variant === "iconMin") {
     return (
-      <img
+      <Box
+        as="img"
         src={paths.iconMin}
         alt={ariaLabel}
         width={width}
@@ -70,57 +74,52 @@ export function LogoChakra({
         className={className}
         role="img"
         aria-label={ariaLabel}
-        style={boxProps}
       />
     );
   }
 
-  // Handle logo variants with dark/light mode switching
-  if (mode === "dark") {
+  // Handle responsive variants
+  if (variant === "responsive") {
     return (
-      <img
-        src={paths.logo.dark}
+      <Box
+        as="img"
+        src={paths.logo.responsive}
         alt={ariaLabel}
-        width={width}
-        height={height}
+        width={width || 320}
+        height={height || 120}
         className={className}
         role="img"
         aria-label={ariaLabel}
-        style={boxProps}
-      />
-    );
-  }
-  
-  if (mode === "light") {
-    return (
-      <img
-        src={paths.logo.light}
-        alt={ariaLabel}
-        width={width}
-        height={height}
-        className={className}
-        role="img"
-        aria-label={ariaLabel}
-        style={boxProps}
       />
     );
   }
 
-  // Auto mode: use CSS media query for prefers-color-scheme
-  // We'll use the dark version as default and let CSS handle the switching
+  if (variant === "mobile") {
+    return (
+      <Box
+        as="img"
+        src={paths.logo.mobile}
+        alt={ariaLabel}
+        width={width || 160}
+        height={height || 60}
+        className={className}
+        role="img"
+        aria-label={ariaLabel}
+      />
+    );
+  }
+
+  // Default logo with color mode switching
   return (
-    <img
-      src={paths.logo.dark}
+    <Box
+      as="img"
+      src={logo}
       alt={ariaLabel}
       width={width}
       height={height}
       className={className}
       role="img"
       aria-label={ariaLabel}
-      style={{
-        ...boxProps,
-        filter: 'var(--logo-filter, none)'
-      }}
     />
   );
 }

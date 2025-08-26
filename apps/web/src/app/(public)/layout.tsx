@@ -19,21 +19,7 @@ export default function PublicLayout({
         flexDirection="column"
         w="100%"
       >
-        <Box
-          as="header"
-          position="sticky"
-          top="0"
-          zIndex="sticky"
-          bg="rgba(11,18,32,0.92)"
-          backdropFilter="saturate(140%) blur(8px)"
-          borderBottom="1px solid"
-          borderColor="whiteAlpha.200"
-          h="64px"
-          className="safe-area-top"
-          flexShrink={0}
-        >
-          <Header />
-        </Box>
+        <Header />
         
         <Box
           as="main"
