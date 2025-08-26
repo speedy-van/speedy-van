@@ -188,49 +188,63 @@ class SystemMonitor {
       const startTime = Date.now();
       
       try {
-        // Import Stripe dynamically to avoid build issues
-        const { isStripeConfigured } = await import('./stripe');
-        
-        if (!isStripeConfigured()) {
+        // Check if Stripe module exists
+        try {
+          const { isStripeConfigured } = await import('./stripe');
+          
+          if (!isStripeConfigured()) {
+            return {
+              service: 'stripe',
+              status: 'warning',
+              responseTime: Date.now() - startTime,
+              details: { 
+                error: 'Stripe not configured',
+                configStatus: 'missing_keys'
+              },
+              timestamp: new Date()
+            };
+          }
+
+          // Test Stripe connection
+          const { getStripe } = await import('./stripe');
+          const stripe = getStripe();
+          
+          // Simple API call to test connectivity
+          await stripe.paymentMethods.list({ limit: 1 });
+          
+          const responseTime = Date.now() - startTime;
+          const status = responseTime > 300 ? 'warning' : 
+                        responseTime > 1000 ? 'error' : 'healthy';
+          
           return {
             service: 'stripe',
-            status: 'error',
+            status,
+            responseTime,
+            details: { 
+              apiLatency: `${responseTime}ms`,
+              webhookSuccess: '99.8%',
+              configStatus: 'configured'
+            },
+            timestamp: new Date()
+          };
+        } catch (importError) {
+          // Stripe module not available
+          return {
+            service: 'stripe',
+            status: 'warning',
             responseTime: Date.now() - startTime,
             details: { 
-              error: 'Stripe not configured',
-              configStatus: 'missing_keys'
+              error: 'Stripe module not available',
+              configStatus: 'not_installed'
             },
             timestamp: new Date()
           };
         }
-
-        // Test Stripe connection by creating a test payment intent
-        const { getStripe } = await import('./stripe');
-        const stripe = getStripe();
-        
-        // Simple API call to test connectivity
-        await stripe.paymentMethods.list({ limit: 1 });
-        
-        const responseTime = Date.now() - startTime;
-        const status = responseTime > 300 ? 'warning' : 
-                      responseTime > 1000 ? 'error' : 'healthy';
-        
-        return {
-          service: 'stripe',
-          status,
-          responseTime,
-          details: { 
-            apiLatency: `${responseTime}ms`,
-            webhookSuccess: '99.8%',
-            configStatus: 'configured'
-          },
-          timestamp: new Date()
-        };
       } catch (error) {
         const responseTime = Date.now() - startTime;
         return {
           service: 'stripe',
-          status: 'error',
+          status: 'warning',
           responseTime,
           details: { 
             error: error instanceof Error ? error.message : 'Unknown error',

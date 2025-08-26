@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from "react";
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { Box, Heading, Text, SimpleGrid, Card, CardBody, CardHeader, Button, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Flex, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, useColorModeValue } from "@chakra-ui/react";
 import { Calendar, TrendingUp, Users, Package, DollarSign, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { ChartContainer } from "@/components/ChartContainer";
 
 interface AnalyticsData {
   kpis: {
@@ -257,8 +258,7 @@ export default function Analytics() {
                 <Heading size="md">Revenue Trends</Heading>
               </CardHeader>
               <CardBody>
-                <Box width="100%" height="400px">
-                  <ResponsiveContainer width="100%" height="100%">
+                                  <ChartContainer height={400}>
                     <AreaChart data={series}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="day" />
@@ -266,8 +266,7 @@ export default function Analytics() {
                       <Tooltip formatter={(value) => [`£${value}`, 'Revenue']} />
                       <Area type="monotone" dataKey="revenue" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} />
                     </AreaChart>
-                  </ResponsiveContainer>
-                </Box>
+                  </ChartContainer>
               </CardBody>
             </Card>
           </TabPanel>
@@ -278,18 +277,16 @@ export default function Analytics() {
                 <Heading size="md">Booking Activity</Heading>
               </CardHeader>
               <CardBody>
-                <Box width="100%" height="400px">
-                  <ResponsiveContainer width="100%" height="100%">
+                                  <ChartContainer height={400}>
                     <BarChart data={series}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="day" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="bookings" fill="#8884d8" />
+                      <Bar dataKey="Booking" fill="#8884d8" />
                       <Bar dataKey="completed" fill="#82ca9d" />
                     </BarChart>
-                  </ResponsiveContainer>
-                </Box>
+                  </ChartContainer>
               </CardBody>
             </Card>
           </TabPanel>
@@ -327,8 +324,7 @@ export default function Analytics() {
               </CardHeader>
               <CardBody>
                 <Flex gap={6}>
-                  <Box flex="1" height="300px">
-                    <ResponsiveContainer width="100%" height="100%">
+                                      <ChartContainer height={300} flex="1">
                       <PieChart>
                         <Pie
                           data={cancellationReasons}
@@ -346,8 +342,7 @@ export default function Analytics() {
                         </Pie>
                         <Tooltip />
                       </PieChart>
-                    </ResponsiveContainer>
-                  </Box>
+                    </ChartContainer>
                   <Box flex="1">
                     <Box display="flex" flexDirection="column" gap={2}>
                       {cancellationReasons.map((reason, index) => (

@@ -30,7 +30,7 @@ The main shell component that provides the overall layout structure:
 - User session management
 - Responsive design that adapts to sidebar collapse state
 
-### 2. AdminSidebar (`/src/components/admin/AdminSidebar.tsx`)
+### 2. AdminNavigation (`/src/components/admin/AdminNavigation.tsx`) - Unified Navigation System
 
 Collapsible sidebar with hierarchical navigation:
 

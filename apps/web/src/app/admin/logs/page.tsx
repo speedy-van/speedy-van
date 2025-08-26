@@ -141,7 +141,7 @@ export default function LogsPage() {
           <CardBody>
             <Stat>
               <StatLabel>Total Logs</StatLabel>
-              <StatNumber>{(stats.totalLogs || 0).toLocaleString()}</StatNumber>
+              <StatNumber suppressHydrationWarning>{(stats.totalLogs || 0).toLocaleString()}</StatNumber>
               <StatHelpText>
                 <FiActivity style={{ display: 'inline', marginRight: '4px' }} />
                 Last 24 hours
@@ -154,7 +154,7 @@ export default function LogsPage() {
           <CardBody>
             <Stat>
               <StatLabel>Errors Today</StatLabel>
-              <StatNumber color="red.500">{stats.errorsToday}</StatNumber>
+              <StatNumber color="red.500" suppressHydrationWarning>{stats.errorsToday}</StatNumber>
               <StatHelpText>
                 <FiAlertTriangle style={{ display: 'inline', marginRight: '4px' }} />
                 Critical issues
@@ -167,7 +167,7 @@ export default function LogsPage() {
           <CardBody>
             <Stat>
               <StatLabel>Warnings Today</StatLabel>
-              <StatNumber color="yellow.500">{stats.warningsToday}</StatNumber>
+              <StatNumber color="yellow.500" suppressHydrationWarning>{stats.warningsToday}</StatNumber>
               <StatHelpText>
                 <FiInfo style={{ display: 'inline', marginRight: '4px' }} />
                 Attention needed
@@ -180,7 +180,7 @@ export default function LogsPage() {
           <CardBody>
             <Stat>
               <StatLabel>Avg Response Time</StatLabel>
-              <StatNumber>{stats.avgResponseTime}</StatNumber>
+              <StatNumber suppressHydrationWarning>{stats.avgResponseTime}</StatNumber>
               <StatHelpText>
                 <FiClock style={{ display: 'inline', marginRight: '4px' }} />
                 API performance
@@ -196,6 +196,14 @@ export default function LogsPage() {
           <AlertIcon />
           <AlertTitle>Error!</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
+          <Button 
+            size="sm" 
+            colorScheme="blue" 
+            onClick={loadLogs}
+            ml={4}
+          >
+            Retry
+          </Button>
         </Alert>
       )}
 
@@ -262,7 +270,7 @@ export default function LogsPage() {
                       {logs.map((log) => (
                         <Tr key={log.id}>
                           <Td>
-                            <Text fontSize="sm">{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
+                            <Text fontSize="sm" suppressHydrationWarning>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
                           </Td>
                           <Td>
                             <HStack spacing={2}>
@@ -367,7 +375,7 @@ export default function LogsPage() {
                       {logs.map((log) => (
                         <Tr key={log.id}>
                           <Td>
-                            <Text fontSize="sm">{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
+                            <Text fontSize="sm" suppressHydrationWarning>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
                           </Td>
                           <Td>
                             <Badge colorScheme={getLevelColor(log.level || '')} size="sm">
@@ -452,7 +460,7 @@ export default function LogsPage() {
                       {logs.map((log) => (
                         <Tr key={log.id}>
                           <Td>
-                            <Text fontSize="sm">{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
+                            <Text fontSize="sm" suppressHydrationWarning>{log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</Text>
                           </Td>
                           <Td>
                             <Text fontSize="sm" fontWeight="bold">{log.service}</Text>
@@ -508,7 +516,7 @@ export default function LogsPage() {
                 <SimpleGrid columns={2} spacing={4}>
                   <Box>
                     <Text fontWeight="bold">Timestamp</Text>
-                    <Text>{selectedLog.timestamp ? new Date(selectedLog.timestamp).toLocaleString() : 'N/A'}</Text>
+                    <Text suppressHydrationWarning>{selectedLog.timestamp ? new Date(selectedLog.timestamp).toLocaleString() : 'N/A'}</Text>
                   </Box>
                   {selectedLog.actor && (
                     <Box>

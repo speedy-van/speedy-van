@@ -1,4 +1,3 @@
-export { AdminSidebar } from './AdminSidebar';
 export { GlobalSearch } from './GlobalSearch';
 export { KeyboardShortcuts } from './KeyboardShortcuts';
 export { ViewToggle, type ViewType } from './ViewToggle';

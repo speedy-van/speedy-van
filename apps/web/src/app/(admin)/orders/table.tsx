@@ -8,7 +8,6 @@ import {
   Tr,
   Th,
   Td,
-  Input,
   InputGroup,
   InputLeftElement,
   Select,
@@ -40,6 +39,7 @@ import {
   Alert,
   AlertIcon,
 } from "@chakra-ui/react";
+import ClientInput from "@/components/admin/ClientInput";
 import {
   FaSearch,
   FaFilter,
@@ -564,8 +564,8 @@ export default function OrdersClient() {
                   </HStack>
                   
                   <VStack align="start" spacing={2}>
-                    <Text fontWeight="medium">{order.customer?.name || order.customerName || '-'}</Text>
-                    <Text fontSize="sm" color="gray.600">{order.customer?.email || order.customerEmail || '-'}</Text>
+                    <Text fontWeight="medium">{order.customer && order.customer.name ? order.customer.name : (order.customerName || '-')}</Text>
+                    <Text fontSize="sm" color="gray.600">{order.customer && order.customer.email ? order.customer.email : (order.customerEmail || '-')}</Text>
                   </VStack>
 
                   <VStack align="start" spacing={1}>
@@ -594,7 +594,7 @@ export default function OrdersClient() {
 
                   <HStack justify="space-between" fontSize="sm" color="gray.600">
                     <HStack>
-                      {order.driver?.user.name ? (
+                      {order.driver && order.driver.user && order.driver.user.name ? (
                         <>
                           <Icon as={FaTruck} color="blue.500" boxSize={3} />
                           <Text>{order.driver.user.name}</Text>
@@ -734,7 +734,7 @@ export default function OrdersClient() {
                       <InputLeftElement>
                         <FaSearch />
                       </InputLeftElement>
-                      <Input
+                      <ClientInput
                         placeholder="Search by code, address, customer..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -779,13 +779,13 @@ export default function OrdersClient() {
 
                 {/* Additional Filters */}
                 <Flex gap={4} wrap="wrap">
-                  <Input
+                  <ClientInput
                     placeholder="Filter by driver name..."
                     value={driverFilter}
                     onChange={(e) => setDriverFilter(e.target.value)}
                     minW="200px"
                   />
-                  <Input
+                  <ClientInput
                     placeholder="Filter by area..."
                     value={areaFilter}
                     onChange={(e) => setAreaFilter(e.target.value)}

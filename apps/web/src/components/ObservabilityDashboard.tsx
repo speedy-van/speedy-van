@@ -30,7 +30,8 @@ import {
   AlertTitle,
   AlertDescription,
 } from '@chakra-ui/react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from 'recharts';
+import { ChartContainer } from './ChartContainer';
 
 interface MetricData {
   name: string;
@@ -248,12 +249,12 @@ export function ObservabilityDashboard() {
             <Heading size="md">Performance Trends (24h)</Heading>
           </CardHeader>
           <CardBody>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer height={300}>
               <LineChart data={performanceData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="timestamp" />
                 <YAxis />
-                <Tooltip />
+                <RechartsTooltip />
                 <Line 
                   type="monotone" 
                   dataKey="portalLoadTime" 
@@ -267,7 +268,7 @@ export function ObservabilityDashboard() {
                   name="Time to First Content (ms)"
                 />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardBody>
         </Card>
 

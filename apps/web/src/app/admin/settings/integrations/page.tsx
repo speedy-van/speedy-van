@@ -83,15 +83,16 @@ const mockIntegrations: Integration[] = [
     },
   },
   {
-    id: 'maps',
-    name: 'Google Maps',
+    id: 'mapbox',
+    name: 'Mapbox',
     description: 'Geocoding, directions, and location services',
     icon: FiMap,
     status: 'connected',
     isEnabled: true,
     config: {
-      apiKey: 'AIza...',
-      billingAccount: 'billing-account-id',
+      accessToken: 'pk.eyJ1Ijoi...',
+      styleUrl: 'mapbox://styles/mapbox/streets-v12',
+      geocodingEndpoint: 'https://api.mapbox.com/geocoding/v5',
     },
   },
   {

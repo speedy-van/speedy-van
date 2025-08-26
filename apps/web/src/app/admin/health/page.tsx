@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
-import { Box, Heading, HStack, VStack, Text, Badge, Card, CardBody, Button, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, Grid, GridItem, Progress, Alert, AlertIcon, AlertTitle, AlertDescription, Spinner } from "@chakra-ui/react";
+import { Box, Heading, HStack, VStack, Text, Badge, Card, CardBody, Button, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, Grid, GridItem, Progress, Alert, AlertIcon, AlertTitle, AlertDescription } from "@chakra-ui/react";
+import LoadingSpinner from "@/components/admin/LoadingSpinner";
 import { FiActivity, FiDatabase, FiServer, FiWifi, FiClock, FiRefreshCw, FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 
 interface ServiceHealth {
@@ -107,12 +108,15 @@ export default function HealthPage() {
 
   if (!healthData && !loading) {
     return (
-      <Box>
-        <Alert status="error">
+      <Box p={6}>
+        <Alert status="error" mb={4}>
           <AlertIcon />
           <AlertTitle>Error!</AlertTitle>
-          <AlertDescription>Failed to load health data</AlertDescription>
+          <AlertDescription>Failed to load health data. Please try refreshing the page.</AlertDescription>
         </Alert>
+        <Button onClick={loadHealthData} colorScheme="blue" leftIcon={<FiRefreshCw />}>
+          Retry
+        </Button>
       </Box>
     );
   }
@@ -151,10 +155,7 @@ export default function HealthPage() {
 
       {/* Loading State */}
       {loading && !healthData && (
-        <HStack justify="center" py={8}>
-          <Spinner />
-          <Text>Loading health data...</Text>
-        </HStack>
+        <LoadingSpinner message="Loading health data..." />
       )}
 
       {healthData && (

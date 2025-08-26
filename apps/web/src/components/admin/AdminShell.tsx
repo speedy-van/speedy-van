@@ -35,7 +35,7 @@ import {
   FiWifiOff,
 } from 'react-icons/fi';
 
-import { AdminSidebar } from './AdminSidebar';
+import AdminNavigation from './AdminNavigation';
 import { GlobalSearch } from './GlobalSearch';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { RealTimeToast, useToasts, toastUtils } from './RealTimeToast';
@@ -158,10 +158,21 @@ const MotionBox = motion.create(Box);
       animate="animate"
     >
       {/* Sidebar */}
-      <AdminSidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
+      <Box
+        bg={bgColor}
+        borderRight="1px solid"
+        borderColor={borderColor}
+        h="100vh"
+        position="sticky"
+        top={0}
+        left={0}
+        zIndex={20}
+        transition="width 0.2s"
+        width={isSidebarCollapsed ? "60px" : "280px"}
+        overflow="hidden"
+      >
+        <AdminNavigation isCollapsed={isSidebarCollapsed} />
+      </Box>
 
       {/* Main content area */}
       <MotionFlex 

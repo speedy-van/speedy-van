@@ -147,7 +147,12 @@ export default function ContentPage() {
               <CardBody>
                 <HStack justify="space-between" mb={4}>
                   <Heading size="md">Promotions</Heading>
-                  <Button leftIcon={<FiPlus />} colorScheme="blue" size="sm">
+                  <Button 
+                    leftIcon={<FiPlus />} 
+                    colorScheme="blue" 
+                    size="sm"
+                    onClick={() => window.location.href = '/admin/content/promotions'}
+                  >
                     Add Promotion
                   </Button>
                 </HStack>

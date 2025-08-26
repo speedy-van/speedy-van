@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin";
+import ErrorBoundary from "@/components/admin/ErrorBoundary";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -32,7 +33,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div suppressHydrationWarning>
       <AdminShell>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </AdminShell>
     </div>
   );

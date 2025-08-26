@@ -149,6 +149,12 @@ export async function GET(request: NextRequest) {
         rightToWorkType: 'Not specified',
         complianceIssues,
         autoApproveEligible,
+        // Include approval tracking fields
+        approvedAt: app.reviewedAt && app.status === 'approved' ? app.reviewedAt.toISOString() : undefined,
+        approvedBy: app.reviewedBy && app.status === 'approved' ? app.reviewedBy : undefined,
+        reviewedAt: app.reviewedAt ? app.reviewedAt.toISOString() : undefined,
+        reviewedBy: app.reviewedBy,
+        reviewNotes: app.reviewNotes,
       };
     });
 

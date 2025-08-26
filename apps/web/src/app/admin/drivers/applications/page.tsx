@@ -103,6 +103,11 @@ interface DriverApplication {
   rightToWorkType: string;
   complianceIssues: string[];
   autoApproveEligible: boolean;
+  approvedAt?: string;
+  reviewedAt?: string;
+  approvedBy?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
 }
 
 export default function DriverApplicationsPage() {
@@ -363,8 +368,46 @@ export default function DriverApplicationsPage() {
                       <Badge colorScheme={application.autoApproveEligible ? "green" : "gray"}>
                         {application.autoApproveEligible ? "Auto-approve" : "Manual Review"}
                       </Badge>
+                      <Badge 
+                        colorScheme={
+                          application.status === 'approved' ? 'green' : 
+                          application.status === 'rejected' ? 'red' : 
+                          application.status === 'under_review' ? 'orange' : 
+                          application.status === 'requires_additional_info' ? 'yellow' : 'blue'
+                        }
+                        size="sm"
+                      >
+                        {application.status.replace('_', ' ').toUpperCase()}
+                      </Badge>
                     </VStack>
                   </Flex>
+
+                  {/* Approval Information */}
+                  {application.status === 'approved' && application.approvedAt && (
+                    <Alert status="success" size="sm">
+                      <AlertIcon />
+                      <Box>
+                        <AlertTitle>Approved</AlertTitle>
+                        <AlertDescription>
+                          Approved on {new Date(application.approvedAt).toLocaleDateString()} at {new Date(application.approvedAt).toLocaleTimeString()}
+                          {application.approvedBy && ` by ${application.approvedBy}`}
+                        </AlertDescription>
+                      </Box>
+                    </Alert>
+                  )}
+
+                  {application.status === 'rejected' && application.reviewedAt && (
+                    <Alert status="error" size="sm">
+                      <AlertIcon />
+                      <Box>
+                        <AlertTitle>Rejected</AlertTitle>
+                        <AlertDescription>
+                          Rejected on {new Date(application.reviewedAt).toLocaleDateString()} at {new Date(application.reviewedAt).toLocaleTimeString()}
+                          {application.reviewedBy && ` by ${application.reviewedBy}`}
+                        </AlertDescription>
+                      </Box>
+                    </Alert>
+                  )}
 
                   <Divider />
 
@@ -598,6 +641,61 @@ export default function DriverApplicationsPage() {
                           </Card>
                         </Grid>
                       </VStack>
+
+                      {/* Approval Information */}
+                      {(selectedApplication.status === 'approved' || selectedApplication.status === 'rejected') && (
+                        <>
+                          <Divider />
+                          <VStack align="start" spacing={4}>
+                            <Heading size="sm" color="white" borderBottom="2px solid" borderColor="neon.500" pb={2}>
+                              Review Information
+                            </Heading>
+                            <Card bg="dark.900" borderColor="neon.500" border="1px solid" w="full">
+                              <CardBody>
+                                <VStack spacing={3} align="start">
+                                  <HStack>
+                                    <Icon as={selectedApplication.status === 'approved' ? FiCheck : FiX} 
+                                          color={selectedApplication.status === 'approved' ? 'green.500' : 'red.500'} />
+                                    <Text fontWeight="bold" color="white">
+                                      {selectedApplication.status === 'approved' ? 'Approved' : 'Rejected'}
+                                    </Text>
+                                  </HStack>
+                                  
+                                  {selectedApplication.status === 'approved' && selectedApplication.approvedAt && (
+                                    <Text color="text.secondary">
+                                      <strong>Approved on:</strong> {new Date(selectedApplication.approvedAt).toLocaleDateString()} at {new Date(selectedApplication.approvedAt).toLocaleTimeString()}
+                                    </Text>
+                                  )}
+                                  
+                                  {selectedApplication.status === 'rejected' && selectedApplication.reviewedAt && (
+                                    <Text color="text.secondary">
+                                      <strong>Rejected on:</strong> {new Date(selectedApplication.reviewedAt).toLocaleDateString()} at {new Date(selectedApplication.reviewedAt).toLocaleTimeString()}
+                                    </Text>
+                                  )}
+                                  
+                                  {selectedApplication.approvedBy && (
+                                    <Text color="text.secondary">
+                                      <strong>Approved by:</strong> {selectedApplication.approvedBy}
+                                    </Text>
+                                  )}
+                                  
+                                  {selectedApplication.reviewedBy && selectedApplication.status === 'rejected' && (
+                                    <Text color="text.secondary">
+                                      <strong>Rejected by:</strong> {selectedApplication.reviewedBy}
+                                    </Text>
+                                  )}
+                                  
+                                  {selectedApplication.reviewNotes && (
+                                    <Text color="text.secondary">
+                                      <strong>Notes:</strong> {selectedApplication.reviewNotes}
+                                    </Text>
+                                  )}
+                                </VStack>
+                              </CardBody>
+                            </Card>
+                          </VStack>
+                        </>
+                      )}
                     </VStack>
                   </TabPanel>
 

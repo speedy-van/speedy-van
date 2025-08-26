@@ -116,8 +116,35 @@ export default function FinanceClient({ data }: FinanceClientProps) {
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const formatCurrency = (totalGBP: number) => {
+  const formatCurrency = (totalGBP: number | null | undefined) => {
+    if (totalGBP == null) return '£0.00';
     return `£${(totalGBP / 100).toFixed(2)}`;
+  };
+
+  const formatDate = (dateString: string | Date | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
+
+  const formatRelativeTime = (dateString: string | Date | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return 'N/A';
+    }
   };
 
   const handleIssueRefund = async (bookingId: string) => {
@@ -300,11 +327,11 @@ export default function FinanceClient({ data }: FinanceClientProps) {
                     {data.recentInvoices.slice(0, 5).map(invoice => (
                       <Flex key={invoice.id} justify="space-between" align="center" p={3} border="1px" borderColor="gray.200" borderRadius="md">
                         <VStack align="start" spacing={1}>
-                          <Text fontWeight="bold">#{invoice.invoiceNumber}</Text>
-                          <Text fontSize="sm" color="gray.600">{invoice.customer.name}</Text>
-                          <Text fontSize="sm" color="gray.500">
-                            {invoice.paidAt ? new Date(invoice.paidAt).toLocaleDateString() : 'N/A'}
-                          </Text>
+                          <Text fontWeight="bold">#{invoice.invoiceNumber || 'N/A'}</Text>
+                          <Text fontSize="sm" color="gray.600">{invoice.customer?.name || 'Unknown Customer'}</Text>
+                                                     <Text fontSize="sm" color="gray.500">
+                             {formatDate(invoice.paidAt)}
+                           </Text>
                         </VStack>
                         <VStack align="end" spacing={1}>
                           <Text fontWeight="bold">{formatCurrency(invoice.totalGBP)}</Text>
@@ -408,17 +435,17 @@ export default function FinanceClient({ data }: FinanceClientProps) {
                     {data.recentInvoices.map(invoice => (
                       <Tr key={invoice.id}>
                         <Td>
-                          <Text fontWeight="bold">#{invoice.invoiceNumber}</Text>
+                          <Text fontWeight="bold">#{invoice.invoiceNumber || 'N/A'}</Text>
                         </Td>
-                        <Td>{invoice.customer.name}</Td>
-                        <Td>#{invoice.reference}</Td>
+                        <Td>{invoice.customer?.name || 'Unknown Customer'}</Td>
+                        <Td>#{invoice.reference || 'N/A'}</Td>
                         <Td>{formatCurrency(invoice.totalGBP)}</Td>
                         <Td>
                           <Badge colorScheme="green">Paid</Badge>
                         </Td>
-                        <Td>
-                          {invoice.paidAt ? new Date(invoice.paidAt).toLocaleDateString() : 'N/A'}
-                        </Td>
+                                                 <Td>
+                           {formatDate(invoice.paidAt)}
+                         </Td>
                         <Td>
                           <HStack spacing={2}>
                             <IconButton
@@ -477,17 +504,17 @@ export default function FinanceClient({ data }: FinanceClientProps) {
                   <Tbody>
                     {data.pendingRefunds.map(refund => (
                       <Tr key={refund.id}>
-                        <Td>#{refund.reference}</Td>
-                        <Td>{refund.customer.name}</Td>
+                        <Td>#{refund.reference || 'N/A'}</Td>
+                        <Td>{refund.customer?.name || 'Unknown Customer'}</Td>
                         <Td>{formatCurrency(refund.totalGBP)}</Td>
                         <Td>{formatCurrency(refund.totalGBP)}</Td>
                         <Td>Customer request</Td>
                         <Td>
                           <Badge colorScheme="orange">Processing</Badge>
                         </Td>
-                        <Td>
-                          {new Date(refund.updatedAt).toLocaleDateString()}
-                        </Td>
+                                                 <Td>
+                           {formatDate(refund.updatedAt)}
+                         </Td>
                         <Td>
                           <HStack spacing={2}>
                             <IconButton
@@ -538,20 +565,20 @@ export default function FinanceClient({ data }: FinanceClientProps) {
                   <Tbody>
                     {data.driverPayouts.map(payout => (
                       <Tr key={payout.id}>
-                        <Td>{payout.driver.user.name}</Td>
+                        <Td>{payout.driver?.user?.name || 'Unknown Driver'}</Td>
                         <Td>{formatCurrency(payout.totalAmountPence)}</Td>
-                        <Td>{payout.earnings.length} jobs</Td>
+                        <Td>{payout.earnings?.length || 0} jobs</Td>
                         <Td>
                           <Badge colorScheme={
                             payout.status === 'pending' ? 'yellow' : 
                             payout.status === 'processing' ? 'blue' : 'green'
                           }>
-                            {payout.status}
+                            {payout.status || 'unknown'}
                           </Badge>
                         </Td>
-                        <Td>
-                          {formatDistanceToNow(new Date(payout.createdAt), { addSuffix: true })}
-                        </Td>
+                                                 <Td>
+                           {formatRelativeTime(payout.createdAt)}
+                         </Td>
                         <Td>
                           <HStack spacing={2}>
                             <IconButton
@@ -560,7 +587,7 @@ export default function FinanceClient({ data }: FinanceClientProps) {
                               size="sm"
                               variant="ghost"
                             />
-                            {payout.status === 'pending' && (
+                            {(payout.status === 'pending') && (
                               <IconButton
                                 aria-label="Process payout"
                                 icon={<FaCheck />}

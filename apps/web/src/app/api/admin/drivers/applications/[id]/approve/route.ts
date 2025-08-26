@@ -72,7 +72,7 @@ export async function POST(
 
     // Start a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
-      // Update application status
+      // Update application status with approval details
       const updatedApplication = await tx.driverApplication.update({
         where: { id: applicationId },
         data: {
@@ -204,6 +204,7 @@ export async function POST(
         email: application.email,
         status: 'approved',
         approvedAt: new Date().toISOString(),
+        approvedBy: session.user.name || session.user.email,
         driverRecordCreated: true,
       }
     });
