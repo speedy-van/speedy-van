@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------------
 
 import { getItemPrice } from './item-catalog';
+import { getCurrentPricingSettings } from './settings';
 
 // ===== Types =================================================================
 
@@ -44,6 +45,7 @@ export interface PricingBreakdown {
   subtotal: number;
   vat: number;
   total: number;
+  priceAdjustment: number; // Percentage adjustment applied (0 if none)
 }
 
 export interface PricingResult {
@@ -125,8 +127,12 @@ function calculateStairsCost(pickup?: AddressMeta, dropoff?: AddressMeta): numbe
 
 // ===== Engine ================================================================
 
-export function computeQuote(input: PricingInputs): PricingResult {
+export async function computeQuote(input: PricingInputs): Promise<PricingResult> {
   console.log('Pricing engine - computeQuote called with inputs:', input);
+  
+  // Get current pricing settings
+  const pricingSettings = await getCurrentPricingSettings();
+  console.log('Pricing engine - pricing settings:', pricingSettings);
   
   const miles = Math.max(0, input.miles);
   console.log('Pricing engine - miles:', miles);
@@ -154,10 +160,18 @@ export function computeQuote(input: PricingInputs): PricingResult {
   
   // Subtotal
   const subtotal = baseRate + distanceCost + itemsCost + workersCost + stairsCost + extrasCost;
-  console.log('Pricing engine - subtotal before clamp:', subtotal);
+  console.log('Pricing engine - subtotal before adjustment:', subtotal);
+  
+  // Apply pricing adjustment if settings are active
+  let adjustedSubtotal = subtotal;
+  if (pricingSettings.isActive && pricingSettings.customerPriceAdjustment !== 0) {
+    const adjustmentMultiplier = 1 + pricingSettings.customerPriceAdjustment;
+    adjustedSubtotal = subtotal * adjustmentMultiplier;
+    console.log('Pricing engine - applied adjustment:', pricingSettings.customerPriceAdjustment * 100 + '%', 'new subtotal:', adjustedSubtotal);
+  }
   
   // Apply minimum/maximum boundaries
-  const clampedSubtotal = clamp(subtotal, MINIMUM_PRICE_GBP, MAXIMUM_PRICE_GBP);
+  const clampedSubtotal = clamp(adjustedSubtotal, MINIMUM_PRICE_GBP, MAXIMUM_PRICE_GBP);
   console.log('Pricing engine - clampedSubtotal:', clampedSubtotal);
   
   // VAT
@@ -180,6 +194,9 @@ export function computeQuote(input: PricingInputs): PricingResult {
       subtotal: Math.round(clampedSubtotal * 100) / 100,
       vat: Math.round(vat * 100) / 100,
       total: Math.round(total * 100) / 100,
+      priceAdjustment: pricingSettings.isActive && pricingSettings.customerPriceAdjustment !== 0 
+        ? Math.round(pricingSettings.customerPriceAdjustment * 100) / 100 
+        : 0,
     },
   };
   

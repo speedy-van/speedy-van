@@ -20,15 +20,19 @@ export function PricingCalculator() {
 
   // Compute quote when form data changes
   useEffect(() => {
-    try {
-      setError(null);
-      const result = computeQuote(formData);
-      console.log('Calculated quote:', result); // Debug log
-      setQuote(result);
-    } catch (error) {
-      console.error('Pricing calculation error:', error);
-      setError('Error calculating price');
-    }
+    const calculateQuote = async () => {
+      try {
+        setError(null);
+        const result = await computeQuote(formData);
+        console.log('Calculated quote:', result); // Debug log
+        setQuote(result);
+      } catch (error) {
+        console.error('Pricing calculation error:', error);
+        setError('Error calculating price');
+      }
+    };
+    
+    calculateQuote();
   }, [formData]);
 
   const updateItem = (index: number, field: 'key' | 'quantity', value: string | number) => {

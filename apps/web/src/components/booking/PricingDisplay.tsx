@@ -110,7 +110,7 @@ export default function PricingDisplay({
           return;
         }
 
-        const result = computeQuote(inputs);
+        const result = await computeQuote(inputs);
         console.log('PricingDisplay - computed result:', result);
         setQuote(result);
         
@@ -127,7 +127,7 @@ export default function PricingDisplay({
       }
     };
 
-    calculateQuote();
+    calculateQuote().catch(console.error);
   }, [bookingData]);
 
   return (

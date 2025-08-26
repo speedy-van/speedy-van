@@ -80,6 +80,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
       width={width} 
       height={height} 
       minHeight={typeof height === 'number' ? `${height}px` : height}
+      minWidth={typeof width === 'number' ? `${width}px` : width}
       className="chart-container"
       position="relative"
       {...boxProps}
@@ -90,6 +91,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
           width="100%" 
           height="100%" 
           minHeight={typeof height === 'number' ? height : undefined}
+          minWidth={typeof width === 'number' ? width : undefined}
         >
           {children}
         </ResponsiveContainer>

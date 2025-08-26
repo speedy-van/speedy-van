@@ -1,80 +1,78 @@
 'use client';
-import { useEffect, useState } from "react";
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
-import { Box, Heading, Text, SimpleGrid, Card, CardBody, CardHeader, Button, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Flex, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, useColorModeValue } from "@chakra-ui/react";
-import { Calendar, TrendingUp, Users, Package, DollarSign, Clock, AlertTriangle, CheckCircle } from "lucide-react";
-import { ChartContainer } from "@/components/ChartContainer";
 
-interface AnalyticsData {
-  kpis: {
-    totalRevenue30d: number;
-    totalRevenue7d: number;
-    totalRevenue24h: number;
-    aov30d: number;
-    aov7d: number;
-    conversionRate: number;
-    onTimePickup: number;
-    onTimeDelivery: number;
-    avgResponseTime: number;
-    openIncidents: number;
-    activeDrivers: number;
-    totalBookings: number;
-    completedBookings: number;
-    cancelledBookings: number;
-    byStatus: Record<string, number>;
-  };
-  series: Array<{
-    day: string;
-    revenue: number;
-    Booking: number;
-    completed: number;
-    cancelled: number;
-  }>;
-  driverMetrics: Array<{
-    driverId: string;
-    driverName: string;
-    completedJobs: number;
-    avgRating: number;
-    earnings: number;
-    onTimeRate: number;
-  }>;
-  cancellationReasons: Array<{
-    reason: string;
-    count: number;
-    percentage: number;
-  }>;
-  serviceAreas: Array<{
-    area: string;
-    Booking: number;
-    revenue: number;
-    avgRating: number;
-  }>;
-  realTimeMetrics: {
-    jobsInProgress: number;
-    latePickups: number;
-    lateDeliveries: number;
-    pendingAssignments: number;
-  };
-}
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Heading,
+  Text,
+  SimpleGrid,
+  Card,
+  CardHeader,
+  CardBody,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Button,
+  Flex,
+  Alert,
+  AlertIcon,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  useColorModeValue,
+} from '@chakra-ui/react';
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
+// Chart container component for consistent sizing
+const ChartContainer = ({ children, height = 400, minHeight = 400 }: { children: React.ReactElement; height?: number; minHeight?: number }) => (
+  <Box height={height} minHeight={minHeight} width="100%">
+    <ResponsiveContainer width="100%" height="100%">
+      {children}
+    </ResponsiveContainer>
+  </Box>
+);
 
 export default function Analytics() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
 
-  // Use neon dark theme colors
-  const bgColor = 'bg.surface';
-  const borderColor = 'border.primary';
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const response = await fetch(`/api/admin/analytics?range=${timeRange}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const analyticsData = await response.json();
         setData(analyticsData);
       } catch (error) {
         console.error('Failed to fetch analytics data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch analytics data');
       } finally {
         setLoading(false);
       }
@@ -86,7 +84,7 @@ export default function Analytics() {
     return () => clearInterval(interval);
   }, [timeRange]);
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <Box p={6}>
         <Box>
@@ -101,7 +99,66 @@ export default function Analytics() {
     );
   }
 
-  const { kpis, series, driverMetrics, cancellationReasons, serviceAreas, realTimeMetrics } = data;
+  if (error) {
+    return (
+      <Box p={6}>
+        <Alert status="error" mb={6}>
+          <AlertIcon />
+          Failed to load analytics data: {error}
+        </Alert>
+        <Button onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!data) {
+    return (
+      <Box p={6}>
+        <Alert status="warning">
+          <AlertIcon />
+          No analytics data available
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Extract data with safe defaults
+  const { 
+    kpis = {}, 
+    series = [], 
+    driverMetrics = [], 
+    cancellationReasons = [], 
+    serviceAreas = [], 
+    realTimeMetrics = {} 
+  } = data;
+
+  // Safe access to KPI values with defaults
+  const safeKpis = {
+    totalRevenue30d: kpis.totalRevenue30d || 0,
+    totalRevenue7d: kpis.totalRevenue7d || 0,
+    totalRevenue24h: kpis.totalRevenue24h || 0,
+    aov30d: kpis.aov30d || 0,
+    aov7d: kpis.aov7d || 0,
+    conversionRate: kpis.conversionRate || 0,
+    onTimePickup: kpis.onTimePickup || 0,
+    onTimeDelivery: kpis.onTimeDelivery || 0,
+    avgResponseTime: kpis.avgResponseTime || 0,
+    openIncidents: kpis.openIncidents || 0,
+    activeDrivers: kpis.activeDrivers || 0,
+    totalBookings: kpis.totalBookings || 0,
+    completedBookings: kpis.completedBookings || 0,
+    cancelledBookings: kpis.cancelledBookings || 0,
+    byStatus: kpis.byStatus || {},
+  };
+
+  const safeRealTimeMetrics = {
+    jobsInProgress: realTimeMetrics.jobsInProgress || 0,
+    latePickups: realTimeMetrics.latePickups || 0,
+    lateDeliveries: realTimeMetrics.lateDeliveries || 0,
+    pendingAssignments: realTimeMetrics.pendingAssignments || 0,
+  };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -143,48 +200,10 @@ export default function Analytics() {
         <Card bg={bgColor} borderColor={borderColor}>
           <CardBody>
             <Stat>
-              <StatLabel>Total Revenue</StatLabel>
-              <StatNumber>£{kpis.totalRevenue30d.toFixed(2)}</StatNumber>
+              <StatLabel>Total Revenue (30d)</StatLabel>
+              <StatNumber>£{safeKpis.totalRevenue30d.toLocaleString()}</StatNumber>
               <StatHelpText>
-                <StatArrow type="increase" />
-                {((kpis.totalRevenue7d / kpis.totalRevenue30d) * 100 - 100).toFixed(1)}% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel>Average Order Value</StatLabel>
-              <StatNumber>£{kpis.aov30d.toFixed(2)}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                {((kpis.aov7d / kpis.aov30d) * 100 - 100).toFixed(1)}% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel>Active Jobs</StatLabel>
-              <StatNumber>{realTimeMetrics.jobsInProgress}</StatNumber>
-              <StatHelpText>
-                {realTimeMetrics.pendingAssignments} pending assignment
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel>On-Time Performance</StatLabel>
-              <StatNumber>{kpis.onTimePickup}%</StatNumber>
-              <StatHelpText>
-                Pickup: {kpis.onTimePickup}% | Delivery: {kpis.onTimeDelivery}%
+                AOV: £{safeKpis.aov30d.toFixed(2)}
               </StatHelpText>
             </Stat>
           </CardBody>
@@ -194,9 +213,21 @@ export default function Analytics() {
           <CardBody>
             <Stat>
               <StatLabel>Active Drivers</StatLabel>
-              <StatNumber>{kpis.activeDrivers}</StatNumber>
+              <StatNumber>{safeKpis.activeDrivers}</StatNumber>
               <StatHelpText>
-                {realTimeMetrics.latePickups} late pickups, {realTimeMetrics.lateDeliveries} late deliveries
+                {safeRealTimeMetrics.jobsInProgress} jobs in progress
+              </StatHelpText>
+            </Stat>
+          </CardBody>
+        </Card>
+
+        <Card bg={bgColor} borderColor={borderColor}>
+          <CardBody>
+            <Stat>
+              <StatLabel>On-Time Performance</StatLabel>
+              <StatNumber>{safeKpis.onTimePickup}%</StatNumber>
+              <StatHelpText>
+                {safeRealTimeMetrics.latePickups} late pickups, {safeRealTimeMetrics.lateDeliveries} late deliveries
               </StatHelpText>
             </Stat>
           </CardBody>
@@ -206,9 +237,9 @@ export default function Analytics() {
           <CardBody>
             <Stat>
               <StatLabel>Conversion Rate</StatLabel>
-              <StatNumber>{kpis.conversionRate.toFixed(1)}%</StatNumber>
+              <StatNumber>{safeKpis.conversionRate.toFixed(1)}%</StatNumber>
               <StatHelpText>
-                {kpis.totalBookings} total bookings
+                {safeKpis.totalBookings} total bookings
               </StatHelpText>
             </Stat>
           </CardBody>
@@ -218,9 +249,9 @@ export default function Analytics() {
           <CardBody>
             <Stat>
               <StatLabel>Open Incidents</StatLabel>
-              <StatNumber>{kpis.openIncidents}</StatNumber>
+              <StatNumber>{safeKpis.openIncidents}</StatNumber>
               <StatHelpText>
-                Avg response time: {kpis.avgResponseTime}min
+                Avg response time: {safeKpis.avgResponseTime}min
               </StatHelpText>
             </Stat>
           </CardBody>
@@ -231,10 +262,10 @@ export default function Analytics() {
             <Stat>
               <StatLabel>Completion Rate</StatLabel>
               <StatNumber>
-                {((kpis.completedBookings / kpis.totalBookings) * 100).toFixed(1)}%
+                {safeKpis.totalBookings > 0 ? ((safeKpis.completedBookings / safeKpis.totalBookings) * 100).toFixed(1) : '0.0'}%
               </StatNumber>
               <StatHelpText>
-                {kpis.completedBookings} completed, {kpis.cancelledBookings} cancelled
+                {safeKpis.completedBookings} completed, {safeKpis.cancelledBookings} cancelled
               </StatHelpText>
             </Stat>
           </CardBody>
@@ -258,7 +289,8 @@ export default function Analytics() {
                 <Heading size="md">Revenue Trends</Heading>
               </CardHeader>
               <CardBody>
-                                  <ChartContainer height={400}>
+                {series.length > 0 ? (
+                  <ChartContainer height={400} minHeight={400}>
                     <AreaChart data={series}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="day" />
@@ -267,6 +299,11 @@ export default function Analytics() {
                       <Area type="monotone" dataKey="revenue" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} />
                     </AreaChart>
                   </ChartContainer>
+                ) : (
+                  <Box textAlign="center" py={8}>
+                    <Text color="gray.500">No revenue data available for the selected time range</Text>
+                  </Box>
+                )}
               </CardBody>
             </Card>
           </TabPanel>
@@ -277,16 +314,22 @@ export default function Analytics() {
                 <Heading size="md">Booking Activity</Heading>
               </CardHeader>
               <CardBody>
-                                  <ChartContainer height={400}>
+                {series.length > 0 ? (
+                  <ChartContainer height={400} minHeight={400}>
                     <BarChart data={series}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="day" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="Booking" fill="#8884d8" />
+                      <Bar dataKey="bookings" fill="#8884d8" />
                       <Bar dataKey="completed" fill="#82ca9d" />
                     </BarChart>
                   </ChartContainer>
+                ) : (
+                  <Box textAlign="center" py={8}>
+                    <Text color="gray.500">No booking data available for the selected time range</Text>
+                  </Box>
+                )}
               </CardBody>
             </Card>
           </TabPanel>
@@ -297,63 +340,21 @@ export default function Analytics() {
                 <Heading size="md">Driver Performance</Heading>
               </CardHeader>
               <CardBody>
-                <Box display="flex" flexDirection="column" gap={4}>
-                  {driverMetrics.slice(0, 10).map((driver) => (
-                    <Flex key={driver.driverId} justify="space-between" align="center" p={4} border="1px" borderColor={borderColor} rounded="lg">
-                      <Box>
-                        <Text fontWeight="bold">{driver.driverName}</Text>
-                        <Text fontSize="sm" color="gray.600">
-                          {driver.completedJobs} jobs • {driver.avgRating.toFixed(1)}★ rating
-                        </Text>
-                      </Box>
-                      <Box textAlign="right">
-                        <Text fontWeight="bold">£{driver.earnings.toFixed(2)}</Text>
-                        <Text fontSize="sm" color="gray.600">{driver.onTimeRate}% on-time</Text>
-                      </Box>
-                    </Flex>
-                  ))}
-                </Box>
-              </CardBody>
-            </Card>
-          </TabPanel>
-
-          <TabPanel>
-            <Card bg={bgColor} borderColor={borderColor}>
-              <CardHeader>
-                <Heading size="md">Cancellation Reasons</Heading>
-              </CardHeader>
-              <CardBody>
-                <Flex gap={6}>
-                                      <ChartContainer height={300} flex="1">
-                      <PieChart>
-                        <Pie
-                          data={cancellationReasons}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="count"
-                        >
-                          {cancellationReasons.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ChartContainer>
-                  <Box flex="1">
-                    <Box display="flex" flexDirection="column" gap={2}>
-                      {cancellationReasons.map((reason, index) => (
-                        <Flex key={reason.reason} justify="space-between" align="center" p={2} border="1px" borderColor={borderColor} rounded="md">
-                          <Text fontSize="sm">{reason.reason}</Text>
-                          <Badge colorScheme="blue">{reason.count} ({reason.percentage.toFixed(1)}%)</Badge>
-                        </Flex>
-                      ))}
-                    </Box>
+                {driverMetrics.length > 0 ? (
+                  <ChartContainer height={400} minHeight={400}>
+                    <BarChart data={driverMetrics}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="driverName" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="earnings" fill="#8884d8" />
+                    </BarChart>
+                  </ChartContainer>
+                ) : (
+                  <Box textAlign="center" py={8}>
+                    <Text color="gray.500">No driver performance data available</Text>
                   </Box>
-                </Flex>
+                )}
               </CardBody>
             </Card>
           </TabPanel>
@@ -361,27 +362,59 @@ export default function Analytics() {
           <TabPanel>
             <Card bg={bgColor} borderColor={borderColor}>
               <CardHeader>
-                <Heading size="md">Service Area Performance</Heading>
+                <Heading size="md">Cancellation Analysis</Heading>
               </CardHeader>
               <CardBody>
-                <Box display="flex" flexDirection="column" gap={4}>
-                  {serviceAreas.map((area) => (
-                    <Flex key={area.area} justify="space-between" align="center" p={4} border="1px" borderColor={borderColor} rounded="lg">
-                      <Box>
-                        <Text fontWeight="bold">{area.area}</Text>
-                        <Text fontSize="sm" color="gray.600">
-                          {area.Booking} bookings • {area.avgRating.toFixed(1)}★ rating
-                        </Text>
-                      </Box>
-                      <Box textAlign="right">
-                        <Text fontWeight="bold">£{area.revenue.toFixed(2)}</Text>
-                        <Text fontSize="sm" color="gray.600">
-                          £{(area.revenue / area.Booking).toFixed(2)} avg per booking
-                        </Text>
-                      </Box>
-                    </Flex>
-                  ))}
-                </Box>
+                {cancellationReasons.length > 0 ? (
+                  <ChartContainer height={400} minHeight={400}>
+                    <PieChart>
+                      <Pie
+                        data={cancellationReasons}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ reason, percentage }) => `${reason}: ${percentage}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {cancellationReasons.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ChartContainer>
+                ) : (
+                  <Box textAlign="center" py={8}>
+                    <Text color="gray.500">No cancellation data available</Text>
+                  </Box>
+                )}
+              </CardBody>
+            </Card>
+          </TabPanel>
+
+          <TabPanel>
+            <Card bg={bgColor} borderColor={borderColor}>
+              <CardHeader>
+                <Heading size="md">Service Areas</Heading>
+              </CardHeader>
+              <CardBody>
+                {serviceAreas.length > 0 ? (
+                  <ChartContainer height={400} minHeight={400}>
+                    <BarChart data={serviceAreas}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="area" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="revenue" fill="#8884d8" />
+                    </BarChart>
+                  </ChartContainer>
+                ) : (
+                  <Box textAlign="center" py={8}>
+                    <Text color="gray.500">No service area data available</Text>
+                  </Box>
+                )}
               </CardBody>
             </Card>
           </TabPanel>

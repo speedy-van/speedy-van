@@ -114,6 +114,7 @@ const navigationItems: NavItem[] = [
     icon: FiSettings,
     children: [
       { label: 'General', href: '/admin/settings', icon: FiSettings },
+      { label: 'Pricing', href: '/admin/settings/pricing', icon: FiDollarSign },
       { label: 'Integrations', href: '/admin/settings/integrations', icon: FiSettings },
       { label: 'Security', href: '/admin/settings/security', icon: FiShield },
       { label: 'Legal', href: '/admin/settings/legal', icon: FiFileText }

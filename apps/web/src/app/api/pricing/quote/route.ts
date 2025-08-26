@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     // For now, we trust the provided payload (already validated).
     const inputs = parsed.data as PricingInputs;
 
-    const result = await withTimeout(Promise.resolve(computeQuote(inputs)), 12_000);
+    const result = await withTimeout(computeQuote(inputs), 12_000);
 
     return NextResponse.json(
       { totalGBP: result.totalGBP, breakdown: result.breakdown },

@@ -35,6 +35,8 @@ model User {
   driver                  Driver?
   driverApplication       DriverApplication?
   supportTickets          SupportTicket[]
+  pricingSettingsCreated  PricingSettings[] @relation("PricingSettingsCreatedBy")
+  pricingSettingsUpdated  PricingSettings[] @relation("PricingSettingsUpdatedBy")
 
   @@index([role])
 }
@@ -1218,6 +1220,24 @@ enum RefundStatus {
   completed
   failed
   cancelled
+}
+
+model PricingSettings {
+  id                    String   @id @default(cuid())
+  customerPriceAdjustment Decimal @db.Decimal(5, 4) @default(0) // Percentage adjustment for customer pricing (-1.00 to 1.00)
+  driverRateMultiplier  Decimal @db.Decimal(5, 4) @default(1) // Multiplier for driver earnings (0.50 to 2.00)
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  createdBy             String
+  updatedBy             String?
+  
+  // Relations
+  createdByUser         User     @relation("PricingSettingsCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser         User?    @relation("PricingSettingsUpdatedBy", fields: [updatedBy], references: [id])
+  
+  @@index([isActive])
+  @@index([createdAt])
 }
 
 

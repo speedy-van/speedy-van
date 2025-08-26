@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentPricingSettings } from "@/lib/pricing/settings";
 
 export interface EarningsCalculation {
   baseAmountPence: number;
@@ -30,6 +31,9 @@ export async function calculateDriverEarnings(assignmentId: string): Promise<Ear
 
   const booking = assignment.Booking;
   
+  // Get current pricing settings for driver rate multiplier
+  const pricingSettings = await getCurrentPricingSettings();
+  
   // Base calculation - simplified
   // For now, using a simple calculation based on distance and time
   const baseRatePerMile = 2.50; // £2.50 per mile
@@ -37,13 +41,18 @@ export async function calculateDriverEarnings(assignmentId: string): Promise<Ear
   const distanceMiles = booking.baseDistanceMiles || 0;
   const durationHours = (booking.estimatedDurationMinutes || 0) / 60;
   
-  // Base amount calculation
+  // Apply driver rate multiplier if settings are active
+  const rateMultiplier = pricingSettings.isActive ? pricingSettings.driverRateMultiplier : 1;
+  const adjustedRatePerMile = baseRatePerMile * rateMultiplier;
+  const adjustedRatePerHour = baseRatePerHour * rateMultiplier;
+  
+  // Base amount calculation with adjusted rates
   let baseAmountPence = Math.round(
-    (distanceMiles * baseRatePerMile + durationHours * baseRatePerHour) * 100
+    (distanceMiles * adjustedRatePerMile + durationHours * adjustedRatePerHour) * 100
   );
   
-  // Minimum fare
-  const minFarePence = 1500; // £15 minimum
+  // Minimum fare (also adjusted by multiplier)
+  const minFarePence = Math.round(1500 * rateMultiplier); // £15 minimum * multiplier
   baseAmountPence = Math.max(baseAmountPence, minFarePence);
   
   // Additional earnings (simplified)

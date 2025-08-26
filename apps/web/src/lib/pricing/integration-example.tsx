@@ -30,13 +30,17 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
 
   // Compute quote when form data changes
   useEffect(() => {
-    try {
-      const result = computeQuote(formData);
-      setQuote(result);
-      onQuoteUpdate?.(result);
-    } catch (error) {
-      console.error('Pricing calculation error:', error);
-    }
+    const calculateQuote = async () => {
+      try {
+        const result = await computeQuote(formData);
+        setQuote(result);
+        onQuoteUpdate?.(result);
+      } catch (error) {
+        console.error('Pricing calculation error:', error);
+      }
+    };
+    
+    calculateQuote();
   }, [formData, onQuoteUpdate]);
 
   // API-based quote (alternative approach)
