@@ -88,8 +88,8 @@ function normalizeSuggestions(data: any): Suggestion[] {
       const postcode = f?.properties?.postcode || getContext('postcode') || "";
       const city = getContext('place') || getContext('locality') || getContext('district') || 
                    f?.properties?.place || "";
-      const number = f?.address || "";
-      const street = f?.text || "";
+      const number = f.address || "";
+      const street = f.text || "";
       const line1 = [number, street].filter(Boolean).join(' ').trim() || label.split(",")[0] || label;
 
       return {
@@ -117,28 +117,36 @@ export default function AddressAutocomplete({
   disabled = false,
   country = "GB",
   limit = 6,
-  minLength = 3,
-  debounceMs = 250,
+  minLength = 1, // Allow single character searches for postcodes
+  debounceMs = 100,
   ...unknownProps // Capture any unknown props to prevent them from reaching the DOM
 }: AddressAutocompleteProps) {
-  console.log('🎯 [AddressAutocomplete] Component rendered with props:', { value, onChange, onSelect, placeholder, country, limit, minLength, debounceMs });
-  console.log('🔍 [AddressAutocomplete] This should appear in console!');
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<Suggestion[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [searchAttempted, setSearchAttempted] = React.useState(false);
   const isSelectingRef = React.useRef(false);
+  const lastSelectedIdRef = React.useRef<string | null>(null);
   const ctrlRef = React.useRef<AbortController | null>(null);
 
   // Fetch suggestions
   React.useEffect(() => {
     if (!value || value.length < minLength || disabled || isSelectingRef.current) {
       if (isSelectingRef.current) {
-        console.log('[AddressAutocomplete] API call blocked - selecting in progress');
+        // API call blocked - selecting in progress
+        console.log('[AddressAutocomplete] API call blocked - selection in progress');
       }
       setItems([]);
       setOpen(false);
+      setSearchAttempted(false);
       return;
+    }
+    
+    // Debug postcode detection
+    const isPostcodeQuery = /^[A-Z]{1,2}[0-9]/i.test(value);
+    if (isPostcodeQuery) {
+      console.log('[AddressAutocomplete] Postcode query detected:', value);
     }
 
     const c = new AbortController();
@@ -148,13 +156,14 @@ export default function AddressAutocomplete({
     const t = setTimeout(async () => {
       try {
         setLoading(true);
+        setSearchAttempted(true);
         const url = `/api/places/suggest?q=${encodeURIComponent(value)}&country=${country}&limit=${limit}`;
-        console.log('[AddressAutocomplete] Making API call to:', url);
-        console.log('[AddressAutocomplete] Signal aborted:', c.signal.aborted);
+        
+        console.log('[AddressAutocomplete] Searching:', value, 'URL:', url);
         
         // Add timeout and better error handling
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout (reduced from 10)
         
         const res = await fetch(url, { 
           signal: controller.signal,
@@ -166,42 +175,30 @@ export default function AddressAutocomplete({
         
         clearTimeout(timeoutId);
         
-        console.log('[AddressAutocomplete] Response status:', res.status);
-        console.log('[AddressAutocomplete] Response ok:', res.ok);
-        console.log('[AddressAutocomplete] Response headers:', Object.fromEntries(res.headers.entries()));
-        
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
         
         const data = await res.json();
         
-        // Debug logging
-        console.log('[AddressAutocomplete] API response:', data);
+        console.log('[AddressAutocomplete] Raw response:', data);
         
         const normalizedItems = normalizeSuggestions(data);
+        
         console.log('[AddressAutocomplete] Normalized items:', normalizedItems);
         
         setItems(normalizedItems);
         setOpen(true);
       } catch (err) {
         console.error('[AddressAutocomplete] Fetch error:', err);
-        console.error('[AddressAutocomplete] Error details:', {
-          message: err?.message,
-          name: err?.name,
-          stack: err?.stack
-        });
         
-                 // Try fallback: direct Mapbox API call
-         try {
-           console.log('[AddressAutocomplete] Trying fallback Mapbox API...');
-           const fallbackUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?autocomplete=true&limit=${limit}&country=${country}&access_token=${MAPBOX_TOKEN}`;
-           console.log('[AddressAutocomplete] Fallback URL:', fallbackUrl);
+        // Try fallback: direct Mapbox API call
+        try {
+          const fallbackUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?autocomplete=true&limit=${limit}&country=${country}&access_token=${MAPBOX_TOKEN}`;
           
           const fallbackRes = await fetch(fallbackUrl);
           if (fallbackRes.ok) {
             const fallbackData = await fallbackRes.json();
-            console.log('[AddressAutocomplete] Fallback success:', fallbackData);
             const fallbackItems = normalizeSuggestions(fallbackData);
             setItems(fallbackItems);
             setOpen(true);
@@ -227,12 +224,19 @@ export default function AddressAutocomplete({
   const selectItem = (idx: number) => {
     const item = items[idx];
     if (!item || isSelectingRef.current) {
-      console.log('[AddressAutocomplete] Selection blocked - already selecting or no item');
+      // Selection blocked - already selecting or no item
       return; // Prevent double selection
     }
     
-    console.log('[AddressAutocomplete] Starting selection for item:', item.label);
+    // Check if this item was already selected recently
+    if (lastSelectedIdRef.current === item.id) {
+      console.log('[AddressAutocomplete] Item already selected recently:', item.id);
+      return; // Prevent duplicate selection
+    }
+    
+    // Set selection flag to prevent double selection
     isSelectingRef.current = true;
+    lastSelectedIdRef.current = item.id;
     
     // Ensure we have proper address data
     let address = item.address ?? { line1: item.label };
@@ -248,120 +252,150 @@ export default function AddressAutocomplete({
       const parts = item.label.split(',');
       if (parts.length > 1) {
         // Last part is usually postcode
-        address.postcode = address.postcode || parts[parts.length - 1].trim();
+        address.postcode = address.postcode || parts[parts.length - 1]?.trim() || "";
         // Middle parts are usually city
-        address.city = address.city || parts.slice(1, -1).join(',').trim();
+        address.city = address.city || parts.slice(1, -1).join(',').trim() || "";
       }
     }
     
-    const sel: AutocompleteSelection = {
+    const selection: AutocompleteSelection = {
       id: item.id,
       label: item.label,
       address,
-      coords: item.coords ?? null,
-      raw: item,
+      coords: item.coords,
+      raw: item
     };
     
-    // Debug logging
-    console.log('[AddressAutocomplete] Selected item:', sel);
+    console.log('AddressAutocomplete selecting:', selection);
     
-    // Close menu immediately to prevent any focus issues
-    setOpen(false);
-    setItems([]); // Clear items to prevent re-selection
-    setActiveIndex(0); // Reset active index
+    // Call onSelect with the prepared selection FIRST
+    onSelect(selection);
     
-    // Update value and trigger selection
+    // Then update the input value to show the selected address
     onChange(item.label);
-    onSelect(sel);
     
-    // Reset selection flag after a longer delay to prevent any race conditions
+    // Close the dropdown and clear items
+    setOpen(false);
+    setItems([]);
+    setActiveIndex(0);
+    
+    // Reset the selection flag after a short delay
     setTimeout(() => {
-      console.log('[AddressAutocomplete] Resetting selection flag');
       isSelectingRef.current = false;
-    }, 500); // Increased delay to prevent double selection
+    }, 100);
+    
+    // Reset the last selected ID after a longer delay
+    setTimeout(() => {
+      lastSelectedIdRef.current = null;
+    }, 500);
   };
 
+  const handleFocus = () => {
+    if (items.length > 0 && !isSelectingRef.current) {
+      // Focus - opening menu
+      setOpen(true);
+    } else {
+      // Focus blocked - no items or selecting
+    }
+  };
+
+  const handleBlur = () => {
+    // Only close if we're not in the middle of selecting
+    if (!isSelectingRef.current) {
+      // Blur - closing menu
+      setTimeout(() => {
+        setOpen(false);
+        setItems([]); // Clear items when losing focus
+      }, 150);
+    } else {
+      // Blur blocked - selecting in progress
+      console.log('[AddressAutocomplete] Blur blocked - selection in progress');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, items.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      selectItem(activeIndex);
+    }
+  };
+
+  // Filter out unknown props to prevent them from reaching the DOM
+  const inputProps = Object.fromEntries(
+    Object.entries(unknownProps).filter(([key]) => 
+      !['className', 'style', 'id', 'name', 'aria-label', 'aria-describedby'].includes(key)
+    )
+  );
+
   return (
-    <div 
-      style={{ position: "relative" }}
-      onClick={(e) => {
-        // Prevent clicks on the container from interfering with selection
-        e.stopPropagation();
-      }}
-    >
+    <div style={{ position: 'relative', width: '100%' }}>
       <input
-        // Only pass valid HTML attributes to the input element
-        // unknownProps (like leftIcon) are filtered out above
-        disabled={disabled}
+        {...inputProps}
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => {
-          if (items.length > 0 && !isSelectingRef.current) {
-            console.log('[AddressAutocomplete] Focus - opening menu');
-            setOpen(true);
-          } else {
-            console.log('[AddressAutocomplete] Focus blocked - no items or selecting');
-          }
-        }}
-        onBlur={() => {
-          // Only close if we're not in the middle of selecting
-          if (!isSelectingRef.current) {
-            console.log('[AddressAutocomplete] Blur - closing menu');
-            setTimeout(() => {
-              setOpen(false);
-              setItems([]); // Clear items when losing focus
-            }, 150);
-          } else {
-            console.log('[AddressAutocomplete] Blur blocked - selecting in progress');
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setActiveIndex((i) => Math.min(i + 1, items.length - 1));
-          } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setActiveIndex((i) => Math.max(i - 1, 0));
-          } else if (e.key === "Enter") {
-            e.preventDefault();
-            selectItem(activeIndex);
-          }
-        }}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className="address-input"
+        disabled={disabled}
       />
 
       {open && (
         <ul className="autocomplete-menu">
-          {loading && <li className="muted">Searching...</li>}
-          {!loading &&
-            items.map((s, i) => (
-              <li
-                key={s.id}
-                className={i === activeIndex ? "active" : ""}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  
-                  // Additional protection against double clicks
-                  if (isSelectingRef.current) {
-                    console.log('[AddressAutocomplete] Click blocked - already selecting');
-                    return;
-                  }
-                  
-                  console.log('[AddressAutocomplete] Clicking on item:', s.label);
-                  selectItem(i);
-                }}
-              >
-                <div>{s.label}</div>
-                {s.secondary && <small>{s.secondary}</small>}
-                {s.address?.line1 && s.address.line1 !== s.label && (
-                  <small style={{ color: '#666', display: 'block', marginTop: '2px' }}>
-                    📍 {s.address.line1}
-                  </small>
-                )}
-              </li>
-            ))}
+          {loading && (
+            <li className="loading-item">
+              <div className="loading-spinner"></div>
+              <span>Searching addresses...</span>
+            </li>
+          )}
+          {!loading && items.length === 0 && searchAttempted && (
+            <li className="no-results">
+              <span>No addresses found. Try a different search term.</span>
+            </li>
+          )}
+          {!loading && items.length > 0 && items.map((s, i) => (
+            <li
+              key={s.id}
+              className={i === activeIndex ? "active" : ""}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Additional protection against double clicks
+                if (isSelectingRef.current) {
+                  console.log('[AddressAutocomplete] Click blocked - already selecting');
+                  return;
+                }
+                
+                // Check if this item was already selected recently
+                if (lastSelectedIdRef.current === items[i].id) {
+                  console.log('[AddressAutocomplete] Click blocked - item already selected recently');
+                  return;
+                }
+                
+                console.log('[AddressAutocomplete] Clicking on item:', i, items[i]);
+                
+                // Clicking on item:
+                selectItem(i);
+              }}
+            >
+              <div className="suggestion-main">{s.label}</div>
+              {s.secondary && <small className="suggestion-secondary">{s.secondary}</small>}
+              {s.address?.line1 && s.address.line1 !== s.label && (
+                <small className="suggestion-detail">
+                  📍 {s.address.line1}
+                </small>
+              )}
+            </li>
+          ))}
         </ul>
       )}
 
@@ -389,6 +423,10 @@ export default function AddressAutocomplete({
         .address-input::placeholder {
           color: #A3A3A3;
         }
+        .address-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
         .autocomplete-menu {
           position: absolute;
           background: #1A1A1A;
@@ -406,6 +444,10 @@ export default function AddressAutocomplete({
           cursor: pointer;
           color: #E5E5E5;
           transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+          border-bottom: 1px solid #333;
+        }
+        .autocomplete-menu li:last-child {
+          border-bottom: none;
         }
         .autocomplete-menu li:hover {
           background: #333333;
@@ -417,9 +459,47 @@ export default function AddressAutocomplete({
         .autocomplete-menu li.active small {
           color: #0D0D0D;
         }
-        .muted {
+        .loading-item {
           color: #A3A3A3;
-          padding: 12px 16px;
+          padding: 16px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-style: italic;
+        }
+        .no-results {
+          color: #A3A3A3;
+          padding: 16px;
+          text-align: center;
+          font-style: italic;
+        }
+        .loading-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid #404040;
+          border-top: 2px solid #00C2FF;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .suggestion-main {
+          font-weight: 500;
+          margin-bottom: 4px;
+        }
+        .suggestion-secondary {
+          color: #A3A3A3;
+          display: block;
+          margin-top: 2px;
+          font-size: 12px;
+        }
+        .suggestion-detail {
+          color: #00C2FF;
+          display: block;
+          margin-top: 4px;
+          font-size: 11px;
         }
         .autocomplete-menu small {
           color: #A3A3A3;

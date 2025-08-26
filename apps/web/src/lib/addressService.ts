@@ -165,7 +165,7 @@ async function searchRealAddresses(query: string): Promise<AddressSuggestion[]> 
 /**
  * Get current location using browser geolocation
  */
-export function getCurrentLocation(): Promise<{lat: number, lng: number}> {
+export function getCurrentLocation(): Promise<{coords: {latitude: number, longitude: number}}> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is not supported by this browser'));
@@ -175,8 +175,10 @@ export function getCurrentLocation(): Promise<{lat: number, lng: number}> {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+          coords: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }
         });
       },
       (error) => {
