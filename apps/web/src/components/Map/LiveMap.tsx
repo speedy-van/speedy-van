@@ -2,7 +2,7 @@
 import mapboxgl, { Map } from 'mapbox-gl';
 import { useEffect, useRef, useState } from 'react';
 import { Box, Button, HStack, Text, VStack, useColorModeValue } from '@chakra-ui/react';
-import { FiNavigation, FiMapPin, FiHome } from 'react-icons/fi';
+import { FiNavigation, FiMapPin, FiHome, FiTruck } from 'react-icons/fi';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -18,6 +18,33 @@ interface Route {
   duration?: number;
 }
 
+interface DriverLocation {
+  driverId: string;
+  driverName: string;
+  lat: number;
+  lng: number;
+  lastUpdate: string;
+  status: string;
+}
+
+interface TrackingBooking {
+  id: string;
+  reference: string;
+  status: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  currentLocation?: {
+    lat: number;
+    lng: number;
+    timestamp: string;
+  };
+  routeProgress: number;
+  eta?: {
+    estimatedArrival: string;
+    minutesRemaining: number;
+  };
+}
+
 interface LiveMapProps {
   driverLocation?: Location;
   pickupLocation?: Location;
@@ -27,6 +54,16 @@ interface LiveMapProps {
   onNavigateToPickup?: () => void;
   onNavigateToDropoff?: () => void;
   height?: number;
+  // New props for enhanced tracking
+  driverLocations?: DriverLocation[];
+  selectedBooking?: TrackingBooking | null;
+  showAllDrivers?: boolean;
+  showRoutePath?: boolean;
+  trackingPings?: Array<{
+    lat: number;
+    lng: number;
+    createdAt: string;
+  }>;
 }
 
 export default function LiveMap({ 
@@ -37,12 +74,18 @@ export default function LiveMap({
   showNavigation = false,
   onNavigateToPickup,
   onNavigateToDropoff,
-  height = 360
+  height = 360,
+  driverLocations = [],
+  selectedBooking,
+  showAllDrivers = false,
+  showRoutePath = false,
+  trackingPings = []
 }: LiveMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const instance = useRef<Map | null>(null);
   const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const routeSource = useRef<string | null>(null);
+  const trackingPathSource = useRef<string | null>(null);
   
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -80,20 +123,63 @@ export default function LiveMap({
     Object.values(markers.current).forEach(marker => marker.remove());
     markers.current = {};
 
-    // Add driver marker
+    // Add driver marker (single booking view)
     if (driverLocation) {
       const driverEl = document.createElement('div');
-      driverEl.style.width = '20px';
-      driverEl.style.height = '20px';
+      driverEl.style.width = '24px';
+      driverEl.style.height = '24px';
       driverEl.style.borderRadius = '50%';
       driverEl.style.background = '#3182ce';
       driverEl.style.border = '3px solid white';
       driverEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       driverEl.style.transform = 'translate(-50%, -50%)';
       
-      markers.current.driver = new mapboxgl.Marker({ element: driverEl })
+      const marker = new mapboxgl.Marker({ element: driverEl })
         .setLngLat([driverLocation.lng, driverLocation.lat])
         .addTo(map);
+
+      // Add popup
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`
+          <div style="padding: 8px;">
+            <strong>Driver Location</strong><br>
+            ${driverLocation.label || 'Current position'}
+          </div>
+        `);
+      
+      marker.setPopup(popup);
+      markers.current.driver = marker;
+    }
+
+    // Add multiple driver markers (admin view)
+    if (showAllDrivers && driverLocations.length > 0) {
+      driverLocations.forEach((driver, index) => {
+        const driverEl = document.createElement('div');
+        driverEl.style.width = '20px';
+        driverEl.style.height = '20px';
+        driverEl.style.borderRadius = '50%';
+        driverEl.style.background = driver.status === 'online' ? '#38a169' : '#e53e3e';
+        driverEl.style.border = '2px solid white';
+        driverEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        driverEl.style.transform = 'translate(-50%, -50%)';
+        
+        const marker = new mapboxgl.Marker({ element: driverEl })
+          .setLngLat([driver.lng, driver.lat])
+          .addTo(map);
+
+        // Add popup
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setHTML(`
+            <div style="padding: 8px;">
+              <strong>${driver.driverName}</strong><br>
+              Status: ${driver.status}<br>
+              Last update: ${new Date(driver.lastUpdate).toLocaleTimeString()}
+            </div>
+          `);
+        
+        marker.setPopup(popup);
+        markers.current[`driver-${driver.driverId}`] = marker;
+      });
     }
 
     // Add pickup marker
@@ -107,9 +193,21 @@ export default function LiveMap({
       pickupEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       pickupEl.style.transform = 'translate(-50%, -50%)';
       
-      markers.current.pickup = new mapboxgl.Marker({ element: pickupEl })
+      const marker = new mapboxgl.Marker({ element: pickupEl })
         .setLngLat([pickupLocation.lng, pickupLocation.lat])
         .addTo(map);
+
+      // Add popup
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`
+          <div style="padding: 8px;">
+            <strong>Pickup Location</strong><br>
+            ${pickupLocation.label || 'Pickup address'}
+          </div>
+        `);
+      
+      marker.setPopup(popup);
+      markers.current.pickup = marker;
     }
 
     // Add dropoff marker
@@ -123,34 +221,73 @@ export default function LiveMap({
       dropoffEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       dropoffEl.style.transform = 'translate(-50%, -50%)';
       
-      markers.current.dropoff = new mapboxgl.Marker({ element: dropoffEl })
+      const marker = new mapboxgl.Marker({ element: dropoffEl })
         .setLngLat([dropoffLocation.lng, dropoffLocation.lat])
         .addTo(map);
+
+      // Add popup
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`
+          <div style="padding: 8px;">
+            <strong>Dropoff Location</strong><br>
+            ${dropoffLocation.label || 'Dropoff address'}
+          </div>
+        `);
+      
+      marker.setPopup(popup);
+      markers.current.dropoff = marker;
     }
 
-    // Fit map to show all markers
-    if (Object.keys(markers.current).length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      Object.values(markers.current).forEach(marker => {
-        bounds.extend(marker.getLngLat());
-      });
-      map.fitBounds(bounds, { padding: 50, maxZoom: 16 });
-    }
-  }, [driverLocation, pickupLocation, dropoffLocation, isMapLoaded]);
+    // Add selected booking marker (admin view)
+    if (selectedBooking?.currentLocation) {
+      const bookingEl = document.createElement('div');
+      bookingEl.style.width = '28px';
+      bookingEl.style.height = '28px';
+      bookingEl.style.borderRadius = '50%';
+      bookingEl.style.background = '#805ad5';
+      bookingEl.style.border = '3px solid white';
+      bookingEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      bookingEl.style.transform = 'translate(-50%, -50%)';
+      
+      const marker = new mapboxgl.Marker({ element: bookingEl })
+        .setLngLat([selectedBooking.currentLocation.lng, selectedBooking.currentLocation.lat])
+        .addTo(map);
 
-  // Update route when it changes
+      // Add popup
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`
+          <div style="padding: 8px;">
+            <strong>Booking: ${selectedBooking.reference}</strong><br>
+            Status: ${selectedBooking.status}<br>
+            Progress: ${selectedBooking.routeProgress}%<br>
+            ${selectedBooking.eta ? `ETA: ${selectedBooking.eta.minutesRemaining} min` : ''}
+          </div>
+        `);
+      
+      marker.setPopup(popup);
+      markers.current.selectedBooking = marker;
+    }
+
+  }, [driverLocation, pickupLocation, dropoffLocation, driverLocations, selectedBooking, showAllDrivers, isMapLoaded]);
+
+  // Update route when route data changes
   useEffect(() => {
     if (!instance.current || !isMapLoaded || !route) return;
 
     const map = instance.current;
-    const routeId = 'route-line';
 
     // Remove existing route
-    if (map.getLayer(routeId)) map.removeLayer(routeId);
-    if (map.getSource(routeId)) map.removeSource(routeId);
+    if (routeSource.current) {
+      if (map.getSource(routeSource.current)) {
+        map.removeLayer(`${routeSource.current}-line`);
+        map.removeSource(routeSource.current);
+      }
+    }
 
     // Add new route
-    map.addSource(routeId, {
+    routeSource.current = `route-${Date.now()}`;
+    
+    map.addSource(routeSource.current, {
       type: 'geojson',
       data: {
         type: 'Feature',
@@ -163,9 +300,9 @@ export default function LiveMap({
     });
 
     map.addLayer({
-      id: routeId,
+      id: `${routeSource.current}-line`,
       type: 'line',
-      source: routeId,
+      source: routeSource.current,
       layout: {
         'line-join': 'round',
         'line-cap': 'round'
@@ -177,94 +314,144 @@ export default function LiveMap({
       }
     });
 
-    routeSource.current = routeId;
   }, [route, isMapLoaded]);
 
-  // Update driver location smoothly
+  // Add tracking path (breadcrumb trail)
   useEffect(() => {
-    if (!instance.current || !driverLocation || !markers.current.driver) return;
+    if (!instance.current || !isMapLoaded || !showRoutePath || trackingPings.length === 0) return;
 
-    const marker = markers.current.driver;
-    const newLngLat = [driverLocation.lng, driverLocation.lat] as [number, number];
+    const map = instance.current;
+
+    // Remove existing tracking path
+    if (trackingPathSource.current) {
+      if (map.getSource(trackingPathSource.current)) {
+        map.removeLayer(`${trackingPathSource.current}-line`);
+        map.removeSource(trackingPathSource.current);
+      }
+    }
+
+    // Add tracking path
+    trackingPathSource.current = `tracking-path-${Date.now()}`;
     
-    // Smooth transition for driver marker
-    marker.setLngLat(newLngLat);
+    const coordinates = trackingPings.map(ping => [ping.lng, ping.lat]);
     
-    // Only auto-center if we're not showing navigation controls
-    if (!showNavigation) {
-      instance.current.easeTo({ 
-        center: newLngLat, 
-        duration: 1000 
+    map.addSource(trackingPathSource.current, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: coordinates
+        }
+      }
+    });
+
+    map.addLayer({
+      id: `${trackingPathSource.current}-line`,
+      type: 'line',
+      source: trackingPathSource.current,
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#805ad5',
+        'line-width': 3,
+        'line-opacity': 0.6,
+        'line-dasharray': [2, 2]
+      }
+    });
+
+  }, [trackingPings, showRoutePath, isMapLoaded]);
+
+  // Fit bounds when locations change
+  useEffect(() => {
+    if (!instance.current || !isMapLoaded) return;
+
+    const map = instance.current;
+    const bounds = new mapboxgl.LngLatBounds();
+
+    // Add all relevant locations to bounds
+    if (driverLocation) {
+      bounds.extend([driverLocation.lng, driverLocation.lat]);
+    }
+    if (pickupLocation) {
+      bounds.extend([pickupLocation.lng, pickupLocation.lat]);
+    }
+    if (dropoffLocation) {
+      bounds.extend([dropoffLocation.lng, dropoffLocation.lat]);
+    }
+    if (selectedBooking?.currentLocation) {
+      bounds.extend([selectedBooking.currentLocation.lng, selectedBooking.currentLocation.lat]);
+    }
+    if (showAllDrivers && driverLocations.length > 0) {
+      driverLocations.forEach(driver => {
+        bounds.extend([driver.lng, driver.lat]);
       });
     }
-  }, [driverLocation, showNavigation]);
+
+    // Fit map to bounds with padding
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, {
+        padding: 50,
+        maxZoom: 15
+      });
+    }
+
+  }, [driverLocation, pickupLocation, dropoffLocation, selectedBooking, driverLocations, showAllDrivers, isMapLoaded]);
 
   return (
-    <Box position="relative">
-      <div 
-        ref={mapRef} 
-        style={{ 
-          width: '100%', 
-          height: height, 
-          borderRadius: 12,
-          border: `1px solid ${borderColor}`
-        }} 
-      />
+    <Box position="relative" height={height} borderRadius="md" overflow="hidden">
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       
-      {showNavigation && pickupLocation && dropoffLocation && (
-        <Box
-          position="absolute"
-          bottom={4}
-          left={4}
-          right={4}
-          bg={bgColor}
-          borderRadius="lg"
-          p={4}
-          boxShadow="lg"
-          border={`1px solid ${borderColor}`}
-        >
-          <VStack spacing={3} align="stretch">
-            <HStack justify="space-between">
-              <Text fontSize="sm" fontWeight="medium" color="gray.600">
-                Navigation
-              </Text>
-              {route && (
-                <Text fontSize="sm" color="gray.500">
-                  {route.distance ? `${Math.round(route.distance / 1000)}km` : ''}
-                  {route.duration ? ` • ${Math.round(route.duration / 60)}min` : ''}
-                </Text>
-              )}
-            </HStack>
-            
-            <HStack spacing={2}>
+      {showNavigation && (
+        <Box position="absolute" top={4} right={4} zIndex={1}>
+          <VStack spacing={2}>
+            {onNavigateToPickup && (
               <Button
                 size="sm"
-                leftIcon={<FiMapPin />}
                 colorScheme="green"
+                leftIcon={<FiMapPin />}
                 onClick={onNavigateToPickup}
-                flex={1}
               >
-                To Pickup
+                Navigate to Pickup
               </Button>
+            )}
+            {onNavigateToDropoff && (
               <Button
                 size="sm"
-                leftIcon={<FiHome />}
                 colorScheme="red"
+                leftIcon={<FiHome />}
                 onClick={onNavigateToDropoff}
-                flex={1}
               >
-                To Dropoff
+                Navigate to Dropoff
               </Button>
-            </HStack>
+            )}
           </VStack>
         </Box>
       )}
 
-      <style>{`
-        .mapboxgl-map {
-          border-radius: 12px;
-        }
-      `}</style>
+      {/* Legend for admin view */}
+      {showAllDrivers && (
+        <Box position="absolute" bottom={4} left={4} zIndex={1} bg="white" p={3} borderRadius="md" boxShadow="md">
+          <VStack spacing={2} align="start">
+            <Text fontSize="sm" fontWeight="bold">Legend</Text>
+            <HStack spacing={2}>
+              <Box w={3} h={3} bg="#38a169" borderRadius="full" />
+              <Text fontSize="xs">Online Driver</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Box w={3} h={3} bg="#e53e3e" borderRadius="full" />
+              <Text fontSize="xs">Offline Driver</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Box w={3} h={3} bg="#805ad5" borderRadius="full" />
+              <Text fontSize="xs">Selected Booking</Text>
+            </HStack>
+          </VStack>
+        </Box>
+      )}
     </Box>
   );
 }

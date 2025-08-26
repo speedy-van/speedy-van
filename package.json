@@ -10,6 +10,8 @@
     "lint": "npm run lint --prefix apps/web",
     "verify-logos": "node scripts/verify-logos.mjs",
     "svgo": "node scripts/svgo.mjs"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.4"
   }
 }
-
