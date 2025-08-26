@@ -31,6 +31,7 @@ import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { signOut } from "next-auth/react";
 import SkipLink from "@/components/site/SkipLink";
+import CustomerChatWidget from "@/components/Chat/CustomerChatWidget";
 
 // Mobile Navigation Component
 function MobileNav({ session }: { session: any }) {
@@ -199,6 +200,13 @@ export default async function CustomerPortalLayout({ children }: { children: Rea
       <Container as="main" id="main" maxW="1200px" py={6}>
         {children}
       </Container>
+      
+      {/* Customer Chat Widget */}
+      <CustomerChatWidget 
+        customerId={session.user?.id}
+        customerName={session.user?.name}
+        customerEmail={session.user?.email}
+      />
     </>
   );
 }

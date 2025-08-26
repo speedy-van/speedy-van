@@ -17,11 +17,15 @@ export async function GET(_: Request, { params }: { params: { code: string } }) 
           user: true
         }
       },
-      Message: {
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 10
+      chatSessions: {
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'desc'
+            },
+            take: 10
+          }
+        }
       }
     }
   });

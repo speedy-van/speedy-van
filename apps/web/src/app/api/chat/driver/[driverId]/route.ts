@@ -5,11 +5,25 @@ import { getPusherServer } from "@/lib/pusher";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(_: Request, { params }: { params: { driverId: string } }) {
-  const msgs = await prisma.message.findMany({
-    where: { bookingId: params.driverId },
-    orderBy: { createdAt: "asc" },
+  // Find chat sessions for the driver, then get messages
+  const chatSessions = await prisma.chatSession.findMany({
+    where: {
+      participants: {
+        some: {
+          userId: params.driverId
+        }
+      }
+    },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+      }
+    }
   });
-  return NextResponse.json(msgs);
+  
+  // Flatten messages from all sessions
+  const allMessages = chatSessions.flatMap(session => session.messages);
+  return NextResponse.json(allMessages);
 }
 
 export async function POST(req: Request, { params }: { params: { driverId: string } }) {
@@ -29,14 +43,48 @@ export async function POST(req: Request, { params }: { params: { driverId: strin
     return new NextResponse("Forbidden", { status: 403 });
   }
 
+  // Find or create a chat session for the driver
+  let chatSession = await prisma.chatSession.findFirst({
+    where: {
+      participants: {
+        some: {
+          userId: params.driverId
+        }
+      },
+      type: "driver_admin"
+    }
+  });
+
+  if (!chatSession) {
+    // Create a new chat session if none exists
+    chatSession = await prisma.chatSession.create({
+      data: {
+        type: "driver_admin",
+        participants: {
+          create: [
+            {
+              userId: params.driverId,
+              role: "driver"
+            },
+            {
+              userId: uid,
+              role: role === "admin" ? "admin" : "driver"
+            }
+          ]
+        }
+      }
+    });
+  }
+
   const m = await prisma.message.create({
     data: { 
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      bookingId: params.driverId, 
+      sessionId: chatSession.id, 
       senderId: uid, 
       content 
     },
   });
+  
   await getPusherServer().trigger(`driver-${params.driverId}`, "chat:new", m);
   return NextResponse.json(m, { status: 201 });
 }

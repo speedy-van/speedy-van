@@ -28,6 +28,24 @@ export async function logAudit({ req, action, targetType, targetId, before, afte
       'suspicious_activity', 'account_locked', 'account_unlocked'
     ].includes(action);
     
+    // Verify user exists in database before setting userId
+    let userId = null;
+    if (actorId !== "anonymous") {
+      try {
+        const userExists = await prisma.user.findUnique({
+          where: { id: actorId },
+          select: { id: true }
+        });
+        if (userExists) {
+          userId = actorId;
+        } else {
+          console.warn(`Audit log: User ${actorId} not found in database, using anonymous`);
+        }
+      } catch (userCheckError) {
+        console.warn(`Audit log: Error checking user ${actorId}:`, userCheckError);
+      }
+    }
+    
     await prisma.auditLog.create({
       data: {
         actorId,
@@ -39,7 +57,7 @@ export async function logAudit({ req, action, targetType, targetId, before, afte
         after: after as any,
         ip: ip ?? undefined,
         userAgent: userAgent ?? undefined,
-        userId: actorId !== "anonymous" ? actorId : null,
+        userId: userId,
         details: isSecurityEvent ? {
           securityEvent: true,
           timestamp: new Date().toISOString(),

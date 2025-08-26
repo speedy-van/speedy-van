@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: { customerId: string } }
 ) {
   try {
-    // هنا يمكنك إضافة منطق لجلب رسائل الحجز من قاعدة البيانات
+    const session = await getServerSession(authOptions);
+    
+    if (!session || session.user?.id !== params.customerId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // هنا يمكنك إضافة منطق لجلب الرسائل من قاعدة البيانات
     // حالياً سنعيد مصفوفة فارغة
     const messages = [];
 
     return NextResponse.json(messages);
   } catch (error) {
-    console.error('Error fetching booking messages:', error);
+    console.error('Error fetching customer messages:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -21,9 +29,15 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: { customerId: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || session.user?.id !== params.customerId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { content } = body;
 
@@ -34,14 +48,14 @@ export async function POST(
       );
     }
 
-    // هنا يمكنك إضافة منطق لحفظ رسالة الحجز في قاعدة البيانات
+    // هنا يمكنك إضافة منطق لحفظ الرسالة في قاعدة البيانات
     const message = {
-      id: `booking_msg_${Date.now()}`,
+      id: `msg_${Date.now()}`,
       content,
       senderId: 'user',
-      senderName: 'Customer',
+      senderName: session.user?.name || 'Customer',
       timestamp: new Date().toISOString(),
-      bookingId: params.bookingId
+      customerId: params.customerId
     };
 
     // إرسال الرسالة عبر Pusher (إذا كان متاحاً)
@@ -55,19 +69,17 @@ export async function POST(
         useTLS: true
       });
 
-      await pusher.trigger(`booking-${params.bookingId}`, 'chat:new', message);
+      await pusher.trigger(`customer-${params.customerId}`, 'chat:new', message);
     } catch (pusherError) {
       console.error('Pusher error:', pusherError);
     }
 
     return NextResponse.json(message);
   } catch (error) {
-    console.error('Error sending booking message:', error);
+    console.error('Error sending customer message:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
-
-

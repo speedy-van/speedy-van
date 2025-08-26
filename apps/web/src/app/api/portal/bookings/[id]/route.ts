@@ -56,13 +56,18 @@ export async function GET(
             }
           }
         },
-        Message: {
-          orderBy: { createdAt: 'asc' },
+        chatSessions: {
           select: {
             id: true,
-            content: true,
-            senderId: true,
-            createdAt: true
+            messages: {
+              orderBy: { createdAt: 'asc' },
+              select: {
+                id: true,
+                content: true,
+                senderId: true,
+                createdAt: true
+              }
+            }
           }
         }
       }

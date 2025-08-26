@@ -151,6 +151,7 @@ export default function RatingForm({ bookingId, driverName, jobCode, onSuccess }
             <Select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              suppressHydrationWarning
             >
               <option value="overall">Overall Experience</option>
               <option value="communication">Communication</option>

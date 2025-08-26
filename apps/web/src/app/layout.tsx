@@ -7,6 +7,7 @@ import "@/styles/booking-fixes.css";
 import "@/styles/ios-safari-fixes.css";
 import "@/styles/video-background.css";
 import "@/styles/charts.css";
+import "@/styles/mobile-chat-improvements.css";
 // import "mapbox-gl/dist/mapbox-gl.css"; // Removed to fix CSS error
 import { ConsentProvider } from "@/components/Consent/ConsentProvider";
 import CookieBanner from "@/components/Consent/CookieBanner";
@@ -18,6 +19,7 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import Providers from "@/components/Providers";
 import { MotionProvider } from "@/components/MotionProvider";
+import GuestChatWrapper from "@/components/Chat/GuestChatWrapper";
 
 export const metadata = {
   title: "Speedy Van — Premium Moving & Delivery Services",
@@ -100,6 +102,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <MotionProvider>
               <ConsentProvider initialConsent={initialConsent}>
                 {children}
+                <GuestChatWrapper />
                 <CookieBanner />
                 <CookiePreferencesModal />
                 <AnalyticsScripts />

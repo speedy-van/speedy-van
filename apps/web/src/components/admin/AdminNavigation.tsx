@@ -71,6 +71,12 @@ const navigationItems: NavItem[] = [
     ]
   },
   {
+    label: 'Chat',
+    href: '/admin/chat',
+    icon: FiMessageSquare,
+    badge: 'Live'
+  },
+  {
     label: 'Finance',
     href: '/admin/finance',
     icon: FiDollarSign,

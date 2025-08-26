@@ -55,11 +55,15 @@ export async function GET(req: Request, { params }: { params: { code: string } }
           }
         }
       },
-      Message: {
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 50
+      chatSessions: {
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'desc'
+            },
+            take: 50
+          }
+        }
       },
       TrackingPing: {
         orderBy: {

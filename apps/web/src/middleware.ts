@@ -65,14 +65,14 @@ function addConsentHeaders(req: NextRequest, response: NextResponse) {
     response.headers.set("x-consent-region", "UK");
   }
   
-  // Add Content Security Policy headers to allow Mapbox
+  // Add Content Security Policy headers to allow Mapbox, Pusher, Postcodes.io, and other external services
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com",
-    "style-src 'self' 'unsafe-inline' https://api.mapbox.com",
-    "img-src 'self' data: blob: https://*.mapbox.com",
-    "connect-src 'self' https://api.mapbox.com https://events.mapbox.com",
-    "font-src 'self' https://api.mapbox.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://www.googletagmanager.com",
+    "style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https://*.mapbox.com https://api.qrserver.com https://via.placeholder.com",
+    "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.pusherapp.com https://*.pusher.com wss://*.pusherapp.com wss://*.pusher.com https://api.postcodes.io https://www.googletagmanager.com",
+    "font-src 'self' https://api.mapbox.com https://fonts.gstatic.com",
     "worker-src 'self' blob:",
     "frame-src 'self'",
     "object-src 'none'",

@@ -512,7 +512,7 @@ export default function AnalyticsReportsPage() {
                   <VStack spacing={4} align="stretch">
                     <FormControl>
                       <FormLabel>Start with Template</FormLabel>
-                      <Select value={selectedTemplate} onChange={(e) => handleTemplateSelect(e.target.value)}>
+                      <Select value={selectedTemplate} onChange={(e) => handleTemplateSelect(e.target.value)} suppressHydrationWarning>
                         <option value="">Choose a template...</option>
                         {REPORT_TEMPLATES.map((template) => (
                           <option key={template.id} value={template.id}>
@@ -574,7 +574,7 @@ export default function AnalyticsReportsPage() {
 
                     <FormControl>
                       <FormLabel>Date Range</FormLabel>
-                      <Select value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+                      <Select value={dateRange} onChange={(e) => setDateRange(e.target.value)} suppressHydrationWarning>
                         <option value="7d">Last 7 days</option>
                         <option value="30d">Last 30 days</option>
                         <option value="90d">Last 90 days</option>
@@ -585,7 +585,7 @@ export default function AnalyticsReportsPage() {
 
                     <FormControl>
                       <FormLabel>Schedule (Optional)</FormLabel>
-                      <Select value={schedule} onChange={(e) => setSchedule(e.target.value as any)}>
+                      <Select value={schedule} onChange={(e) => setSchedule(e.target.value as any)} suppressHydrationWarning>
                         <option value="none">No schedule</option>
                         <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>

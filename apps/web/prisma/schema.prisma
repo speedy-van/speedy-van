@@ -37,6 +37,10 @@ model User {
   supportTickets          SupportTicket[]
   pricingSettingsCreated  PricingSettings[] @relation("PricingSettingsCreatedBy")
   pricingSettingsUpdated  PricingSettings[] @relation("PricingSettingsUpdatedBy")
+  chatSessions            ChatSession[] @relation("ChatSessionCreatedBy")
+  chatSessionsClosed      ChatSession[] @relation("ChatSessionClosedBy")
+  chatParticipants        ChatParticipant[]
+  messages                Message[]
 
   @@index([role])
 }
@@ -891,9 +895,9 @@ model Booking {
 
   // Relations to existing models
   Assignment Assignment?
-  Message    Message[]
   Payment    Payment[]
   TrackingPing TrackingPing[]
+  chatSessions ChatSession[]
   
   // Relations to User and Driver (for existing references)
   customerId String?
@@ -945,12 +949,68 @@ model JobEvent {
 }
 
 model Message {
-  id        String   @id
-  bookingId String
+  id        String   @id @default(cuid())
+  sessionId String
   senderId  String
   content   String
+  type      MessageType @default(text)
+  status    MessageStatus @default(sent)
+  metadata  Json?
   createdAt DateTime @default(now())
-  Booking   Booking  @relation(fields: [bookingId], references: [id])
+  updatedAt DateTime @updatedAt
+  
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model ChatSession {
+  id          String   @id @default(cuid())
+  type        ChatSessionType
+  title       String?
+  bookingId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  closedAt    DateTime?
+  closedBy    String?
+  createdBy   String?
+  
+  booking     Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  closedByUser User?   @relation("ChatSessionClosedBy", fields: [closedBy], references: [id], onDelete: SetNull)
+  createdByUser User?  @relation("ChatSessionCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  participants ChatParticipant[]
+  messages    Message[]
+
+  @@index([type])
+  @@index([bookingId])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model ChatParticipant {
+  id              String   @id @default(cuid())
+  sessionId       String
+  userId          String?
+  guestName       String?
+  guestEmail      String?
+  role            ChatParticipantRole
+  lastReadAt      DateTime?
+  isTyping        Boolean  @default(false)
+  joinedAt        DateTime @default(now())
+  
+  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@unique([sessionId, guestEmail])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([lastReadAt])
 }
 
 model Payment {
@@ -1238,6 +1298,37 @@ model PricingSettings {
   
   @@index([isActive])
   @@index([createdAt])
+}
+
+enum MessageType {
+  text
+  image
+  file
+  location
+  system
+}
+
+enum MessageStatus {
+  sent
+  delivered
+  read
+  failed
+}
+
+enum ChatSessionType {
+  customer_driver
+  customer_admin
+  driver_admin
+  guest_admin
+  support
+}
+
+enum ChatParticipantRole {
+  customer
+  driver
+  admin
+  guest
+  support
 }
 
 
