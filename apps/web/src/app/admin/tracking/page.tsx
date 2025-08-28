@@ -49,8 +49,18 @@ interface TrackingBooking {
   id: string;
   reference: string;
   status: string;
-  pickupAddress: string;
-  dropoffAddress: string;
+  addresses: {
+    pickup: {
+      label: string;
+      postcode: string;
+      coordinates: { lat: number; lng: number };
+    };
+    dropoff: {
+      label: string;
+      postcode: string;
+      coordinates: { lat: number; lng: number };
+    };
+  };
   scheduledAt: string;
   driver?: {
     id: string;
@@ -206,8 +216,8 @@ export default function TrackingHub() {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
     const matchesSearch = searchQuery === '' || 
       booking.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.dropoffAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              booking.addresses.pickup.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.addresses.dropoff.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (booking.driver?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesStatus && matchesSearch;
@@ -399,10 +409,10 @@ export default function TrackingHub() {
                               </Flex>
                               
                               <Text fontSize="xs" color="gray.600">
-                                {booking.pickupAddress}
+                                {booking.addresses.pickup.label}
                               </Text>
                               <Text fontSize="xs" color="gray.600">
-                                → {booking.dropoffAddress}
+                                → {booking.addresses.dropoff.label}
                               </Text>
                               
                               {booking.driver && (

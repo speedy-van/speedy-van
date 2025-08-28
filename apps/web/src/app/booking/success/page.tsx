@@ -136,9 +136,9 @@ export default function BookingSuccessPage() {
     yPosition += 8;
     addText('123 Business Street, London, SW1A 1AA', 20, yPosition, 10);
     yPosition += 6;
-    addText('Phone: +44 20 1234 5678 | Email: accounts@speedyvan.co.uk', 20, yPosition, 10);
+    addText('Phone: 07901846297 | Email: support@speedy-van.co.uk', 20, yPosition, 10);
     yPosition += 6;
-    addText('Website: www.speedyvan.co.uk', 20, yPosition, 10);
+    addText('Website: www.speedy-van.co.uk', 20, yPosition, 10);
     yPosition += 15;
 
     // Invoice Title

@@ -444,7 +444,7 @@ export default function CheckoutPage() {
         borderRadius: '8px'
       }}>
         <p style={{ color: '#6b7280', fontSize: '14px', margin: '0' }}>
-          Need help? Contact us at <strong>support@speedyvan.com</strong> or call <strong>0800 123 4567</strong>
+          Need help? Contact us at <strong>support@speedy-van.co.uk</strong> or call <strong>07901846297</strong>
         </p>
       </div>
     </div>

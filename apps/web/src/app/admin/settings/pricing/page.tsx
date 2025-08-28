@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { 
   Box, 
   VStack, 
@@ -35,6 +37,8 @@ interface PricingSettings {
 }
 
 export default function PricingSettingsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [settings, setSettings] = useState<PricingSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,9 +49,28 @@ export default function PricingSettingsPage() {
   const [driverMultiplier, setDriverMultiplier] = useState(1);
   const [isActive, setIsActive] = useState(true);
 
+  // Check admin access
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (status === "loading") return;
+    
+    if (!session?.user || session.user.role !== "admin") {
+      toast({
+        title: "Access Denied",
+        description: "You must be an admin to access pricing settings",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      router.push("/admin");
+      return;
+    }
+  }, [session, status, router, toast]);
+
+  useEffect(() => {
+    if (session?.user?.role === "admin") {
+      loadSettings();
+    }
+  }, [session]);
 
   const loadSettings = async () => {
     try {
@@ -107,187 +130,177 @@ export default function PricingSettingsPage() {
     }
   };
 
-  const getCustomerAdjustmentLabel = (value: number) => {
-    if (value === 0) return "No adjustment";
-    if (value > 0) return `+${value}% increase`;
-    return `${Math.abs(value)}% decrease`;
-  };
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <Box p={6}>
+        <VStack spacing={6} align="center">
+          <Spinner size="xl" />
+          <Text>Loading...</Text>
+        </VStack>
+      </Box>
+    );
+  }
 
-  const getDriverMultiplierLabel = (value: number) => {
-    if (value === 1) return "Standard rate";
-    if (value > 1) return `${value}x multiplier`;
-    return `${value}x multiplier`;
-  };
+  // Show access denied if not admin
+  if (!session?.user || session.user.role !== "admin") {
+    return (
+      <Box p={6}>
+        <VStack spacing={6} align="center">
+          <Alert status="error">
+            <AlertIcon />
+            <Box>
+              <AlertTitle>Access Denied</AlertTitle>
+              <AlertDescription>
+                You must be an admin to access pricing settings. Redirecting...
+              </AlertDescription>
+            </Box>
+          </Alert>
+        </VStack>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (
-      <Box display="flex" alignItems="center" justifyContent="center" minH="400px">
-        <Spinner size="xl" color="neon.500" />
+      <Box p={6}>
+        <VStack spacing={6} align="center">
+          <Spinner size="xl" />
+          <Text>Loading pricing settings...</Text>
+        </VStack>
       </Box>
     );
   }
 
   return (
-    <Box p={6} maxW="4xl" mx="auto">
+    <Box p={6}>
       <VStack spacing={6} align="stretch">
+        {/* Header */}
         <Box>
           <Heading size="lg" mb={2}>Pricing Settings</Heading>
-          <Text color="gray.600">
-            Adjust customer pricing and driver earnings rates dynamically.
+          <Text color="text.secondary">
+            Manage customer pricing adjustments and driver rate multipliers
           </Text>
         </Box>
 
-        <VStack spacing={6} align="stretch">
-          {/* Customer Pricing Adjustment */}
-          <Box p={6} bg="white" borderRadius="lg" shadow="sm" border="1px" borderColor="gray.200">
-            <VStack spacing={4} align="stretch">
-                             <HStack>
-                 <Icon as={FaChartLine} color="neon.500" />
-                 <Heading size="md">Customer Pricing Adjustment</Heading>
-               </HStack>
-              <Text color="gray.600">
-                Increase or decrease all customer prices by a percentage. This affects the final quote calculation.
-              </Text>
-              
-              <VStack spacing={4} align="stretch">
-                <HStack justify="space-between">
-                  <Text fontWeight="medium">Price Adjustment</Text>
-                  <Badge 
-                    colorScheme={customerAdjustment === 0 ? "gray" : customerAdjustment > 0 ? "green" : "red"}
-                    variant="subtle"
-                  >
-                    {getCustomerAdjustmentLabel(customerAdjustment)}
-                  </Badge>
-                </HStack>
-                
-                <Slider
-                  value={customerAdjustment}
-                  onChange={setCustomerAdjustment}
-                  min={-100}
-                  max={100}
-                  step={1}
-                >
-                  <SliderTrack>
-                    <SliderFilledTrack bg="neon.500" />
-                  </SliderTrack>
-                  <SliderThumb />
-                </Slider>
-                
-                <HStack justify="space-between" fontSize="sm" color="gray.500">
-                  <Text>-100% (Free)</Text>
-                  <Text>0% (Standard)</Text>
-                  <Text>+100% (Double)</Text>
-                </HStack>
-              </VStack>
+        <Divider />
 
-              <Divider />
-
-              <Box>
-                <Text fontWeight="medium" mb={2}>Example Impact</Text>
-                <VStack spacing={1} align="stretch" fontSize="sm" color="gray.600">
-                  <Text>• A £100 booking with +20% adjustment = £120</Text>
-                  <Text>• A £100 booking with -10% adjustment = £90</Text>
-                  <Text>• Minimum and maximum price limits still apply</Text>
-                </VStack>
-              </Box>
-            </VStack>
-          </Box>
-
-          {/* Driver Rate Multiplier */}
-          <Box p={6} bg="white" borderRadius="lg" shadow="sm" border="1px" borderColor="gray.200">
-            <VStack spacing={4} align="stretch">
-              <HStack>
-                <Icon as={FaUsers} color="neon.500" />
-                <Heading size="md">Driver Earnings Multiplier</Heading>
+        {/* Current Settings Display */}
+        {settings && (
+          <Box p={4} bg="bg.surface" borderRadius="lg" border="1px solid" borderColor="border.primary">
+            <VStack align="start" spacing={3}>
+              <Text fontWeight="bold">Current Settings</Text>
+              <HStack spacing={6}>
+                <Text>Customer Price Adjustment: <Badge colorScheme={settings.customerPriceAdjustment > 0 ? "green" : settings.customerPriceAdjustment < 0 ? "red" : "gray"}>
+                  {settings.customerPriceAdjustment > 0 ? "+" : ""}{Math.round(settings.customerPriceAdjustment * 100)}%
+                </Badge></Text>
+                <Text>Driver Rate Multiplier: <Badge colorScheme="blue">{settings.driverRateMultiplier}x</Badge></Text>
+                <Text>Status: <Badge colorScheme={settings.isActive ? "green" : "red"}>{settings.isActive ? "Active" : "Inactive"}</Badge></Text>
               </HStack>
-              <Text color="gray.600">
-                Adjust driver earnings by a multiplier. This affects the base rate calculation for all drivers.
+              <Text fontSize="sm" color="text.tertiary">
+                Last updated: {new Date(settings.updatedAt).toLocaleString()}
               </Text>
-              
-              <VStack spacing={4} align="stretch">
-                <HStack justify="space-between">
-                  <Text fontWeight="medium">Rate Multiplier</Text>
-                  <Badge 
-                    colorScheme={driverMultiplier === 1 ? "gray" : driverMultiplier > 1 ? "green" : "red"}
-                    variant="subtle"
-                  >
-                    {getDriverMultiplierLabel(driverMultiplier)}
-                  </Badge>
-                </HStack>
-                
-                <Slider
-                  value={driverMultiplier}
-                  onChange={setDriverMultiplier}
-                  min={0.5}
-                  max={2}
-                  step={0.05}
-                >
-                  <SliderTrack>
-                    <SliderFilledTrack bg="neon.500" />
-                  </SliderTrack>
-                  <SliderThumb />
-                </Slider>
-                
-                <HStack justify="space-between" fontSize="sm" color="gray.500">
-                  <Text>0.5x (Half)</Text>
-                  <Text>1x (Standard)</Text>
-                  <Text>2x (Double)</Text>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <Box>
-                <Text fontWeight="medium" mb={2}>Example Impact</Text>
-                <VStack spacing={1} align="stretch" fontSize="sm" color="gray.600">
-                  <Text>• Standard £2.50/mile with 1.2x multiplier = £3.00/mile</Text>
-                  <Text>• Standard £25/hour with 0.8x multiplier = £20/hour</Text>
-                  <Text>• Platform fees are calculated after the multiplier</Text>
-                </VStack>
-              </Box>
             </VStack>
           </Box>
+        )}
 
-          {/* Settings Status */}
-          <Box p={6} bg="white" borderRadius="lg" shadow="sm" border="1px" borderColor="gray.200">
-            <VStack spacing={4} align="stretch">
-              <Heading size="md">Settings Status</Heading>
-              <Text color="gray.600">
-                Control whether these pricing adjustments are active.
+        {/* Settings Form */}
+        <Box p={6} bg="bg.surface" borderRadius="lg" border="1px solid" borderColor="border.primary">
+          <VStack spacing={6} align="stretch">
+            <Heading size="md">Adjust Pricing</Heading>
+            
+            {/* Customer Price Adjustment */}
+            <Box>
+              <HStack justify="space-between" mb={2}>
+                <Text fontWeight="medium">Customer Price Adjustment</Text>
+                <Badge colorScheme={customerAdjustment > 0 ? "green" : customerAdjustment < 0 ? "red" : "gray"}>
+                  {customerAdjustment > 0 ? "+" : ""}{customerAdjustment}%
+                </Badge>
+              </HStack>
+              <Text fontSize="sm" color="text.secondary" mb={3}>
+                Adjust customer pricing by percentage (-100% to +100%)
               </Text>
-              
-              <HStack>
+              <Slider
+                value={customerAdjustment}
+                onChange={setCustomerAdjustment}
+                min={-100}
+                max={100}
+                step={1}
+                colorScheme={customerAdjustment > 0 ? "green" : customerAdjustment < 0 ? "red" : "gray"}
+              >
+                <SliderTrack>
+                  <SliderFilledTrack />
+                </SliderTrack>
+                <SliderThumb />
+              </Slider>
+            </Box>
+
+            {/* Driver Rate Multiplier */}
+            <Box>
+              <HStack justify="space-between" mb={2}>
+                <Text fontWeight="medium">Driver Rate Multiplier</Text>
+                <Badge colorScheme="blue">{driverMultiplier}x</Badge>
+              </HStack>
+              <Text fontSize="sm" color="text.secondary" mb={3}>
+                Multiply driver earnings (0.5x to 2.0x)
+              </Text>
+              <Slider
+                value={driverMultiplier}
+                onChange={setDriverMultiplier}
+                min={0.5}
+                max={2.0}
+                step={0.1}
+                colorScheme="blue"
+              >
+                <SliderTrack>
+                  <SliderFilledTrack />
+                </SliderTrack>
+                <SliderThumb />
+              </Slider>
+            </Box>
+
+            {/* Active Status */}
+            <Box>
+              <HStack justify="space-between">
+                <VStack align="start" spacing={1}>
+                  <Text fontWeight="medium">Active Status</Text>
+                  <Text fontSize="sm" color="text.secondary">
+                    Enable or disable these pricing settings
+                  </Text>
+                </VStack>
                 <Switch
                   isChecked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  colorScheme="neon"
+                  colorScheme="green"
+                  size="lg"
                 />
-                <Text fontWeight="medium">
-                  {isActive ? "Settings are active" : "Settings are inactive"}
-                </Text>
               </HStack>
-              
-              {!isActive && (
-                <Text fontSize="sm" color="gray.500">
-                  When inactive, standard pricing rates will be used for all calculations.
-                </Text>
-              )}
-            </VStack>
-          </Box>
+            </Box>
 
-          {/* Save Button */}
-          <HStack justify="flex-end">
-            <Button 
-              onClick={saveSettings} 
-              disabled={saving}
-                             leftIcon={<FaSave />}
-              variant="primary"
+            {/* Save Button */}
+            <Button
+              onClick={saveSettings}
+              isLoading={saving}
+              loadingText="Saving..."
+              leftIcon={<FaSave />}
+              colorScheme="blue"
               size="lg"
             >
-              {saving ? "Saving..." : "Save Settings"}
+              Save Pricing Settings
             </Button>
-          </HStack>
-        </VStack>
+          </VStack>
+        </Box>
+
+        {/* Information */}
+        <Alert status="info">
+          <AlertIcon />
+          <Box>
+            <AlertTitle>Pricing Impact</AlertTitle>
+            <AlertDescription>
+              Changes to pricing settings will affect all new bookings. Customer prices and driver earnings will be adjusted according to these settings.
+            </AlertDescription>
+          </Box>
+        </Alert>
       </VStack>
     </Box>
   );

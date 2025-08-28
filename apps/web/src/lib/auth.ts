@@ -1,123 +1,105 @@
-import { AuthOptions, getServerSession } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
-import AppleProvider from "next-auth/providers/apple";
+import { NextAuthOptions, getServerSession } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { logAudit } from "@/lib/audit";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "./prisma";
 
-// Add database connection check
-async function checkDatabaseConnection() {
-  try {
-    await prisma.$connect();
-    console.log('✅ Database connection active');
-    return true;
-  } catch (error) {
-    console.error('❌ Database connection failed:', error);
-    return false;
-  }
-}
-
-export const authOptions: AuthOptions = {
-  session: { 
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours - rolling sessions
-  },
-  jwt: {
-    // Ensure JWT tokens are properly generated
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      }
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      }
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      }
-    }
-  },
+export const authOptions: NextAuthOptions = {
   providers: [
-    Credentials({
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(creds) {
-        console.log('🔐 Auth attempt for email:', creds?.email);
         if (!creds?.email || !creds?.password) {
           console.log('❌ Missing credentials');
           return null;
         }
-        
+
         try {
-          // Check database connection first
-          const dbConnected = await checkDatabaseConnection();
-          if (!dbConnected) {
-            console.log('❌ Database not connected');
-            return null;
-          }
-          
-          const user = await prisma.user.findUnique({ where: { email: creds.email } });
-          console.log('👤 User found:', user ? { id: user.id, email: user.email, role: user.role } : 'Not found');
-          
-          if (user) {
-            console.log('👤 Full user data:', {
-              id: user.id,
-              email: user.email,
-              role: user.role,
-              name: user.name,
-              adminRole: (user as any).adminRole
-            });
-          }
-          
+          // Find user by email
+          const user = await prisma.user.findUnique({
+            where: { email: creds.email },
+            include: {
+              driver: true,
+              driverApplication: true
+            }
+          });
+
           if (!user) {
             console.log('❌ User not found');
             return null;
           }
-          
-          const ok = await bcrypt.compare(creds.password, user.password);
-          console.log('🔑 Password comparison result:', ok);
-          console.log('🔑 Password details:', {
-            providedPassword: creds.password ? '***' : 'undefined',
-            hashedPassword: user.password ? '***' : 'undefined',
-            passwordLength: user.password?.length || 0
-          });
-          
-          if (!ok) {
-            console.log('❌ Password mismatch');
+
+          // Check if user account is active
+          if (!user.isActive) {
+            console.log('❌ User account is inactive');
             return null;
           }
-          
-          console.log('✅ Authentication successful for user:', { id: user.id, email: user.email, role: user.role });
-          const userData = { 
+
+          // Verify password
+          const isValidPassword = await bcrypt.compare(creds.password, user.password);
+          if (!isValidPassword) {
+            console.log('❌ Invalid password');
+            return null;
+          }
+
+          // Enforce strict role-based access control
+          if (user.role === 'driver') {
+            // For drivers, check if they have been approved
+            if (!user.driver || user.driver.onboardingStatus !== 'approved') {
+              console.log('❌ Driver not approved:', {
+                userId: user.id,
+                email: user.email,
+                hasDriverRecord: !!user.driver,
+                onboardingStatus: user.driver?.onboardingStatus
+              });
+              return null;
+            }
+
+            // Check if driver application is approved
+            if (user.driverApplication && user.driverApplication.status !== 'approved') {
+              console.log('❌ Driver application not approved:', {
+                userId: user.id,
+                email: user.email,
+                applicationStatus: user.driverApplication.status
+              });
+              return null;
+            }
+          } else if (user.role === 'customer') {
+            // For customers, ensure they don't have pending driver applications
+            // that could grant them driver access
+            if (user.driverApplication && user.driverApplication.status === 'pending') {
+              console.log('❌ Customer has pending driver application:', {
+                userId: user.id,
+                email: user.email,
+                applicationStatus: user.driverApplication.status
+              });
+              return null;
+            }
+          }
+
+          console.log('✅ Authentication successful for user:', { 
             id: user.id, 
             email: user.email, 
-            name: user.name ?? "", 
-            role: user.role, 
-            adminRole: (user as any).adminRole ?? null 
+            role: user.role,
+            isActive: user.isActive,
+            driverStatus: user.driver?.onboardingStatus,
+            applicationStatus: user.driverApplication?.status
+          });
+
+          const userData = {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? "",
+            role: user.role,
+            adminRole: (user as any).adminRole ?? null,
+            driverId: user.driver?.id ?? null,
+            driverStatus: user.driver?.onboardingStatus ?? null,
+            applicationStatus: user.driverApplication?.status ?? null
           };
+
           console.log('🔐 Returning user data:', userData);
           return userData as any;
         } catch (error) {
@@ -129,121 +111,116 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      console.log('🔐 JWT callback triggered:', { 
-        hasUser: !!user, 
-        hasToken: !!token, 
-        tokenId: token.id,
-        tokenRole: token.role 
-      });
-      
-      // Initial sign in
-      if (user) {
-        console.log('🔐 JWT callback - User data:', {
-          id: user.id,
-          email: user.email,
-          role: (user as any).role,
-          adminRole: (user as any).adminRole
-        });
-        
+      if (account && user) {
+        // Initial sign in
         token.id = user.id;
-        token.role = (user as any).role;
-        token.adminRole = (user as any).adminRole ?? null;
         token.email = user.email;
         token.name = user.name;
-        
-        console.log('🔐 JWT callback - Token updated:', {
-          id: token.id,
-          role: token.role,
-          adminRole: token.adminRole,
-          email: token.email,
-          name: token.name
-        });
+        token.role = (user as any).role;
+        token.adminRole = (user as any).adminRole;
+        token.driverId = (user as any).driverId;
+        token.driverStatus = (user as any).driverStatus;
+        token.applicationStatus = (user as any).applicationStatus;
       }
-      
-      // Log token data for debugging
-      console.log('🔐 JWT callback - Token data:', {
-        id: token.id,
-        role: token.role,
-        adminRole: token.adminRole,
-        email: token.email
-      });
-      
-      // Return previous token if the access token has not expired yet
       return token;
     },
     async session({ session, token }) {
-      console.log('🔐 Session callback triggered:', { 
-        hasSession: !!session, 
-        hasToken: !!token,
-        sessionUser: !!session?.user 
-      });
-      
-      // Send properties to the client
-      if (session.user) {
+      if (token) {
         session.user.id = token.id as string;
-        (session.user as any).role = token.role;
-        (session.user as any).adminRole = token.adminRole;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
-        
-        console.log('🔐 Session callback - Session data:', {
-          id: session.user.id,
-          email: session.user.email,
-          role: (session.user as any).role,
-          adminRole: (session.user as any).adminRole
-        });
-      } else {
-        console.log('⚠️ Session callback - No session.user found');
+        (session.user as any).role = token.role;
+        (session.user as any).adminRole = token.adminRole;
+        (session.user as any).driverId = token.driverId;
+        (session.user as any).driverStatus = token.driverStatus;
+        (session.user as any).applicationStatus = token.applicationStatus;
       }
-      console.log('🔐 Session callback - Final session:', session);
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle role-based redirects
-      if (url.startsWith(baseUrl)) {
-        // If it's a same-origin URL, check if it's a protected route
-        const path = url.replace(baseUrl, '');
-        
-        // If there's a returnTo parameter, use it
+      // Handle role-based redirects after login
+      // If the URL is a callback URL with role information, handle it appropriately
+      if (url.includes('callbackUrl')) {
+        // Extract the callback URL and check if it's role-specific
         const urlObj = new URL(url);
-        const returnTo = urlObj.searchParams.get('returnTo');
-        if (returnTo) {
-          // Validate returnTo URL
-          try {
-            const returnToUrl = new URL(returnTo, baseUrl);
-            if (returnToUrl.origin === baseUrl) {
-              return returnToUrl.pathname + returnToUrl.search + returnToUrl.hash;
-            }
-          } catch (error) {
-            console.warn('Invalid returnTo URL:', returnTo);
-          }
-        }
+        const callbackUrl = urlObj.searchParams.get('callbackUrl');
         
-        // Default role-based redirects (only if no returnTo)
-        if (path === '/' || path === '') {
-          // For root path, redirect based on user role
-          // This will be handled by the client-side after session is established
-          return url;
+        if (callbackUrl) {
+          // If there's a specific callback URL, use it
+          if (callbackUrl.startsWith('/')) {
+            return `${baseUrl}${callbackUrl}`;
+          } else if (callbackUrl.startsWith(baseUrl)) {
+            return callbackUrl;
+          }
         }
       }
       
-      // Allow external URLs (OAuth providers)
-      if (url.startsWith('http')) return url;
-      
-      // Default fallback
+      // Default behavior for other URLs
+      if (url.startsWith(baseUrl)) {
+        return url;
+      } else if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
       return baseUrl;
     },
   },
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
+  },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export async function requireRole(role: "admin" | "driver" | "customer") {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== role) return null;
+  
+  // Additional role-specific checks
+  if (role === 'driver') {
+    // Ensure driver is approved and active
+    if (!(session.user as any).driverId || (session.user as any).driverStatus !== 'approved') {
+      console.log('❌ Driver access denied - not approved:', {
+        userId: session.user.id,
+        email: session.user.email,
+        driverId: (session.user as any).driverId,
+        driverStatus: (session.user as any).driverStatus
+      });
+      return null;
+    }
+  } else if (role === 'customer') {
+    // Ensure customer doesn't have pending driver applications
+    if ((session.user as any).applicationStatus === 'pending') {
+      console.log('❌ Customer access denied - pending driver application:', {
+        userId: session.user.id,
+        email: session.user.email,
+        applicationStatus: (session.user as any).applicationStatus
+      });
+      return null;
+    }
+  }
+  
   return session;
 }
 
 export async function requireDriver() {
-  return requireRole("driver");
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user as any).role !== "driver") return null;
+  
+  // Ensure driver is approved and active
+  if (!(session.user as any).driverId || (session.user as any).driverStatus !== 'approved') {
+    console.log('❌ Driver access denied - not approved:', {
+      userId: session.user.id,
+      email: session.user.email,
+      driverId: (session.user as any).driverId,
+      driverStatus: (session.user as any).driverStatus
+    });
+    return null;
+  }
+  
+  return session;
 }
 
 export async function requireAdmin(allowedAdminRoles?: Array<"superadmin" | "ops" | "support" | "reviewer" | "finance" | "read_only">) {
@@ -257,16 +234,79 @@ export async function requireAdmin(allowedAdminRoles?: Array<"superadmin" | "ops
   return session;
 }
 
-export async function requireDriverWithData() {
-  const session = await requireDriver();
-  if (!session) return null;
+export async function requireCustomer() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user as any).role !== "customer") return null;
+  
+  // Ensure customer doesn't have pending driver applications
+  if ((session.user as any).applicationStatus === 'pending') {
+    console.log('❌ Customer access denied - pending driver application:', {
+      userId: session.user.id,
+      email: session.user.email,
+      applicationStatus: (session.user as any).applicationStatus
+    });
+    return null;
+  }
+  
+  return session;
+}
 
-  // Fetch driver data
-  const driver = await prisma.driver.findUnique({
-    where: { userId: session.user.id }
-  });
+// Helper function to check if user can access driver portal
+export async function canAccessDriverPortal(userId: string): Promise<boolean> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        driver: true,
+        driverApplication: true
+      }
+    });
 
-  return { session, driver };
+    if (!user || user.role !== 'driver' || !user.isActive) {
+      return false;
+    }
+
+    // Check if driver is approved
+    if (!user.driver || user.driver.onboardingStatus !== 'approved') {
+      return false;
+    }
+
+    // Check if driver application is approved
+    if (user.driverApplication && user.driverApplication.status !== 'approved') {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error checking driver portal access:', error);
+    return false;
+  }
+}
+
+// Helper function to check if user can access customer portal
+export async function canAccessCustomerPortal(userId: string): Promise<boolean> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        driverApplication: true
+      }
+    });
+
+    if (!user || user.role !== 'customer' || !user.isActive) {
+      return false;
+    }
+
+    // Check if customer has pending driver applications
+    if (user.driverApplication && user.driverApplication.status === 'pending') {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error checking customer portal access:', error);
+    return false;
+  }
 }
 
 

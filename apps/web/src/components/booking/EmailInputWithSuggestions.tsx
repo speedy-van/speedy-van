@@ -142,6 +142,7 @@ export default function EmailInputWithSuggestions({
   const [isOpen, setIsOpen] = useState(false);
   const [filteredDomains, setFilteredDomains] = useState<string[]>(EMAIL_DOMAINS);
   const [localValue, setLocalValue] = useState(value);
+  const [justSelected, setJustSelected] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -162,19 +163,30 @@ export default function EmailInputWithSuggestions({
     const inputValue = e.target.value;
     setLocalValue(inputValue);
     
-    // Filter domains based on input
-    if (inputValue.includes('@')) {
-      const [localPart, domainPart] = inputValue.split('@');
-      if (domainPart) {
-        const filtered = EMAIL_DOMAINS.filter(domain =>
-          domain.toLowerCase().startsWith('@' + domainPart.toLowerCase())
-        );
-        setFilteredDomains(filtered);
+    // Don't show suggestions if we just selected a domain
+    if (justSelected) {
+      onChange(inputValue);
+      return;
+    }
+    
+    // Show suggestions as soon as user starts typing
+    if (inputValue.length > 0) {
+      if (inputValue.includes('@')) {
+        const [localPart, domainPart] = inputValue.split('@');
+        if (domainPart) {
+          const filtered = EMAIL_DOMAINS.filter(domain =>
+            domain.toLowerCase().startsWith('@' + domainPart.toLowerCase())
+          );
+          setFilteredDomains(filtered);
+        } else {
+          setFilteredDomains(EMAIL_DOMAINS);
+        }
       } else {
-        setFilteredDomains(EMAIL_DOMAINS);
+        // Show popular domains even before @ symbol
+        setFilteredDomains(EMAIL_DOMAINS.slice(0, 10));
       }
     } else {
-      setFilteredDomains(EMAIL_DOMAINS);
+      setFilteredDomains([]);
     }
 
     // Update parent component
@@ -185,19 +197,33 @@ export default function EmailInputWithSuggestions({
     const [localPart] = localValue.split('@');
     const newValue = localPart + domain;
     setLocalValue(newValue);
-    onChange(newValue);
+    setJustSelected(true);
     setIsOpen(false);
-    inputRef.current?.focus();
+    onChange(newValue);
+    
+    // Add a small delay before focusing to prevent immediate re-opening
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+    
+    // Reset the justSelected flag after a longer delay
+    setTimeout(() => {
+      setJustSelected(false);
+    }, 500);
   };
 
   const handleInputFocus = () => {
-    if (localValue.includes('@')) {
+    // Show suggestions when user focuses on input
+    // Only show if there's content and dropdown isn't being closed and we haven't just selected
+    if (localValue.length > 0 && !isOpen && !justSelected) {
       setIsOpen(true);
     }
   };
 
   const handleInputClick = () => {
-    if (localValue.includes('@')) {
+    // Show suggestions when user clicks on input
+    // Only show if there's content and dropdown isn't being closed and we haven't just selected
+    if (localValue.length > 0 && !isOpen && !justSelected) {
       setIsOpen(true);
     }
   };
@@ -216,33 +242,18 @@ export default function EmailInputWithSuggestions({
 
   return (
     <Box ref={containerRef} position="relative" w="full">
-      <HStack spacing={2}>
-        <InputGroup size={size}>
-          <InputLeftElement>
-            <FaEnvelope />
-          </InputLeftElement>
-          <Input
-            ref={inputRef}
-            type="email"
-            value={localValue}
-            onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onClick={handleInputClick}
-            placeholder={placeholder}
-            isInvalid={isInvalid}
-            pr="40px"
-          />
-        </InputGroup>
-        <Button
-          size={size}
-          variant="ghost"
-          onClick={toggleDropdown}
-          minW="40px"
-          px={2}
-        >
-          <Icon as={isOpen ? FaChevronUp : FaChevronDown} />
-        </Button>
-      </HStack>
+      <InputGroup size={size}>
+        <Input
+          ref={inputRef}
+          type="email"
+          value={localValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onClick={handleInputClick}
+          placeholder={placeholder}
+          isInvalid={isInvalid}
+        />
+      </InputGroup>
 
       {/* Domain Suggestions Dropdown */}
       {isOpen && (
@@ -262,12 +273,12 @@ export default function EmailInputWithSuggestions({
           mt={1}
         >
           <VStack spacing={0} align="stretch">
-            {/* Popular domains section */}
-            <Box p={3} bg="bg.surface" borderBottomWidth="1px" borderColor="border.primary">
-              <Text fontSize="sm" fontWeight="semibold" color="neon.500">
-                Popular Domains
-              </Text>
-            </Box>
+                         {/* Popular domains section */}
+             <Box p={3} bg="bg.surface" borderBottomWidth="1px" borderColor="border.primary">
+               <Text fontSize="sm" fontWeight="semibold" color="neon.500">
+                 {localValue.includes('@') ? 'Popular Domains' : 'Popular Email Domains'}
+               </Text>
+             </Box>
             
             {/* Domain suggestions */}
             {filteredDomains.slice(0, 20).map((domain, index) => (

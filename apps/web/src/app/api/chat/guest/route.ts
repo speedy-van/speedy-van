@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     // Find or create a system user for guest messages
     let systemUser = await prisma.user.findFirst({
       where: {
-        email: 'system@speedyvan.com',
+        email: 'system@speedy-van.co.uk',
         role: 'admin'
       }
     });

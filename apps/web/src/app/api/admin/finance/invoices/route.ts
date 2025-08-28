@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getAdminInvoices } from '@/lib/invoices';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
@@ -18,96 +19,17 @@ export async function GET(request: NextRequest) {
     const fromDate = searchParams.get('fromDate') || '';
     const toDate = searchParams.get('toDate') || '';
 
-    const skip = (page - 1) * limit;
-
-    // Build where clause
-    const where: any = {};
-
-    if (search) {
-      where.OR = [
-        { reference: { contains: search, mode: 'insensitive' } },
-        { contactEmail: { contains: search, mode: 'insensitive' } },
-        { contactName: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (fromDate || toDate) {
-      where.createdAt = {};
-      if (fromDate) where.createdAt.gte = new Date(fromDate);
-      if (toDate) where.createdAt.lte = new Date(toDate);
-    }
-
-    const [invoices, total] = await Promise.all([
-      prisma.booking.findMany({
-        where,
-        include: {
-          customer: true,
-          driver: {
-            include: {
-              user: true
-            }
-          }
-        },
-        orderBy: {
-          paidAt: 'desc'
-        },
-        skip,
-        take: limit
-      }),
-      prisma.booking.count({ where })
-    ]);
-
-    // Get summary statistics
-    const summary = await prisma.booking.aggregate({
-      _sum: {
-        totalGBP: true
-      },
-      _count: {
-        id: true
-      },
-      where: {
-        status: 'COMPLETED'
-      }
+    const result = await getAdminInvoices(page, limit, {
+      search,
+      status,
+      fromDate,
+      toDate
     });
 
     return NextResponse.json({
-      invoices: invoices.map(invoice => ({
-        id: invoice.id,
-        invoiceNumber: invoice.reference,
-        reference: invoice.reference,
-        customer: {
-          id: invoice.customerId,
-          name: invoice.customer?.name || 'Unknown',
-          email: invoice.customer?.email || 'Unknown',
-          phone: 'Unknown'
-        },
-        totalGBP: invoice.totalGBP || 0,
-        status: invoice.status,
-        paidAt: invoice.paidAt,
-        createdAt: invoice.createdAt,
-        pickupAddress: null,
-        dropoffAddress: null,
-        driver: invoice.driver ? {
-          id: invoice.driver.id,
-          name: invoice.driver.user.name,
-          email: invoice.driver.user.email
-        } : null,
-        paymentIntentId: invoice.stripePaymentIntentId
-      })),
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      },
-      summary: {
-        totalRevenue: summary._sum.totalGBP || 0,
-        totalInvoices: summary._count.id || 0
-      }
+      invoices: result.invoices,
+      pagination: result.pagination,
+      summary: result.summary
     });
 
   } catch (error) {
@@ -168,9 +90,11 @@ export async function POST(request: NextRequest) {
         date: booking.createdAt,
         dueDate: booking.createdAt,
         status: String(booking.status),
-        customerName: 'Unknown',
-        customerEmail: 'Unknown',
-        customerPhone: 'Unknown',
+        customer: {
+          name: 'Unknown',
+          email: 'Unknown',
+          phone: 'Unknown'
+        },
         pickupAddress: '',
         dropoffAddress: '',
         vanSize: '',

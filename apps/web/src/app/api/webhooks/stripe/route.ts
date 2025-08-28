@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyWebhookSignature } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { sendAdminNotification } from '@/lib/notifications';
+import { sendDriverNotification } from '@/lib/driver-notifications';
+import { generateUniqueUnifiedBookingId } from '@/lib/booking-id';
+import { createInvoiceForBooking } from '@/lib/invoices';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -101,9 +105,49 @@ async function handleCheckoutSessionCompleted(session: any) {
       },
     });
 
-    console.log('✅ Booking confirmed:', bookingId);
+    console.log('✅ Booking confirmed:', { bookingId });
     
-    // TODO: Send confirmation email
+    // Get the complete booking data to send admin notification
+    const completeBooking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        pickupAddress: true,
+        dropoffAddress: true,
+        pickupProperty: true,
+        dropoffProperty: true,
+        items: true,
+        Assignment: {
+          include: {
+            Driver: true
+          }
+        }
+      }
+    });
+
+    if (completeBooking) {
+      // Send admin notification with complete booking details
+      await sendAdminNotification(completeBooking, session);
+      
+      // Send driver notifications if any drivers are assigned
+      if (completeBooking.Assignment?.Driver) {
+        await sendDriverNotification(completeBooking, completeBooking.Assignment.Driver.id, 'job_offer');
+      }
+      
+      // Create invoice for the paid booking
+      try {
+        await createInvoiceForBooking({
+          bookingId: completeBooking.id,
+          stripePaymentIntentId: session.payment_intent,
+          paidAt: new Date()
+        });
+        console.log('✅ Invoice created for booking:', completeBooking.reference);
+      } catch (invoiceError) {
+        console.error('❌ Error creating invoice:', invoiceError);
+        // Don't fail the webhook if invoice creation fails
+      }
+    }
+    
+    // TODO: Send confirmation email to customer
     // TODO: Notify driver
     // TODO: Update availability
     

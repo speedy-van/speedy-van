@@ -8,6 +8,9 @@ declare module "next-auth" {
       name?: string | null
       role: "admin" | "driver" | "customer"
       adminRole?: "superadmin" | "ops" | "support" | "reviewer" | "finance" | "read_only" | null
+      driverId?: string | null
+      driverStatus?: string | null
+      applicationStatus?: string | null
     }
   }
 
@@ -17,6 +20,9 @@ declare module "next-auth" {
     name?: string | null
     role: "admin" | "driver" | "customer"
     adminRole?: "superadmin" | "ops" | "support" | "reviewer" | "finance" | "read_only" | null
+    driverId?: string | null
+    driverStatus?: string | null
+    applicationStatus?: string | null
   }
 }
 
@@ -25,5 +31,8 @@ declare module "next-auth/jwt" {
     id: string
     role: "admin" | "driver" | "customer"
     adminRole?: "superadmin" | "ops" | "support" | "reviewer" | "finance" | "read_only" | null
+    driverId?: string | null
+    driverStatus?: string | null
+    applicationStatus?: string | null
   }
 }

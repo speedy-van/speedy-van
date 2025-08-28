@@ -208,8 +208,8 @@ export default function EnhancedBookingSummary({
           )}
         </Box>
 
-        {/* Schedule & Crew */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+        {/* Schedule */}
+        <SimpleGrid columns={{ base: 1, md: 1 }} spacing={4}>
           <Box>
             <Text fontSize="lg" fontWeight="semibold" mb={3} color="gray.700">
               <Icon as={FaCalendar} mr={2} color="blue.500" />
@@ -227,51 +227,32 @@ export default function EnhancedBookingSummary({
             </VStack>
           </Box>
 
-          <Box>
-            <Text fontSize="lg" fontWeight="semibold" mb={3} color="gray.700">
-              <Icon as={FaUsers} mr={2} color="blue.500" />
-              Crew
-            </Text>
-            <VStack align="start" spacing={2}>
-              <HStack>
-                <Text fontSize="sm" fontWeight="medium" color="gray.600">Size:</Text>
-                <Text fontSize="sm" color="gray.700">
-                  {bookingData.crewSize || 2} person{(bookingData.crewSize || 2) !== 1 ? 's' : ''}
-                </Text>
-              </HStack>
-              <HStack>
-                <Text fontSize="sm" fontWeight="medium" color="gray.600">Type:</Text>
-                <Badge colorScheme="green" size="sm">
-                  Professional Moving Team
-                </Badge>
-              </HStack>
-            </VStack>
-          </Box>
+
         </SimpleGrid>
 
         {/* Customer Details */}
-        {(bookingData.customerName || bookingData.customerEmail || bookingData.customerPhone) && (
+        {(bookingData.customer?.name || bookingData.customer?.email || bookingData.customer?.phone) && (
           <Box>
             <Text fontSize="lg" fontWeight="semibold" mb={3} color="gray.700">
               Customer Details
             </Text>
             <VStack align="start" spacing={2}>
-              {bookingData.customerName && (
+              {bookingData.customer?.name && (
                 <HStack>
                   <Text fontSize="sm" fontWeight="medium" color="gray.600">Name:</Text>
-                  <Text fontSize="sm" color="gray.700">{bookingData.customerName}</Text>
+                  <Text fontSize="sm" color="gray.700">{bookingData.customer.name}</Text>
                 </HStack>
               )}
-              {bookingData.customerEmail && (
+              {bookingData.customer?.email && (
                 <HStack>
                   <Text fontSize="sm" fontWeight="medium" color="gray.600">Email:</Text>
-                  <Text fontSize="sm" color="gray.700">{bookingData.customerEmail}</Text>
+                  <Text fontSize="sm" color="gray.700">{bookingData.customer.email}</Text>
                 </HStack>
               )}
-              {bookingData.customerPhone && (
+              {bookingData.customer?.phone && (
                 <HStack>
                   <Text fontSize="sm" fontWeight="medium" color="gray.600">Phone:</Text>
-                  <Text fontSize="sm" color="gray.700">{bookingData.customerPhone}</Text>
+                  <Text fontSize="sm" color="gray.700">{bookingData.customer.phone}</Text>
                 </HStack>
               )}
             </VStack>

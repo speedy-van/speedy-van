@@ -118,7 +118,7 @@ const MotionBox = motion.create(Box);
       <Flex h="100vh" overflow="hidden" bg="bg.canvas">
         <Box
           bg={bgColor}
-          borderRight="1px solid"
+          borderRight="2px solid"
           borderColor={borderColor}
           h="100vh"
           position="sticky"
@@ -132,7 +132,7 @@ const MotionBox = motion.create(Box);
         <Flex direction="column" flex={1} overflow="hidden">
           <Box
             bg={bgColor}
-            borderBottom="1px solid"
+            borderBottom="2px solid"
             borderColor={borderColor}
             px={6}
             py={3}
@@ -160,7 +160,7 @@ const MotionBox = motion.create(Box);
       {/* Sidebar */}
       <Box
         bg={bgColor}
-        borderRight="1px solid"
+        borderRight="2px solid"
         borderColor={borderColor}
         h="100vh"
         position="sticky"
@@ -170,6 +170,7 @@ const MotionBox = motion.create(Box);
         transition="width 0.2s"
         width={isSidebarCollapsed ? "60px" : "280px"}
         overflow="hidden"
+        boxShadow="xl"
       >
         <AdminNavigation isCollapsed={isSidebarCollapsed} />
       </Box>
@@ -186,24 +187,25 @@ const MotionBox = motion.create(Box);
         {/* Topbar */}
         <Box
           bg={bgColor}
-          borderBottom="1px solid"
+          borderBottom="2px solid"
           borderColor={borderColor}
-          px={6}
-          py={3}
+          px={8}
+          py={4}
           position="sticky"
           top={0}
           zIndex={10}
+          boxShadow="lg"
         >
-          <Flex align="center" gap={4}>
+          <Flex align="center" gap={6}>
             {/* Left side - Title and breadcrumb */}
-            <VStack align="start" spacing={0}>
+            <VStack align="start" spacing={1}>
               {title && (
-                <Text fontSize="lg" fontWeight="semibold" color="text.primary">
+                <Text fontSize="xl" fontWeight="bold" color="neon.500">
                   {title}
                 </Text>
               )}
               {subtitle && (
-                <Text fontSize="sm" color="text.tertiary">
+                <Text fontSize="md" color="text.tertiary">
                   {subtitle}
                 </Text>
               )}
@@ -212,35 +214,45 @@ const MotionBox = motion.create(Box);
             <Spacer />
 
             {/* Center - Global search */}
-            <Box w="400px">
+            <Box w="450px">
               <GlobalSearch />
             </Box>
 
             <Spacer />
 
             {/* Right side - Actions and user menu */}
-            <HStack spacing={3}>
+            <HStack spacing={4}>
               {/* Connection status */}
-              <HStack spacing={1}>
+              <HStack 
+                spacing={2} 
+                p={2} 
+                borderRadius="lg" 
+                bg={isOnline ? "green.50" : "red.50"}
+                _dark={{ bg: isOnline ? "green.900" : "red.900" }}
+                borderWidth="1px"
+                borderColor={isOnline ? "green.200" : "red.200"}
+              >
                 <Icon
                   as={isOnline ? FiWifi : FiWifiOff}
                   color={isOnline ? 'success.500' : 'error.500'}
                   boxSize={4}
                 />
-                <Text fontSize="xs" color={isOnline ? 'success.500' : 'error.500'}>
+                <Text fontSize="xs" color={isOnline ? 'success.500' : 'error.500'} fontWeight="medium">
                   {isOnline ? 'Online' : 'Offline'}
                 </Text>
               </HStack>
 
               {/* Notifications */}
               <IconButton
-                size="sm"
+                size="md"
                 variant="ghost"
                 icon={<Icon as={FiBell} />}
                 aria-label="Notifications"
                 position="relative"
                 color="text.secondary"
-                _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
+                _hover={{ bg: 'bg.surface.hover', color: 'neon.400' }}
+                borderRadius="lg"
+                transition="all 0.2s"
               >
                 <Badge
                   position="absolute"
@@ -249,6 +261,7 @@ const MotionBox = motion.create(Box);
                   size="sm"
                   colorScheme="red"
                   borderRadius="full"
+                  boxShadow="0 2px 8px rgba(239,68,68,0.3)"
                 >
                   3
                 </Badge>
@@ -257,10 +270,22 @@ const MotionBox = motion.create(Box);
               {/* Create button */}
               {showCreateButton && (
                 <Button
-                  size="sm"
+                  size="md"
                   leftIcon={<Icon as={FiPlus} />}
                   onClick={handleCreateClick}
                   variant="primary"
+                  bg="linear-gradient(135deg, #00C2FF, #00D18F)"
+                  color="white"
+                  _hover={{
+                    bg: "linear-gradient(135deg, #00D18F, #00C2FF)",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 8px 25px rgba(0,194,255,0.3)"
+                  }}
+                  _active={{
+                    bg: "linear-gradient(135deg, #00B8E6, #00C2FF)"
+                  }}
+                  transition="all 0.3s ease"
+                  borderRadius="xl"
                 >
                   Create
                 </Button>
@@ -277,23 +302,26 @@ const MotionBox = motion.create(Box);
                 <MenuButton
                   as={Button}
                   variant="ghost"
-                  size="sm"
-                  px={2}
-                  py={1}
+                  size="md"
+                  px={3}
+                  py={2}
                   color="text.secondary"
-                  _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}
+                  _hover={{ bg: 'bg.surface.hover', color: 'neon.400' }}
+                  borderRadius="xl"
+                  transition="all 0.2s"
                 >
-                  <HStack spacing={2}>
+                  <HStack spacing={3}>
                     <Avatar
-                      size="sm"
+                      size="md"
                       name={session?.user?.name || 'User'}
                       src={undefined}
                       bg="neon.500"
                       color="dark.900"
+                      boxShadow="0 4px 15px rgba(0,194,255,0.3)"
                     />
                     {!isSidebarCollapsed && (
                       <VStack align="start" spacing={0}>
-                        <Text fontSize="sm" fontWeight="medium" color="text.primary">
+                        <Text fontSize="sm" fontWeight="semibold" color="text.primary">
                           {session?.user?.name || 'Admin User'}
                         </Text>
                         <Text fontSize="xs" color="text.tertiary">
@@ -303,15 +331,44 @@ const MotionBox = motion.create(Box);
                     )}
                   </HStack>
                 </MenuButton>
-                <MenuList bg="bg.surface" borderColor="border.primary">
-                  <MenuItem icon={<Icon as={FiUser} />} color="text.secondary" _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}>
+                <MenuList 
+                  bg="bg.surface" 
+                  borderColor="border.primary"
+                  borderWidth="2px"
+                  borderRadius="xl"
+                  boxShadow="xl"
+                  py={2}
+                >
+                  <MenuItem 
+                    icon={<Icon as={FiUser} />} 
+                    color="text.secondary" 
+                    _hover={{ bg: 'bg.surface.hover', color: 'neon.400' }}
+                    borderRadius="lg"
+                    mx={2}
+                    mb={1}
+                  >
                     Profile
                   </MenuItem>
-                  <MenuItem icon={<Icon as={FiSettings} />} color="text.secondary" _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}>
+                  <MenuItem 
+                    icon={<Icon as={FiSettings} />} 
+                    color="text.secondary" 
+                    _hover={{ bg: 'bg.surface.hover', color: 'neon.400' }}
+                    borderRadius="lg"
+                    mx={2}
+                    mb={1}
+                  >
                     Settings
                   </MenuItem>
-                  <MenuDivider borderColor="border.primary" />
-                  <MenuItem icon={<Icon as={FiLogOut} />} onClick={handleSignOut} color="text.secondary" _hover={{ bg: 'bg.surface.hover', color: 'text.primary' }}>
+                  <MenuDivider borderColor="border.primary" mx={2} />
+                  <MenuItem 
+                    icon={<Icon as={FiLogOut} />} 
+                    onClick={handleSignOut} 
+                    color="text.secondary" 
+                    _hover={{ bg: 'bg.surface.hover', color: 'red.400' }}
+                    borderRadius="lg"
+                    mx={2}
+                    mt={1}
+                  >
                     Sign out
                   </MenuItem>
                 </MenuList>
@@ -325,9 +382,23 @@ const MotionBox = motion.create(Box);
           flex={1}
           overflow="auto"
           bg={contentBg}
-          p={6}
+          p={8}
+          position="relative"
         >
-          {children}
+          {/* Background Pattern */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            opacity={0.02}
+            background="radial-gradient(circle at 20% 80%, rgba(0,194,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,209,143,0.1) 0%, transparent 50%)"
+            pointerEvents="none"
+          />
+          <Box position="relative" zIndex={1}>
+            {children}
+          </Box>
         </Box>
       </MotionFlex>
 

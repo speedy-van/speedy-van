@@ -172,7 +172,7 @@ export async function POST(
       // Find the system user for guest messages
       const systemUser = await prisma.user.findFirst({
         where: {
-          email: 'system@speedyvan.com'
+          email: 'system@speedy-van.co.uk'
         }
       });
       

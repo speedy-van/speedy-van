@@ -9,7 +9,9 @@
     "start": "npm run start --prefix apps/web",
     "lint": "npm run lint --prefix apps/web",
     "verify-logos": "node scripts/verify-logos.mjs",
-    "svgo": "node scripts/svgo.mjs"
+    "svgo": "node scripts/svgo.mjs",
+    "validate-catalog": "tsx scripts/validate-catalog-data.ts",
+    "build-synonym-index": "tsx scripts/build-synonym-index.ts"
   },
   "devDependencies": {
     "tsx": "^4.20.4"

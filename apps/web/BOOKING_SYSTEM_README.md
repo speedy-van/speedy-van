@@ -61,7 +61,7 @@ curl -X POST /api/bookings \
     "dropoffAddress": {...},
     "crewSize": "TWO",
     "customerName": "John Doe",
-    "customerPhone": "07000000000",
+    "customerPhone": "07901846297",
     "customerEmail": "john@example.com"
   }'
 ```

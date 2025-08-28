@@ -66,7 +66,7 @@ BOOKING_RESPONSE=$(curl -s -X POST "$BASE_URL/api/bookings" \
     \"timeSlot\": $TIME_SLOT,
     \"stairsFloors\": $STAIRS_FLOORS,
     \"customerName\": \"Test User\",
-    \"customerPhone\": \"07000000000\",
+    \"customerPhone\": \"07901846297\",
     \"customerEmail\": \"test@example.com\"
   }")
 

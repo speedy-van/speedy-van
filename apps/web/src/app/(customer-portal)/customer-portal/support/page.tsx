@@ -331,7 +331,7 @@ export default function CustomerSupportPage() {
                 Get help via email
               </Text>
               <Button size="sm" colorScheme="blue" variant="outline" onClick={onOpen}>
-                support@speedyvan.com
+                support@speedy-van.co.uk
               </Button>
             </CardBody>
           </Card>
@@ -711,7 +711,7 @@ export default function CustomerSupportPage() {
                 <Box>
                   <AlertTitle>Email us directly</AlertTitle>
                   <AlertDescription>
-                    Send an email to <strong>support@speedyvan.com</strong> with your inquiry.
+                    Send an email to <strong>support@speedy-van.co.uk</strong> with your inquiry.
                   </AlertDescription>
                 </Box>
               </Alert>

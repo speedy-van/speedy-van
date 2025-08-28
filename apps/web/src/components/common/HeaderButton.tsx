@@ -10,7 +10,6 @@ export default function HeaderButton({ href, label, ...rest }: Props) {
       as={NextLink}
       href={href}
       variant="headerCta"
-      size="md" // Use medium size for header buttons
       aria-label={label}
       {...rest}
     >

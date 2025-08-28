@@ -1,21 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { computeQuote, type PricingInputs, type PricingResult } from './engine';
+import { computeQuote, type PricingInputs, type PricingResponse } from './engine';
 
 export function PricingCalculator() {
   const [formData, setFormData] = useState<PricingInputs>({
-    miles: 25,
+    distanceMiles: 25,
     items: [
-      { key: 'sofa', quantity: 1 },
-      { key: 'dining_table', quantity: 1 },
+      { id: 'sofa', canonicalName: 'Sofa', quantity: 1, volumeFactor: 1.5, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 45 },
+      { id: 'dining_table', canonicalName: 'Dining Table', quantity: 1, volumeFactor: 1.4, requiresTwoPerson: true, isFragile: false, requiresDisassembly: true, basePriceHint: 38 },
     ],
-    workersTotal: 2,
-
-    vatRegistered: true,
+    pickupFloors: 1,
+    pickupHasLift: false,
+    dropoffFloors: 1,
+    dropoffHasLift: false,
+    helpersCount: 2,
+    extras: { ulez: false, vat: true },
   });
 
-  const [quote, setQuote] = useState<PricingResult | null>(null);
+  const [quote, setQuote] = useState<PricingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Compute quote when form data changes
@@ -35,7 +38,7 @@ export function PricingCalculator() {
     calculateQuote();
   }, [formData]);
 
-  const updateItem = (index: number, field: 'key' | 'quantity', value: string | number) => {
+  const updateItem = (index: number, field: 'id' | 'quantity', value: string | number) => {
     const newItems = [...formData.items];
     newItems[index] = { ...newItems[index], [field]: value };
     setFormData({ ...formData, items: newItems });
@@ -44,7 +47,7 @@ export function PricingCalculator() {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { key: 'box', quantity: 1 }],
+      items: [...formData.items, { id: 'box', canonicalName: 'Box', quantity: 1, volumeFactor: 0.2, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 4 }],
     });
   };
 
@@ -65,8 +68,8 @@ export function PricingCalculator() {
         <input
           type="number"
           min="0"
-          value={formData.miles}
-          onChange={(e) => setFormData({ ...formData, miles: Number(e.target.value) || 0 })}
+          value={formData.distanceMiles}
+          onChange={(e) => setFormData({ ...formData, distanceMiles: Number(e.target.value) || 0 })}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -77,8 +80,8 @@ export function PricingCalculator() {
         {formData.items.map((item, index) => (
           <div key={index} className="flex gap-2 mb-2">
             <select
-              value={item.key}
-              onChange={(e) => updateItem(index, 'key', e.target.value)}
+              value={item.id}
+              onChange={(e) => updateItem(index, 'id', e.target.value)}
               className="flex-1 p-2 border rounded"
             >
               <option value="sofa">كنبة</option>
@@ -101,7 +104,7 @@ export function PricingCalculator() {
               onClick={() => removeItem(index)}
               className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             >
-              حذف
+              Remove
             </button>
           </div>
         ))}
@@ -109,20 +112,20 @@ export function PricingCalculator() {
           onClick={addItem}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          إضافة عنصر
+          Add Item
         </button>
       </div>
 
       {/* Workers */}
       <div className="mb-4">
         <label className="block text-sm font-medium mb-2">
-          عدد العمال (بما في ذلك السائق)
+          Number of Workers (including driver)
         </label>
         <input
           type="number"
           min="1"
-          value={formData.workersTotal}
-          onChange={(e) => setFormData({ ...formData, workersTotal: Number(e.target.value) || 1 })}
+          value={formData.helpersCount}
+          onChange={(e) => setFormData({ ...formData, helpersCount: Number(e.target.value) || 1 })}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -133,11 +136,11 @@ export function PricingCalculator() {
         <label className="flex items-center">
           <input
             type="checkbox"
-            checked={formData.vatRegistered}
-            onChange={(e) => setFormData({ ...formData, vatRegistered: e.target.checked })}
+            checked={formData.extras.vat}
+            onChange={(e) => setFormData({ ...formData, extras: { ...formData.extras, vat: e.target.checked } })}
             className="mr-2"
           />
-          شركة مسجلة للضريبة
+          VAT Registered Company
         </label>
       </div>
 
@@ -150,31 +153,31 @@ export function PricingCalculator() {
 
       {quote && !error && (
         <div className="mt-6 p-4 bg-gray-50 rounded">
-          <h3 className="text-lg font-semibold mb-2">السعر المقدر</h3>
+          <h3 className="text-lg font-semibold mb-2">Estimated Price</h3>
           <div className="text-3xl font-bold text-green-600 mb-4">
-            £{quote.totalGBP}
+            £{quote.breakdown.total}
           </div>
           
           <div className="text-sm space-y-1">
             <div className="flex justify-between">
-              <span>السعر الأساسي:</span>
-              <span>£{quote.breakdown.baseRate}</span>
+              <span>Base Price:</span>
+                              <span>£{quote.breakdown.distanceBase}</span>
             </div>
             <div className="flex justify-between">
-              <span>المسافة ({formData.miles} ميل):</span>
-              <span>£{quote.breakdown.distanceCost}</span>
+                              <span>Distance ({formData.distanceMiles} miles):</span>
+                              <span>£{quote.breakdown.distanceBase}</span>
             </div>
             <div className="flex justify-between">
-              <span>العناصر:</span>
-              <span>£{quote.breakdown.itemsCost}</span>
+              <span>Items:</span>
+                              <span>£{quote.breakdown.totalVolumeFactor}</span>
             </div>
             <div className="flex justify-between">
-              <span>عمال إضافيون:</span>
-              <span>£{quote.breakdown.workersCost}</span>
+              <span>Additional Workers:</span>
+                              <span>£{quote.breakdown.helpersCost}</span>
             </div>
             {quote.breakdown.vat > 0 && (
               <div className="flex justify-between">
-                <span>الضريبة:</span>
+                <span>VAT:</span>
                 <span>£{quote.breakdown.vat}</span>
               </div>
             )}
@@ -184,7 +187,7 @@ export function PricingCalculator() {
 
       {/* Debug Info */}
       <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
-        <h4 className="font-semibold mb-2">معلومات التصحيح:</h4>
+        <h4 className="font-semibold mb-2">Debug Information:</h4>
         <pre className="whitespace-pre-wrap">
           {JSON.stringify({ formData, quote }, null, 2)}
         </pre>

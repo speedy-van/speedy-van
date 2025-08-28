@@ -54,7 +54,7 @@ export default function BookingSummary({
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
           <Text fontSize="xl" fontWeight="bold" color="neon.500">
-            Step 7: Booking Summary
+            Booking Summary (Combined with Payment)
           </Text>
           <Text fontSize="sm" color="text.secondary" mt={2}>
             Review your booking details and total cost
@@ -94,10 +94,7 @@ export default function BookingSummary({
               <Text fontWeight="medium">Time Slot:</Text>
               <Text>{bookingData.timeSlot || 'Not set'}</Text>
             </HStack>
-            <HStack justify="space-between" w="full">
-              <Text fontWeight="medium">Crew Size:</Text>
-              <Text>{bookingData.crewSize} person{bookingData.crewSize !== 1 ? 's' : ''}</Text>
-            </HStack>
+
             <HStack justify="space-between" w="full">
               <Text fontWeight="medium">Customer:</Text>
               <Text>{bookingData.customer?.name || 'Not set'}</Text>

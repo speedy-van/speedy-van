@@ -56,7 +56,7 @@ export default function StripePaymentButton({
             // Ensure we have a booking ID
             bookingId: bookingData.bookingId || `booking_${Date.now()}`,
             // Add customer email if available
-            customerEmail: bookingData.customerEmail || '',
+            customerEmail: bookingData.customer?.email || '',
             // Add pickup and dropoff addresses
             pickupAddress: bookingData.pickupAddress || {},
             dropoffAddress: bookingData.dropoffAddress || {},

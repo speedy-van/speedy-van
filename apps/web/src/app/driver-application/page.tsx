@@ -37,7 +37,7 @@ import {
   FormHelperText,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { FiUpload, FiX, FiEye, FiEyeOff, FiMapPin, FiUser, FiMail, FiPhone, FiCreditCard, FiShield, FiFileText, FiCamera } from 'react-icons/fi';
+import { FiUpload, FiX, FiEye, FiEyeOff, FiMapPin, FiUser, FiMail, FiPhone, FiCreditCard, FiShield, FiFileText, FiCamera, FiTruck, FiCheckCircle, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 
 const MotionBox = motion.create(Box);
@@ -104,6 +104,7 @@ export default function DriverApplicationPage() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   
   const bgColor = useColorModeValue('white', 'gray.800');
+  const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   const [formData, setFormData] = useState<DriverApplication>({
@@ -143,13 +144,13 @@ export default function DriverApplicationPage() {
   });
 
   const steps = [
-    { number: 1, title: 'Personal Information', description: 'Basic details and contact information' },
-    { number: 2, title: 'Address & Identity', description: 'Address verification and national insurance' },
-    { number: 3, title: 'Driving License', description: 'Driving license details and photos' },
-    { number: 4, title: 'Insurance & Banking', description: 'Insurance details and bank account information' },
-    { number: 5, title: 'Right to Work', description: 'UK work authorization and documents' },
-    { number: 6, title: 'Emergency Contact', description: 'Emergency contact information' },
-    { number: 7, title: 'Terms & Submit', description: 'Review and submit application' },
+    { number: 1, title: 'Personal Information', description: 'Basic details and contact information', icon: FiUser },
+    { number: 2, title: 'Address & Identity', description: 'Address verification and national insurance', icon: FiMapPin },
+    { number: 3, title: 'Driving License', description: 'Driving license details and photos', icon: FiTruck },
+    { number: 4, title: 'Insurance & Banking', description: 'Insurance details and bank account information', icon: FiCreditCard },
+    { number: 5, title: 'Right to Work', description: 'UK work authorization and documents', icon: FiShield },
+    { number: 6, title: 'Emergency Contact', description: 'Emergency contact information', icon: FiPhone },
+    { number: 7, title: 'Terms & Submit', description: 'Review and submit application', icon: FiCheckCircle },
   ];
 
   // Address autocomplete functionality
@@ -308,99 +309,197 @@ export default function DriverApplicationPage() {
       case 1:
         return (
           <VStack spacing={6} align="stretch">
-            <Heading size="md" color="blue.600">Personal Information</Heading>
+            <HStack spacing={3} mb={4}>
+              <Icon as={FiUser} color="neon.500" boxSize={6} />
+              <Heading size="lg" color="neon.500">Personal Information</Heading>
+            </HStack>
             
-            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+            <Grid templateColumns="repeat(2, 1fr)" gap={6}>
               <FormControl isRequired>
-                <FormLabel>First Name</FormLabel>
+                <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">First Name</FormLabel>
                 <Input
                   value={formData.firstName}
                   onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   placeholder="Enter your first name"
+                  size="lg"
+                  borderRadius="xl"
+                  borderWidth="2px"
+                  borderColor="border.primary"
+                  bg="bg.surface"
+                  _focus={{
+                    borderColor: "neon.400",
+                    boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                  }}
+                  _hover={{
+                    borderColor: "neon.300"
+                  }}
+                  transition="all 0.2s"
                 />
               </FormControl>
               
               <FormControl isRequired>
-                <FormLabel>Last Name</FormLabel>
+                <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">Last Name</FormLabel>
                 <Input
                   value={formData.lastName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   placeholder="Enter your last name"
+                  size="lg"
+                  borderRadius="xl"
+                  borderWidth="2px"
+                  borderColor="border.primary"
+                  bg="bg.surface"
+                  _focus={{
+                    borderColor: "neon.400",
+                    boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                  }}
+                  _hover={{
+                    borderColor: "neon.300"
+                  }}
+                  transition="all 0.2s"
                 />
               </FormControl>
             </Grid>
 
             <FormControl isRequired>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">Email Address</FormLabel>
               <Input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="Enter your email address"
+                size="lg"
+                borderRadius="xl"
+                borderWidth="2px"
+                borderColor="border.primary"
+                bg="bg.surface"
+                _focus={{
+                  borderColor: "neon.400",
+                  boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                }}
+                _hover={{
+                  borderColor: "neon.300"
+                }}
+                transition="all 0.2s"
               />
             </FormControl>
 
-            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+            <Grid templateColumns="repeat(2, 1fr)" gap={6}>
               <FormControl isRequired>
-                <FormLabel>Password</FormLabel>
+                <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">Password</FormLabel>
                 <InputGroup>
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Create a password"
+                    size="lg"
+                    borderRadius="xl"
+                    borderWidth="2px"
+                    borderColor="border.primary"
+                    bg="bg.surface"
+                    _focus={{
+                      borderColor: "neon.400",
+                      boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                    }}
+                    _hover={{
+                      borderColor: "neon.300"
+                    }}
+                    transition="all 0.2s"
                   />
                   <InputRightElement>
                     <IconButton
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                       icon={<Icon as={showPassword ? FiEyeOff : FiEye} />}
                       variant="ghost"
-                      size="sm"
+                      size="md"
                       onClick={() => setShowPassword(!showPassword)}
+                      color="neon.400"
+                      _hover={{ bg: "rgba(0,194,255,0.1)" }}
                     />
                   </InputRightElement>
                 </InputGroup>
               </FormControl>
               
               <FormControl isRequired>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">Confirm Password</FormLabel>
                 <InputGroup>
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="Confirm your password"
+                    size="lg"
+                    borderRadius="xl"
+                    borderWidth="2px"
+                    borderColor="border.primary"
+                    bg="bg.surface"
+                    _focus={{
+                      borderColor: "neon.400",
+                      boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                    }}
+                    _hover={{
+                      borderColor: "neon.300"
+                    }}
+                    transition="all 0.2s"
                   />
                   <InputRightElement>
                     <IconButton
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                       icon={<Icon as={showConfirmPassword ? FiEyeOff : FiEye} />}
                       variant="ghost"
-                      size="sm"
+                      size="md"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      color="neon.400"
+                      _hover={{ bg: "rgba(0,194,255,0.1)" }}
                     />
                   </InputRightElement>
                 </InputGroup>
               </FormControl>
             </Grid>
 
-            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+            <Grid templateColumns="repeat(2, 1fr)" gap={6}>
               <FormControl isRequired>
-                <FormLabel>Phone Number</FormLabel>
+                <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">Phone Number</FormLabel>
                 <Input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   placeholder="Enter your phone number"
+                  size="lg"
+                  borderRadius="xl"
+                  borderWidth="2px"
+                  borderColor="border.primary"
+                  bg="bg.surface"
+                  _focus={{
+                    borderColor: "neon.400",
+                    boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                  }}
+                  _hover={{
+                    borderColor: "neon.300"
+                  }}
+                  transition="all 0.2s"
                 />
               </FormControl>
               
               <FormControl isRequired>
-                <FormLabel>Date of Birth</FormLabel>
+                <FormLabel fontSize="md" fontWeight="semibold" color="text.primary">Date of Birth</FormLabel>
                 <Input
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  size="lg"
+                  borderRadius="xl"
+                  borderWidth="2px"
+                  borderColor="border.primary"
+                  bg="bg.surface"
+                  _focus={{
+                    borderColor: "neon.400",
+                    boxShadow: "0 0 0 1px rgba(0,194,255,0.2)"
+                  }}
+                  _hover={{
+                    borderColor: "neon.300"
+                  }}
+                  transition="all 0.2s"
                 />
               </FormControl>
             </Grid>
@@ -932,109 +1031,261 @@ export default function DriverApplicationPage() {
   };
 
   return (
-    <Container maxW="4xl" py={8}>
-      <MotionBox
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <VStack spacing={8} align="stretch">
-          {/* Header */}
-          <Box textAlign="center">
-            <Heading size="lg" color="blue.600" mb={2}>
-              Driver Application
-            </Heading>
-            <Text color="gray.600">
-              Join our team of professional drivers and start earning with Speedy Van
-            </Text>
-          </Box>
+    <Box 
+      minH="100vh" 
+      bg="bg.canvas"
+      py={{ base: 8, md: 12 }}
+      position="relative"
+      overflow="hidden"
+    >
+      {/* Background Pattern */}
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        opacity={0.02}
+        background="radial-gradient(circle at 20% 80%, rgba(0,194,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,209,143,0.1) 0%, transparent 50%)"
+        pointerEvents="none"
+      />
 
-          {/* Progress Bar */}
-          <Box>
-            <HStack justify="space-between" mb={2}>
-              <Text fontSize="sm" fontWeight="medium">
-                Step {currentStep} of {steps.length}
-              </Text>
-              <Text fontSize="sm" color="gray.500">
-                {Math.round((currentStep / steps.length) * 100)}% Complete
-              </Text>
-            </HStack>
-            <Progress value={(currentStep / steps.length) * 100} colorScheme="brand" size="sm" />
-          </Box>
+      <Container maxW="6xl" position="relative" zIndex={1}>
+        <MotionBox
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <VStack spacing={{ base: 8, md: 12 }} align="stretch">
+            {/* Header */}
+            <Box textAlign="center" py={{ base: 4, md: 6 }}>
+              <VStack spacing={6}>
+                <Box
+                  p={6}
+                  borderRadius="2xl"
+                  bg="linear-gradient(135deg, rgba(0,194,255,0.1), rgba(0,209,143,0.1))"
+                  borderWidth="2px"
+                  borderColor="neon.400"
+                  display="inline-block"
+                >
+                  <Icon as={FiTruck} color="neon.500" boxSize={12} />
+                </Box>
+                <Heading size={{ base: "xl", md: "2xl" }} color="neon.500" fontWeight="extrabold">
+                  🚚 Driver Application
+                </Heading>
+                <Text color="text.secondary" fontSize={{ base: "md", md: "lg" }} maxW="3xl" mx="auto" lineHeight="1.6">
+                  Join our team of professional drivers and start earning with Speedy Van. 
+                  Complete your application below to begin your journey.
+                </Text>
+              </VStack>
+            </Box>
 
-          {/* Steps Navigation */}
-          <HStack spacing={2} overflowX="auto" pb={2}>
-            {steps.map((step, index) => (
-              <Badge
-                key={step.number}
-                colorScheme={currentStep === step.number ? 'brand' : 'gray'}
-                variant={currentStep === step.number ? 'solid' : 'outline'}
-                px={3}
-                py={1}
+            {/* Progress Bar */}
+            <Box>
+              <HStack justify="space-between" mb={4}>
+                <Text fontSize="lg" fontWeight="semibold" color="text.primary">
+                  Step {currentStep} of {steps.length}
+                </Text>
+                <Badge 
+                  colorScheme="neon" 
+                  variant="solid" 
+                  size="lg"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  fontSize="md"
+                  fontWeight="bold"
+                  boxShadow="0 4px 15px rgba(0,194,255,0.3)"
+                >
+                  {Math.round((currentStep / steps.length) * 100)}% Complete
+                </Badge>
+              </HStack>
+              <Progress 
+                value={(currentStep / steps.length) * 100} 
+                colorScheme="neon" 
+                size="lg" 
                 borderRadius="full"
-                cursor="pointer"
-                onClick={() => {
-                  if (index + 1 < currentStep || validateStep(index + 1)) {
-                    setCurrentStep(step.number);
+                bg="bg.surface"
+                sx={{
+                  '& > div': {
+                    background: 'linear-gradient(90deg, #00C2FF 0%, #00D18F 100%)',
+                    boxShadow: '0 0 20px rgba(0,194,255,0.4)'
                   }
                 }}
-                opacity={index + 1 < currentStep || validateStep(index + 1) ? 1 : 0.5}
-              >
-                {step.number}. {step.title}
-              </Badge>
-            ))}
-          </HStack>
+              />
+            </Box>
 
-          {/* Step Content */}
-          <Card bg={bgColor} border="1px solid" borderColor={borderColor}>
-            <CardBody>
-              {renderStepContent()}
-            </CardBody>
-          </Card>
+            {/* Steps Navigation */}
+            <Box overflowX="auto" pb={4}>
+              <HStack spacing={4} minW="max-content">
+                {steps.map((step, index) => (
+                  <Box
+                    key={step.number}
+                    p={4}
+                    borderRadius="xl"
+                    borderWidth="2px"
+                    borderColor={currentStep === step.number ? "neon.400" : "border.primary"}
+                    bg={currentStep === step.number ? "rgba(0,194,255,0.1)" : "bg.surface"}
+                    cursor={index + 1 < currentStep || validateStep(index + 1) ? "pointer" : "default"}
+                    onClick={() => {
+                      if (index + 1 < currentStep || validateStep(index + 1)) {
+                        setCurrentStep(step.number);
+                      }
+                    }}
+                    opacity={index + 1 < currentStep || validateStep(index + 1) ? 1 : 0.5}
+                    transition="all 0.3s ease"
+                    _hover={index + 1 < currentStep || validateStep(index + 1) ? {
+                      borderColor: "neon.400",
+                      bg: "rgba(0,194,255,0.15)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 8px 25px rgba(0,194,255,0.2)"
+                    } : {}}
+                    minW="200px"
+                  >
+                    <VStack spacing={3} align="center">
+                      <Box
+                        p={3}
+                        borderRadius="lg"
+                        bg={currentStep === step.number ? "neon.500" : "gray.500"}
+                        color="white"
+                        boxSize="50px"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        boxShadow={currentStep === step.number ? "0 4px 15px rgba(0,194,255,0.3)" : "none"}
+                      >
+                        <Icon as={step.icon} boxSize={5} />
+                      </Box>
+                      <VStack spacing={1} align="center">
+                        <Text fontWeight="bold" color={currentStep === step.number ? "neon.500" : "text.primary"} fontSize="md">
+                          {step.number}. {step.title}
+                        </Text>
+                        <Text fontSize="sm" color="text.secondary" textAlign="center">
+                          {step.description}
+                        </Text>
+                      </VStack>
+                    </VStack>
+                  </Box>
+                ))}
+              </HStack>
+            </Box>
 
-          {/* Navigation Buttons */}
-          <HStack justify="space-between">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              isDisabled={currentStep === 1}
+            {/* Step Content */}
+            <Card 
+              bg={cardBg} 
+              borderWidth="2px"
+              borderColor="border.primary"
+              borderRadius="2xl"
+              boxShadow="xl"
+              overflow="hidden"
+              position="relative"
+              _before={{
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "linear-gradient(135deg, rgba(0,194,255,0.05), rgba(0,209,143,0.05))",
+                pointerEvents: "none"
+              }}
             >
-              Previous
-            </Button>
+              <CardBody p={{ base: 6, md: 8 }} position="relative" zIndex={1}>
+                {renderStepContent()}
+              </CardBody>
+            </Card>
 
-            <Spacer />
-
-            {currentStep < steps.length ? (
+            {/* Navigation Buttons */}
+            <HStack justify="space-between" spacing={6}>
               <Button
-                variant="primary"
-                onClick={() => {
-                  if (validateStep(currentStep)) {
-                    setCurrentStep(currentStep + 1);
-                  } else {
-                    toast({
-                      title: 'Please complete all required fields',
-                      status: 'error',
-                    });
-                  }
+                variant="outline"
+                size="lg"
+                onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+                isDisabled={currentStep === 1}
+                leftIcon={<Icon as={FiArrowLeft} />}
+                borderColor="border.primary"
+                color="text.secondary"
+                _hover={{
+                  borderColor: "neon.400",
+                  color: "neon.400",
+                  bg: "rgba(0,194,255,0.05)"
                 }}
-                isDisabled={!validateStep(currentStep)}
+                transition="all 0.2s"
+                borderRadius="xl"
+                px={8}
+                py={6}
               >
-                Next
+                Previous
               </Button>
-            ) : (
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                isLoading={isSubmitting}
-                loadingText="Submitting..."
-                isDisabled={!validateStep(currentStep)}
-              >
-                Submit Application
-              </Button>
-            )}
-          </HStack>
-        </VStack>
-      </MotionBox>
-    </Container>
+
+              <Spacer />
+
+              {currentStep < steps.length ? (
+                <Button
+                  variant="solid"
+                  size="lg"
+                  onClick={() => {
+                    if (validateStep(currentStep)) {
+                      setCurrentStep(currentStep + 1);
+                    } else {
+                      toast({
+                        title: 'Please complete all required fields',
+                        status: 'error',
+                      });
+                    }
+                  }}
+                  isDisabled={!validateStep(currentStep)}
+                  rightIcon={<Icon as={FiArrowRight} />}
+                  bg="linear-gradient(135deg, #00C2FF, #00D18F)"
+                  color="white"
+                  _hover={{
+                    bg: "linear-gradient(135deg, #00D18F, #00C2FF)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 25px rgba(0,194,255,0.4)"
+                  }}
+                  _active={{
+                    bg: "linear-gradient(135deg, #00B8E6, #00C2FF)"
+                  }}
+                  transition="all 0.3s ease"
+                  borderRadius="xl"
+                  px={8}
+                  py={6}
+                  fontWeight="bold"
+                >
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  variant="solid"
+                  size="lg"
+                  onClick={handleSubmit}
+                  isLoading={isSubmitting}
+                  loadingText="Submitting..."
+                  isDisabled={!validateStep(currentStep)}
+                  rightIcon={<Icon as={FiCheckCircle} />}
+                  bg="linear-gradient(135deg, #00C2FF, #00D18F)"
+                  color="white"
+                  _hover={{
+                    bg: "linear-gradient(135deg, #00D18F, #00C2FF)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 25px rgba(0,194,255,0.4)"
+                  }}
+                  _active={{
+                    bg: "linear-gradient(135deg, #00B8E6, #00C2FF)"
+                  }}
+                  transition="all 0.3s ease"
+                  borderRadius="xl"
+                  px={8}
+                  py={6}
+                  fontWeight="bold"
+                >
+                  Submit Application
+                </Button>
+              )}
+            </HStack>
+          </VStack>
+        </MotionBox>
+      </Container>
+    </Box>
   );
 }

@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Flex, HStack, Spacer, Avatar, Text, Link as ChakraLink } from '@chakra-ui/react';
+import { Box, Container, Flex, HStack, Spacer, Avatar, Text, Link as ChakraLink, Icon, Badge, useColorModeValue, VStack } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { useSession } from 'next-auth/react';
 import NotificationBell from '@/components/Driver/NotificationBell';
 import DriverSignOutButton from '@/components/Driver/DriverSignOutButton';
 import HeaderButton from '@/components/common/HeaderButton';
+import { FaTruck, FaHome, FaBriefcase, FaCalendarAlt, FaPoundSign, FaCog, FaFileAlt, FaBell, FaUser } from 'react-icons/fa';
 
 interface DriverHeaderProps {
 	driverId?: string;
@@ -22,13 +23,19 @@ export default function DriverHeader({ driverId, sessionUserName, sessionUserEma
 	const userEmail = session?.user?.email || sessionUserEmail || '';
 	const userId = session?.user?.id || driverId;
 	
+	const headerBg = useColorModeValue('rgba(13,13,13,0.95)', 'rgba(0,0,0,0.95)');
+	
 	return (
 		<Box as="header"
 			data-glass="topbar"
 			position="sticky" top="0" zIndex={20}
-			bg="rgba(13,13,13,0.95)" backdropFilter="saturate(140%) blur(12px)"
-			borderBottom="1px solid" borderColor="border.neon" h="64px"
+			bg={headerBg} 
+			backdropFilter="saturate(140%) blur(12px)"
+			borderBottom="2px solid" 
+			borderColor="neon.400" 
+			h="72px"
 			className="safe-area-top"
+			boxShadow="0 4px 20px rgba(0,194,255,0.1)"
 			sx={{
 				// Prevent overlay from covering the whole page in prod
 				'&[data-glass="topbar"]': {
@@ -48,71 +55,257 @@ export default function DriverHeader({ driverId, sessionUserName, sessionUserEma
 				zIndex: -1,
 			}}
 		>
-			<Container maxW="container.lg" h="full">
+			<Container maxW="7xl" h="full">
 				<Flex align="center" justify="space-between" h="full">
-					<HStack align="center" gap={2}>
+					{/* Logo Section */}
+					<HStack align="center" gap={3}>
 						<NextLink href="/driver">
-							<img 
-								src="/logo/speedy-van-logo-dark.svg" 
-								alt="Speedy Van Driver" 
-								width="120" 
-								height="40"
-								style={{ height: '40px', width: 'auto' }}
-							/>
+							<Box
+								p={2}
+								borderRadius="xl"
+								bg="rgba(0,194,255,0.1)"
+								borderWidth="1px"
+								borderColor="neon.400"
+								_hover={{
+									bg: "rgba(0,194,255,0.2)",
+									transform: "scale(1.05)"
+								}}
+								transition="all 0.2s"
+							>
+								<img 
+									src="/logo/speedy-van-logo-dark.svg" 
+									alt="Speedy Van Driver" 
+									width="120" 
+									height="40"
+									style={{ height: '40px', width: 'auto' }}
+								/>
+							</Box>
 						</NextLink>
+						<Badge 
+							colorScheme="neon" 
+							variant="solid" 
+							size="sm"
+							px={3}
+							py={1}
+							borderRadius="full"
+							fontSize="xs"
+							fontWeight="semibold"
+							boxShadow="0 2px 8px rgba(0,194,255,0.3)"
+						>
+							<Icon as={FaTruck} mr={1} />
+							DRIVER PORTAL
+						</Badge>
 					</HStack>
 
-					{/* Desktop navigation */}
-					<HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
-						<ChakraLink as={NextLink} href="/driver" color="white" _hover={{ color: "neon.500" }}>
+					{/* Desktop Navigation */}
+					<HStack as="nav" spacing={8} display={{ base: "none", lg: "flex" }}>
+						<ChakraLink 
+							as={NextLink} 
+							href="/driver" 
+							color="white" 
+							fontWeight="medium"
+							_hover={{ 
+								color: "neon.400",
+								transform: "translateY(-1px)"
+							}}
+							transition="all 0.2s"
+							display="flex"
+							alignItems="center"
+							gap={2}
+						>
+							<Icon as={FaHome} boxSize={4} />
 							Dashboard
 						</ChakraLink>
-						<ChakraLink as={NextLink} href="/driver/jobs" color="white" _hover={{ color: "neon.500" }}>
+						<ChakraLink 
+							as={NextLink} 
+							href="/driver/jobs" 
+							color="white" 
+							fontWeight="medium"
+							_hover={{ 
+								color: "neon.400",
+								transform: "translateY(-1px)"
+							}}
+							transition="all 0.2s"
+							display="flex"
+							alignItems="center"
+							gap={2}
+						>
+							<Icon as={FaBriefcase} boxSize={4} />
 							Jobs
 						</ChakraLink>
-						<ChakraLink as={NextLink} href="/driver/jobs/available" color="white" _hover={{ color: "neon.500" }}>
+						<ChakraLink 
+							as={NextLink} 
+							href="/driver/jobs/available" 
+							color="white" 
+							fontWeight="medium"
+							_hover={{ 
+								color: "neon.400",
+								transform: "translateY(-1px)"
+							}}
+							transition="all 0.2s"
+							display="flex"
+							alignItems="center"
+							gap={2}
+						>
+							<Icon as={FaBriefcase} boxSize={4} />
 							Available Jobs
 						</ChakraLink>
-						<ChakraLink as={NextLink} href="/driver/jobs/active" color="white" _hover={{ color: "neon.500" }}>
+						<ChakraLink 
+							as={NextLink} 
+							href="/driver/jobs/active" 
+							color="white" 
+							fontWeight="medium"
+							_hover={{ 
+								color: "neon.400",
+								transform: "translateY(-1px)"
+							}}
+							transition="all 0.2s"
+							display="flex"
+							alignItems="center"
+							gap={2}
+						>
+							<Icon as={FaBriefcase} boxSize={4} />
 							Active Jobs
 						</ChakraLink>
-						<ChakraLink as={NextLink} href="/driver/schedule" color="white" _hover={{ color: "neon.500" }}>
+						<ChakraLink 
+							as={NextLink} 
+							href="/driver/schedule" 
+							color="white" 
+							fontWeight="medium"
+							_hover={{ 
+								color: "neon.400",
+								transform: "translateY(-1px)"
+							}}
+							transition="all 0.2s"
+							display="flex"
+							alignItems="center"
+							gap={2}
+						>
+							<Icon as={FaCalendarAlt} boxSize={4} />
 							Schedule
 						</ChakraLink>
-						<ChakraLink as={NextLink} href="/driver/earnings" color="white" _hover={{ color: "neon.500" }}>
+						<ChakraLink 
+							as={NextLink} 
+							href="/driver/earnings" 
+							color="white" 
+							fontWeight="medium"
+							_hover={{ 
+								color: "neon.400",
+								transform: "translateY(-1px)"
+							}}
+							transition="all 0.2s"
+							display="flex"
+							alignItems="center"
+							gap={2}
+						>
+							<Icon as={FaPoundSign} boxSize={4} />
 							Earnings
 						</ChakraLink>
 					</HStack>
 
-					{/* Desktop actions */}
-					<HStack spacing={3} display={{ base: "none", md: "flex" }}>
-						{userId && <NotificationBell driverId={userId} />}
+					{/* Desktop Actions */}
+					<HStack spacing={4} display={{ base: "none", lg: "flex" }}>
+						{userId && (
+							<Box position="relative">
+								<NotificationBell driverId={userId} />
+							</Box>
+						)}
 						<HeaderButton 
 							href="/driver/documents" 
 							label="Documents"
 							size="sm"
+							leftIcon={<FaFileAlt />}
+							variant="ghost"
+							color="white"
+							_hover={{
+								bg: "rgba(0,194,255,0.1)",
+								color: "neon.400"
+							}}
 						/>
 						<HeaderButton 
 							href="/driver/settings" 
 							label="Settings"
 							size="sm"
+							leftIcon={<FaCog />}
+							variant="ghost"
+							color="white"
+							_hover={{
+								bg: "rgba(0,194,255,0.1)",
+								color: "neon.400"
+							}}
 						/>
-						<Avatar size="sm" name={userName} bg="neon.500" color="dark.900" />
-						<Text fontSize="sm" color="white">{userEmail}</Text>
+						
+						{/* User Profile Section */}
+						<HStack 
+							spacing={3} 
+							p={2} 
+							borderRadius="xl" 
+							bg="rgba(0,194,255,0.1)"
+							borderWidth="1px"
+							borderColor="neon.400"
+							_hover={{
+								bg: "rgba(0,194,255,0.2)",
+								transform: "scale(1.02)"
+							}}
+							transition="all 0.2s"
+						>
+							<Avatar 
+								size="sm" 
+								name={userName} 
+								bg="neon.500" 
+								color="dark.900"
+								boxShadow="0 2px 8px rgba(0,194,255,0.3)"
+							/>
+							<VStack align="start" spacing={0}>
+								<Text fontSize="sm" color="white" fontWeight="semibold">
+									{userName}
+								</Text>
+								<Text fontSize="xs" color="neon.300">
+									{userEmail}
+								</Text>
+							</VStack>
+						</HStack>
+						
 						<DriverSignOutButton />
 					</HStack>
 
-					{/* Mobile actions */}
-					<HStack spacing={2} display={{ base: "flex", md: "none" }}>
+					{/* Mobile Actions */}
+					<HStack spacing={3} display={{ base: "flex", lg: "none" }}>
 						<HeaderButton 
 							href="/driver/jobs/available" 
 							label="Jobs"
 							size="sm"
+							leftIcon={<FaBriefcase />}
+							variant="ghost"
+							color="white"
+							_hover={{
+								bg: "rgba(0,194,255,0.1)",
+								color: "neon.400"
+							}}
 						/>
 						<HeaderButton 
 							href="/driver/earnings" 
 							label="Earnings"
 							size="sm"
+							leftIcon={<FaPoundSign />}
+							variant="ghost"
+							color="white"
+							_hover={{
+								bg: "rgba(0,194,255,0.1)",
+								color: "neon.400"
+							}}
+						/>
+						<HeaderButton 
+							href="/driver/settings" 
+							label="Settings"
+							size="sm"
+							leftIcon={<FaCog />}
+							variant="ghost"
+							color="white"
+							_hover={{
+								bg: "rgba(0,194,255,0.1)",
+								color: "neon.400"
+							}}
 						/>
 					</HStack>
 				</Flex>

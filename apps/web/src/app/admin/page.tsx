@@ -74,6 +74,33 @@ async function getDashboardData() {
     }
   });
 
+  // Get recent driver application notifications
+  const recentDriverApplications = await prisma.adminNotification.findMany({
+    where: {
+      type: 'new_driver_application',
+      isRead: false,
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 5
+  });
+
+  // Get unread admin notifications count
+  const unreadNotifications = await prisma.adminNotification.count({
+    where: {
+      isRead: false
+    }
+  });
+
+  // Get high priority notifications
+  const highPriorityNotifications = await prisma.adminNotification.count({
+    where: {
+      priority: 'high',
+      isRead: false
+    }
+  });
+
   // Pending refunds
   const pendingRefunds = await prisma.booking.count({
     where: {
@@ -98,13 +125,14 @@ async function getDashboardData() {
     openIncidents,
     jobsInProgress,
     newApplications,
+    recentDriverApplications,
+    unreadNotifications,
+    highPriorityNotifications,
     pendingRefunds,
-    systemHealth: {
-      db: dbHealth,
-      queue: queueHealth,
-      pusher: pusherHealth,
-      stripe: stripeHealth
-    }
+    dbHealth,
+    queueHealth,
+    pusherHealth,
+    stripeHealth,
   };
 }
 

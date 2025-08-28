@@ -24,7 +24,7 @@ export async function GET(
       dimensions: ["date"],
       filters: { dateRange: "30d" },
       schedule: "daily" as const,
-      recipients: ["admin@speedyvan.com"],
+      recipients: ["admin@speedy-van.co.uk"],
       lastRun: new Date().toISOString(),
       nextRun: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       status: "active" as const,

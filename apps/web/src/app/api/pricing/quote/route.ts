@@ -1,78 +1,153 @@
 // src/app/api/pricing/quote/route.ts
 // -----------------------------------------------------------------------------
-// Next.js (App Router) API that computes a quote using the simplified pricing engine.
-// Always returns JSON with { totalGBP, breakdown } or a clear { error }.
-// Includes timeouts and validation to ensure the client never "spins forever".
+// Enhanced pricing API that handles both raw text input and normalized items.
+// Returns pricing with item normalization and detailed breakdown.
 // -----------------------------------------------------------------------------
 
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { computeQuote, type PricingInputs } from "@/lib/pricing/engine";
+import { NextRequest, NextResponse } from 'next/server';
+import { PricingEngine } from '@/lib/pricing/engine';
+import { ItemNormalizer } from '@/lib/pricing/normalizer';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { CatalogItem, NormalizedItem } from '@/lib/pricing/types';
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-// 12s hard timeout for any external work (if you add distance/weather fetches here)
-async function withTimeout<T>(p: Promise<T>, ms = 12_000) {
-  return Promise.race([
-    p,
-    new Promise<T>((_, rej) => setTimeout(() => rej(new Error("Upstream timeout")), ms)),
-  ]);
+// Simple CSV parser that handles quoted fields
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  // Add the last field
+  result.push(current.trim());
+  
+  return result;
 }
 
-const ItemSchema = z.object({
-  key: z.string(),
-  quantity: z.number().int().min(1),
-});
-
-const AddressMetaSchema = z.object({
-  floors: z.number().int().min(0).optional(),
-  hasLift: z.boolean().optional(),
-});
-
-const BodySchema = z.object({
-  miles: z.number().nonnegative(),
-  items: z.array(ItemSchema).default([]),
-  workersTotal: z.number().int().min(1),
-
-  pickup: AddressMetaSchema.optional(),
-  dropoff: AddressMetaSchema.optional(),
-
-  extras: z
-    .object({
-      ulezApplicable: z.boolean().optional(),
-    })
-    .optional(),
-  vatRegistered: z.boolean().optional(),
-});
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const json = await req.json().catch(() => ({}));
-    const parsed = BodySchema.safeParse(json);
-    if (!parsed.success) {
+    const body = await request.json();
+    const {
+      distanceMiles,
+      rawItems,
+      pickupFloors = 0,
+      pickupHasLift = false,
+      dropoffFloors = 0,
+      dropoffHasLift = false,
+      helpersCount = 0,
+      extras = { ulez: false, vat: false }
+    } = body;
+
+    // Validate required fields
+    if (typeof distanceMiles !== 'number' || distanceMiles < 0) {
       return NextResponse.json(
-        { error: "Invalid request", details: parsed.error.flatten() },
-        { status: 400 },
+        { error: 'Invalid distance' },
+        { status: 400 }
       );
     }
 
-    // NOTE: If you calculate miles server-side, do it here,
-    // wrapped with withTimeout(), and feed the final values into computeQuote().
-    // For now, we trust the provided payload (already validated).
-    const inputs = parsed.data as PricingInputs;
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one item is required' },
+        { status: 400 }
+      );
+    }
 
-    const result = await withTimeout(computeQuote(inputs), 12_000);
+    // Load catalog data from compiled JSON for better performance
+    const compiledPath = path.join(process.cwd(), 'src/lib/pricing/data/catalog-dataset.compiled.json');
+    const compiledContent = await fs.readFile(compiledPath, 'utf-8');
+    const compiledData = JSON.parse(compiledContent);
+    const catalogItems: CatalogItem[] = compiledData.items;
 
+    // Build synonym index
+    const { SynonymIndexBuilder } = await import('@/lib/pricing/build-synonym-index');
+    const builder = new SynonymIndexBuilder(catalogItems);
+    const synonymIndex = builder.buildIndex();
+
+    // Normalize items
+    const normalizer = new ItemNormalizer(catalogItems, synonymIndex);
+    const normalizationResult = normalizer.normalizeInput(rawItems);
+
+    if (!normalizationResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Failed to normalize some items',
+          unrecognized: normalizationResult.unrecognized,
+          suggestions: normalizationResult.suggestions
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate normalized items
+    const validationErrors = normalizer.validateItems(normalizationResult.items);
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Item validation failed',
+          details: validationErrors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Calculate quote
+    const pricingEngine = new PricingEngine();
+    const pricingRequest = {
+      distanceMiles,
+      items: normalizationResult.items,
+      pickupFloors,
+      pickupHasLift,
+      dropoffFloors,
+      dropoffHasLift,
+      helpersCount,
+      extras
+    };
+
+    const pricingResponse = pricingEngine.calculateQuote(pricingRequest);
+
+    if (!pricingResponse.success) {
+      return NextResponse.json(
+        {
+          error: 'Pricing calculation failed',
+          details: pricingResponse.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Return successful response
+    return NextResponse.json({
+      success: true,
+      breakdown: pricingResponse.breakdown,
+      normalizedItems: normalizationResult.items,
+      requiresHelpers: pricingResponse.requiresHelpers,
+      suggestions: pricingResponse.suggestions,
+      metadata: {
+        totalItems: normalizationResult.items.length,
+        totalVolume: pricingResponse.breakdown.totalVolumeFactor,
+        distanceMiles,
+        calculatedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Error calculating quote:', error);
     return NextResponse.json(
-      { totalGBP: result.totalGBP, breakdown: result.breakdown },
-      { status: 200 },
-    );
-  } catch (e: any) {
-    console.error("[/api/pricing/quote] error:", e);
-    return NextResponse.json(
-      { error: e?.message ?? "Internal error" },
-      { status: 500 },
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 }

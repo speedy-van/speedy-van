@@ -25,21 +25,36 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  hasHandledError: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { 
+      hasError: false, 
+      hasHandledError: false 
+    };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Prevent multiple error handling to avoid infinite loops
+    if (this.state.hasHandledError) {
+      return;
+    }
+
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    this.setState({ error, errorInfo });
+    
+    // Set error info only once to prevent re-renders
+    this.setState({ 
+      error, 
+      errorInfo,
+      hasHandledError: true 
+    });
     
     // Log error to monitoring service in production
     if (process.env.NODE_ENV === 'production') {
@@ -49,7 +64,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ 
+      hasError: false, 
+      error: undefined, 
+      errorInfo: undefined,
+      hasHandledError: false 
+    });
   };
 
   handleGoHome = () => {

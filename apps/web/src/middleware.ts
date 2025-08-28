@@ -1,92 +1,141 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-export function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname;
-  
-  // Simple public paths check
-  const PUBLIC_PATHS = [
-    "/", "/book", "/how-it-works", "/about", "/track",
-    "/checkout", "/checkout/success", "/checkout/cancel",
-    "/api/health", "/api/webhooks/stripe", "/api/places/suggest",
-    "/api/debug/mapbox", "/api/debug/mapbox-test", "/test-mapbox", "/test-autocomplete", "/test-simple-input", "/api/auth", "/favicon.ico", "/robots.txt", "/sitemap.xml",
-    "/auth/forgot", "/auth/reset", "/auth/verify"
-  ];
-  
-  // Check if path is public
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    const response = NextResponse.next();
-    addConsentHeaders(req, response);
-    return response;
+// Define protected routes and their required roles
+const protectedRoutes = {
+  '/admin': ['admin'],
+  '/driver': ['driver'],
+  '/customer': ['customer'],
+  '/api/admin': ['admin'],
+  '/api/driver': ['driver'],
+  '/api/customer': ['customer'],
+};
+
+// Define public routes that don't require authentication
+const publicRoutes = [
+  '/',
+  '/auth/signin',
+  '/auth/signup',
+  '/auth/error',
+  '/driver-application',
+  '/driver-application/success',
+  '/track',
+  '/api/track',
+  '/api/webhooks',
+  '/api/driver/applications', // Allow public driver applications
+];
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Check if it's a public route
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
   }
 
-  // For protected routes, just continue and let client-side handle auth
-  const response = NextResponse.next();
-  addConsentHeaders(req, response);
-  return response;
-}
+  // Check if it's a protected route
+  const requiredRole = Object.entries(protectedRoutes).find(([route]) => 
+    pathname.startsWith(route)
+  )?.[1];
 
-function addConsentHeaders(req: NextRequest, response: NextResponse) {
-  const cookie = req.cookies.get("sv_consent")?.value;
-  
-  if (cookie) {
-    try {
-      // Simple parsing without complex logic
-      const parts = cookie.split("|");
-      const consent: Record<string, string> = {};
-      
-      parts.forEach(part => {
-        const [key, value] = part.split("=");
-        if (key && value) consent[key] = value;
-      });
-      
-      response.headers.set("x-consent-func", consent.func === "1" ? "1" : "0");
-      response.headers.set("x-consent-ana", consent.ana === "1" ? "1" : "0");
-      response.headers.set("x-consent-mkt", consent.mkt === "1" ? "1" : "0");
-      response.headers.set("x-consent-ver", consent.v || "2");
-      response.headers.set("x-consent-ts", consent.ts || "0");
-      response.headers.set("x-consent-region", consent.region || "UK");
-    } catch {
-      // Fallback to default values if parsing fails
-      response.headers.set("x-consent-func", "0");
-      response.headers.set("x-consent-ana", "0");
-      response.headers.set("x-consent-mkt", "0");
-      response.headers.set("x-consent-ver", "2");
-      response.headers.set("x-consent-ts", "0");
-      response.headers.set("x-consent-region", "UK");
+  if (!requiredRole) {
+    // Not a protected route, allow access
+    return NextResponse.next();
+  }
+
+  try {
+    // Get the JWT token from the request
+    const token = await getToken({ 
+      req: request, 
+      secret: process.env.NEXTAUTH_SECRET 
+    });
+
+    if (!token) {
+      // No token, redirect to signin
+      const signinUrl = new URL('/auth/signin', request.url);
+      signinUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(signinUrl);
     }
-  } else {
-    // Default values if no consent cookie
-    response.headers.set("x-consent-func", "0");
-    response.headers.set("x-consent-ana", "0");
-    response.headers.set("x-consent-mkt", "0");
-    response.headers.set("x-consent-ver", "2");
-    response.headers.set("x-consent-ts", "0");
-    response.headers.set("x-consent-region", "UK");
+
+    const userRole = token.role as string;
+    const isActive = token.isActive as boolean;
+    const driverId = token.driverId as string | null;
+    const driverStatus = token.driverStatus as string | null;
+    const applicationStatus = token.applicationStatus as string | null;
+
+    // Check if user account is active
+    if (!isActive) {
+      const errorUrl = new URL('/auth/error', request.url);
+      errorUrl.searchParams.set('error', 'AccountInactive');
+      return NextResponse.redirect(errorUrl);
+    }
+
+    // Role-based access control
+    if (requiredRole.includes('admin')) {
+      if (userRole !== 'admin') {
+        const errorUrl = new URL('/auth/error', request.url);
+        errorUrl.searchParams.set('error', 'InsufficientPermissions');
+        return NextResponse.redirect(errorUrl);
+      }
+    } else if (requiredRole.includes('driver')) {
+      if (userRole !== 'driver') {
+        const errorUrl = new URL('/auth/error', request.url);
+        errorUrl.searchParams.set('error', 'DriverAccessRequired');
+        return NextResponse.redirect(errorUrl);
+      }
+
+      // Check if driver is approved
+      if (!driverId || driverStatus !== 'approved') {
+        const errorUrl = new URL('/auth/error', request.url);
+        errorUrl.searchParams.set('error', 'DriverNotApproved');
+        return NextResponse.redirect(errorUrl);
+      }
+
+      // Check if driver application is approved
+      if (applicationStatus && applicationStatus !== 'approved') {
+        const errorUrl = new URL('/auth/error', request.url);
+        errorUrl.searchParams.set('error', 'ApplicationNotApproved');
+        return NextResponse.redirect(errorUrl);
+      }
+    } else if (requiredRole.includes('customer')) {
+      if (userRole !== 'customer') {
+        const errorUrl = new URL('/auth/error', request.url);
+        errorUrl.searchParams.set('error', 'CustomerAccessRequired');
+        return NextResponse.redirect(errorUrl);
+      }
+
+      // Check if customer has pending driver applications
+      if (applicationStatus === 'pending') {
+        const errorUrl = new URL('/auth/error', request.url);
+        errorUrl.searchParams.set('error', 'PendingDriverApplication');
+        return NextResponse.redirect(errorUrl);
+      }
+    }
+
+    // Access granted
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Middleware error:', error);
+    
+    // On error, redirect to signin
+    const signinUrl = new URL('/auth/signin', request.url);
+    signinUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(signinUrl);
   }
-  
-  // Add Content Security Policy headers to allow Mapbox, Pusher, Postcodes.io, and other external services
-  const cspDirectives = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://www.googletagmanager.com",
-    "style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https://*.mapbox.com https://api.qrserver.com https://via.placeholder.com",
-    "connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.pusherapp.com https://*.pusher.com wss://*.pusherapp.com wss://*.pusher.com https://api.postcodes.io https://www.googletagmanager.com",
-    "font-src 'self' https://api.mapbox.com https://fonts.gstatic.com",
-    "worker-src 'self' blob:",
-    "frame-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ];
-  
-  response.headers.set("Content-Security-Policy", cspDirectives.join("; "));
 }
 
-export const config = { 
+export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ] 
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+  ],
 };
 
 

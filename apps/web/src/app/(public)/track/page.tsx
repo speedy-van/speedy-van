@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
-import Pusher from "pusher-js";
 import dynamic from "next/dynamic";
 import {
   Box,
@@ -19,57 +18,69 @@ import {
   useColorModeValue,
   Divider,
   Alert,
-  AlertIcon
+  AlertIcon,
+  Progress,
+  IconButton,
+  Tooltip,
+  Flex,
+  Grid,
+  GridItem,
+  List,
+  ListItem,
+  ListIcon
 } from "@chakra-ui/react";
 import {
   FiMapPin,
   FiClock,
   FiTruck,
   FiSearch,
-  FiRefreshCw
+  FiRefreshCw,
+  FiWifi,
+  FiWifiOff,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiInfo
 } from "react-icons/fi";
+import { useRealTimeTracking } from "@/hooks/useRealTimeTracking";
+import { TrackingData } from "@/lib/tracking-service";
 
 const LiveMap = dynamic(() => import("@/components/Map/LiveMap"), { ssr: false });
 
-interface TrackingInfo {
-  Booking: {
-    id: string;
-    reference: string;
-    status: string;
-    pickupAddress: string;
-    dropoffAddress: string;
-    pickupLat?: number;
-    pickupLng?: number;
-    dropoffLat?: number;
-    dropoffLng?: number;
-  };
-  last?: {
-    lat: number;
-    lng: number;
-    createdAt: string;
-  };
-  channel: string;
-}
-
-interface ETAInfo {
-  duration: number;
-  distance: number;
-  geometry?: any;
-}
-
 export default function TrackPage() {
   const [code, setCode] = useState("");
-  const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
-  const [etaInfo, setEtaInfo] = useState<ETAInfo | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
-  const chanRef = useRef<any>(null);
+  const [searchPerformed, setSearchPerformed] = useState(false);
   
   const toast = useToast();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  async function loadTracking() {
+  const {
+    trackingData,
+    isConnected,
+    isLoading,
+    error,
+    lookupBooking,
+    refreshData,
+    lastUpdate,
+    connectionStatus
+  } = useRealTimeTracking({
+    autoSubscribe: true,
+    refreshInterval: 30000, // 30 seconds
+    onUpdate: (update) => {
+      // Show toast for important updates
+      if (update.type === 'status') {
+        toast({
+          title: "Status Updated",
+          description: `Booking status changed to: ${update.data.status}`,
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    }
+  });
+
+  const handleSearch = async () => {
     if (!code.trim()) {
       toast({
         title: "Booking Code Required",
@@ -81,90 +92,26 @@ export default function TrackPage() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/track/${encodeURIComponent(code)}`);
-      if (!response.ok) {
-        setTrackingInfo(null);
-        setDriverLocation(null);
-        setEtaInfo(null);
-        toast({
-          title: "Booking Not Found",
-          description: "Please check your booking code and try again",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
-
-      const data = await response.json();
-      setTrackingInfo(data);
-      
-      if (data.last) {
-        setDriverLocation({ lat: data.last.lat, lng: data.last.lng });
-      }
-
-      // Set up real-time location updates
-      if (chanRef.current) {
-        chanRef.current.unsubscribe();
-      }
-      
-      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, { 
-        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER! 
-      });
-      const channel = pusher.subscribe(data.channel);
-      channel.bind("location", (message: any) => {
-        setDriverLocation({ lat: message.lat, lng: message.lng });
-        // Refresh ETA when location updates
-        loadETA();
-      });
-      chanRef.current = pusher;
-
-      // Load initial ETA
-      await loadETA();
-
-    } catch (error) {
-      console.error('Error loading tracking info:', error);
+    setSearchPerformed(true);
+    const result = await lookupBooking(code.trim());
+    
+    if (result) {
       toast({
-        title: "Error",
-        description: "Failed to load tracking information",
-        status: "error",
+        title: "Booking Found",
+        description: `Successfully tracking booking ${result.reference}`,
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
-    } finally {
-      setLoading(false);
     }
-  }
-
-  async function loadETA() {
-    if (!code.trim()) return;
-
-    try {
-      const response = await fetch(`/api/track/eta?code=${encodeURIComponent(code)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setEtaInfo(data);
-      }
-    } catch (error) {
-      console.error('Error loading ETA:', error);
-    }
-  }
-
-  useEffect(() => {
-    return () => {
-      if (chanRef.current) {
-        chanRef.current.unsubscribe();
-      }
-    };
-  }, []);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'COMPLETED': return 'green';
-      case 'in_progress': return 'blue';
+      case 'IN_PROGRESS': return 'blue';
       case 'CONFIRMED': return 'yellow';
+      case 'DRAFT': return 'gray';
       default: return 'gray';
     }
   };
@@ -172,11 +119,21 @@ export default function TrackPage() {
   const getStatusText = (status: string) => {
     switch (status.toLowerCase()) {
       case 'COMPLETED': return 'COMPLETED';
-      case 'in_progress': return 'In Progress';
+      case 'IN_PROGRESS': return 'In Progress';
       case 'CONFIRMED': return 'Driver Assigned';
       case 'DRAFT': return 'Awaiting Driver';
       default: return status;
     }
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -185,8 +142,33 @@ export default function TrackPage() {
         {/* Header */}
         <Box textAlign="center">
           <Heading size="lg" mb={2}>Track Your Delivery</Heading>
-          <Text color="gray.600">Enter your booking code to track your delivery in real-time</Text>
+          <Text color="gray.600">
+            Enter your booking code or unified booking ID (e.g., SV12345) to track your delivery in real-time
+          </Text>
         </Box>
+
+        {/* Connection Status */}
+        <Card bg={bgColor} border={`1px solid ${borderColor}`}>
+          <CardBody>
+            <HStack justify="space-between" align="center">
+              <HStack spacing={2}>
+                {isConnected ? (
+                  <FiWifi color="green" />
+                ) : (
+                  <FiWifiOff color="red" />
+                )}
+                <Text fontSize="sm">
+                  Real-time tracking: {isConnected ? 'Connected' : 'Disconnected'}
+                </Text>
+              </HStack>
+              {!isConnected && connectionStatus.reconnectAttempts > 0 && (
+                <Text fontSize="xs" color="orange.500">
+                  Reconnecting... ({connectionStatus.reconnectAttempts}/{connectionStatus.maxReconnectAttempts})
+                </Text>
+              )}
+            </HStack>
+          </CardBody>
+        </Card>
 
         {/* Search Section */}
         <Card bg={bgColor} border={`1px solid ${borderColor}`}>
@@ -194,58 +176,114 @@ export default function TrackPage() {
             <VStack spacing={4}>
               <HStack w="100%" spacing={3}>
                 <Input
-                  placeholder="Enter booking code (e.g., ABC123)"
+                  placeholder="Enter booking code (e.g., ABC123) or unified ID (e.g., SV12345)"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  onKeyPress={(e) => e.key === 'Enter' && loadTracking()}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   size="lg"
                 />
                 <Button
                   leftIcon={<FiSearch />}
-                  onClick={loadTracking}
-                  isLoading={loading}
-                  loadingText="Loading..."
+                  onClick={handleSearch}
+                  isLoading={isLoading}
+                  loadingText="Searching..."
                   size="lg"
                   colorScheme="blue"
                 >
                   Track
                 </Button>
               </HStack>
+              
+              {trackingData && (
+                <HStack spacing={2}>
+                  <Text fontSize="sm" color="gray.600">
+                    Last updated: {formatTime(trackingData.lastUpdated)}
+                  </Text>
+                  <Tooltip label="Refresh tracking data">
+                    <IconButton
+                      icon={<FiRefreshCw />}
+                      aria-label="Refresh"
+                      size="sm"
+                      variant="ghost"
+                      onClick={refreshData}
+                      isLoading={isLoading}
+                    />
+                  </Tooltip>
+                </HStack>
+              )}
             </VStack>
           </CardBody>
         </Card>
 
+        {/* Error Display */}
+        {error && (
+          <Alert status="error">
+            <AlertIcon />
+            <Box>
+              <Text fontWeight="medium">Error</Text>
+              <Text fontSize="sm">{error}</Text>
+            </Box>
+          </Alert>
+        )}
+
         {/* Tracking Information */}
-        {trackingInfo && (
+        {trackingData && (
           <>
             {/* Status Card */}
             <Card bg={bgColor} border={`1px solid ${borderColor}`}>
               <CardBody>
                 <VStack spacing={4} align="stretch">
                   <HStack justify="space-between">
-                    <Heading size="md">Delivery Status</Heading>
+                    <VStack align="start" spacing={1}>
+                      <Heading size="md">Delivery Status</Heading>
+                      <Text fontSize="sm" color="gray.600">
+                        {trackingData.unifiedBookingId ? 
+                          `Unified ID: ${trackingData.unifiedBookingId}` : 
+                          `Reference: ${trackingData.reference}`
+                        }
+                      </Text>
+                    </VStack>
                     <Badge
-                      colorScheme={getStatusColor(trackingInfo.Booking.status)}
+                      colorScheme={getStatusColor(trackingData.status)}
                       variant="subtle"
                       fontSize="md"
                       px={3}
                       py={1}
                     >
-                      {getStatusText(trackingInfo.Booking.status)}
+                      {getStatusText(trackingData.status)}
                     </Badge>
                   </HStack>
 
                   <Divider />
 
+                  {/* Route Progress */}
+                  <Box>
+                    <HStack justify="space-between" mb={2}>
+                      <Text fontWeight="medium">Route Progress</Text>
+                      <Text fontSize="sm" color="gray.600">
+                        {trackingData.routeProgress}% complete
+                      </Text>
+                    </HStack>
+                    <Progress 
+                      value={trackingData.routeProgress} 
+                      colorScheme="blue" 
+                      size="lg" 
+                      borderRadius="md"
+                    />
+                  </Box>
+
                   {/* Addresses */}
-                  <VStack spacing={3} align="stretch">
+                  <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4}>
                     <Box>
                       <HStack mb={2}>
                         <FiMapPin />
                         <Text fontWeight="medium">Pickup Address</Text>
                       </HStack>
                       <Text color="gray.700" pl={6}>
-                        {trackingInfo.Booking.pickupAddress}
+                        {trackingData.pickupAddress.label}
+                      </Text>
+                      <Text color="gray.500" pl={6} fontSize="sm">
+                        {trackingData.pickupAddress.postcode}
                       </Text>
                     </Box>
 
@@ -255,13 +293,30 @@ export default function TrackPage() {
                         <Text fontWeight="medium">Delivery Address</Text>
                       </HStack>
                       <Text color="gray.700" pl={6}>
-                        {trackingInfo.Booking.dropoffAddress}
+                        {trackingData.dropoffAddress.label}
+                      </Text>
+                      <Text color="gray.500" pl={6} fontSize="sm">
+                        {trackingData.dropoffAddress.postcode}
                       </Text>
                     </Box>
-                  </VStack>
+                  </Grid>
+
+                  {/* Driver Information */}
+                  {trackingData.driver && (
+                    <>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <HStack>
+                          <FiTruck />
+                          <Text fontWeight="medium">Driver</Text>
+                        </HStack>
+                        <Text>{trackingData.driver.name}</Text>
+                      </HStack>
+                    </>
+                  )}
 
                   {/* ETA Information */}
-                  {etaInfo && (
+                  {trackingData.eta && (
                     <>
                       <Divider />
                       <HStack justify="space-between">
@@ -269,19 +324,20 @@ export default function TrackPage() {
                           <FiClock />
                           <Text fontWeight="medium">Estimated Arrival</Text>
                         </HStack>
-                        <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                          {Math.round(etaInfo.duration / 60)} minutes
-                        </Text>
-                      </HStack>
-                      
-                      <HStack justify="space-between">
-                        <HStack>
-                          <FiTruck />
-                          <Text fontWeight="medium">Distance</Text>
-                        </HStack>
-                        <Text fontSize="lg" fontWeight="bold">
-                          {(etaInfo.distance / 1000).toFixed(1)} km
-                        </Text>
+                        <VStack align="end" spacing={1}>
+                          <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                            {trackingData.eta.minutesRemaining} minutes
+                          </Text>
+                          <Text fontSize="sm" color="gray.600">
+                            {formatTime(trackingData.eta.estimatedArrival)}
+                          </Text>
+                          <Badge 
+                            colorScheme={trackingData.eta.isOnTime ? 'green' : 'orange'}
+                            size="sm"
+                          >
+                            {trackingData.eta.isOnTime ? 'On Time' : 'Delayed'}
+                          </Badge>
+                        </VStack>
                       </HStack>
                     </>
                   )}
@@ -289,72 +345,95 @@ export default function TrackPage() {
               </CardBody>
             </Card>
 
-            {/* Live Map */}
-            <Card bg={bgColor} border={`1px solid ${borderColor}`}>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <HStack justify="space-between">
-                    <Heading size="md">Live Tracking</Heading>
-                    <Button
-                      size="sm"
-                      leftIcon={<FiRefreshCw />}
-                      onClick={loadETA}
-                      variant="ghost"
-                    >
-                      Refresh
-                    </Button>
-                  </HStack>
+            {/* Job Timeline */}
+            {trackingData.jobTimeline && trackingData.jobTimeline.length > 0 && (
+              <Card bg={bgColor} border={`1px solid ${borderColor}`}>
+                <CardBody>
+                  <VStack spacing={4} align="stretch">
+                    <Heading size="md">Job Timeline</Heading>
+                    <List spacing={3}>
+                      {trackingData.jobTimeline.map((event, index) => (
+                        <ListItem key={index}>
+                          <HStack spacing={3}>
+                            <ListIcon 
+                              as={FiCheckCircle} 
+                              color="green.500" 
+                              boxSize={4}
+                            />
+                            <VStack align="start" spacing={1} flex={1}>
+                              <Text fontWeight="medium">{event.label}</Text>
+                              <Text fontSize="sm" color="gray.600">
+                                {formatTime(event.timestamp)}
+                              </Text>
+                              {event.notes && (
+                                <Text fontSize="sm" color="gray.500" fontStyle="italic">
+                                  {event.notes}
+                                </Text>
+                              )}
+                            </VStack>
+                          </HStack>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </VStack>
+                </CardBody>
+              </Card>
+            )}
 
-                  {driverLocation ? (
+            {/* Live Map */}
+            {trackingData.currentLocation && (
+              <Card bg={bgColor} border={`1px solid ${borderColor}`}>
+                <CardBody>
+                  <VStack spacing={4} align="stretch">
+                    <HStack justify="space-between">
+                      <Heading size="md">Live Tracking</Heading>
+                      <Badge colorScheme="green">Real-time updates enabled</Badge>
+                    </HStack>
+
                     <LiveMap
-                      driverLocation={driverLocation}
-                      pickupLocation={trackingInfo.Booking.pickupLat && trackingInfo.Booking.pickupLng ? {
-                        lat: trackingInfo.Booking.pickupLat,
-                        lng: trackingInfo.Booking.pickupLng,
+                      driverLocation={trackingData.currentLocation}
+                      pickupLocation={{
+                        lat: trackingData.pickupAddress.coordinates.lat,
+                        lng: trackingData.pickupAddress.coordinates.lng,
                         label: 'Pickup'
-                      } : undefined}
-                      dropoffLocation={trackingInfo.Booking.dropoffLat && trackingInfo.Booking.dropoffLng ? {
-                        lat: trackingInfo.Booking.dropoffLat,
-                        lng: trackingInfo.Booking.dropoffLng,
+                      }}
+                      dropoffLocation={{
+                        lat: trackingData.dropoffAddress.coordinates.lat,
+                        lng: trackingData.dropoffAddress.coordinates.lng,
                         label: 'Delivery'
-                      } : undefined}
-                      route={etaInfo?.geometry ? {
-                        coordinates: etaInfo.geometry.coordinates,
-                        distance: etaInfo.distance,
-                        duration: etaInfo.duration
-                      } : undefined}
+                      }}
                       height={400}
                     />
-                  ) : (
-                    <Box
-                      height={400}
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      bg="gray.50"
-                      borderRadius="md"
-                    >
-                      <VStack spacing={3}>
-                        <Spinner size="lg" />
-                        <Text color="gray.500">Waiting for driver location...</Text>
-                      </VStack>
-                    </Box>
-                  )}
-                </VStack>
-              </CardBody>
-            </Card>
+                  </VStack>
+                </CardBody>
+              </Card>
+            )}
           </>
         )}
 
         {/* Help Section */}
-        {!trackingInfo && (
+        {!trackingData && searchPerformed && (
           <Alert status="info">
             <AlertIcon />
             <Box>
               <Text fontWeight="medium">How to track your delivery</Text>
               <Text fontSize="sm">
-                Enter the booking code you received when you placed your order. 
-                You can find this code in your confirmation email or SMS.
+                Enter the booking code you received when you placed your order, or use the unified booking ID (SV12345 format). 
+                You can find these codes in your confirmation email or SMS.
+              </Text>
+            </Box>
+          </Alert>
+        )}
+
+        {/* Connection Help */}
+        {!isConnected && (
+          <Alert status="warning">
+            <AlertIcon />
+            <Box>
+              <Text fontWeight="medium">Real-time tracking unavailable</Text>
+              <Text fontSize="sm">
+                We're having trouble connecting to the real-time tracking service. 
+                Your tracking information will still update when you refresh the page.
               </Text>
             </Box>
           </Alert>

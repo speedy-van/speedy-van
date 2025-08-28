@@ -6,15 +6,20 @@ export async function GET(request: Request, { params }: { params: { code: string
   try {
     const { searchParams } = new URL(request.url);
     const includeTracking = searchParams.get('tracking') === 'true';
+    const realtime = searchParams.get('realtime') === 'true';
 
-    const booking = await prisma.booking.findUnique({
-      where: { reference: params.code },
+    // Try to find booking by reference
+    const booking = await prisma.booking.findFirst({
+      where: {
+        reference: params.code
+      },
       include: {
         driver: {
           include: {
             user: {
               select: {
-                name: true
+                name: true,
+                email: true
               }
             }
           }
@@ -25,11 +30,12 @@ export async function GET(request: Request, { params }: { params: { code: string
           include: {
             JobEvent: {
               orderBy: { createdAt: 'desc' },
-              take: 1,
+              take: 10, // Get last 10 events for better tracking
               select: {
                 step: true,
                 createdAt: true,
-                notes: true
+                notes: true,
+                payload: true
               }
             }
           }
@@ -37,7 +43,7 @@ export async function GET(request: Request, { params }: { params: { code: string
         ...(includeTracking && {
           TrackingPing: {
             orderBy: { createdAt: 'desc' },
-            take: 1,
+            take: realtime ? 50 : 10, // More pings for real-time tracking
             select: {
               lat: true,
               lng: true,
@@ -56,6 +62,7 @@ export async function GET(request: Request, { params }: { params: { code: string
     let eta = null;
     let routeProgress = 0;
     let currentLocation = null;
+    let estimatedDuration = null;
 
     if (includeTracking && booking.TrackingPing && booking.TrackingPing.length > 0) {
       const latestPing = booking.TrackingPing[0];
@@ -65,19 +72,46 @@ export async function GET(request: Request, { params }: { params: { code: string
         timestamp: latestPing.createdAt
       };
 
-      // Calculate route progress based on status
-      switch (booking.status) {
-        case 'CONFIRMED':
-          routeProgress = 20;
-          break;
-        case 'COMPLETED':
-          routeProgress = 100;
-          break;
-        default:
-          routeProgress = 0;
+      // Calculate route progress based on job events and status
+      const jobEvents = booking.Assignment?.JobEvent || [];
+      const currentStep = jobEvents[0]?.step;
+      
+      // Map job steps to progress percentages
+      const stepProgress: Record<string, number> = {
+        'navigate_to_pickup': 20,
+        'arrived_at_pickup': 30,
+        'loading_started': 40,
+        'loading_completed': 50,
+        'en_route_to_dropoff': 70,
+        'arrived_at_dropoff': 80,
+        'unloading_started': 90,
+        'unloading_completed': 95,
+        'job_completed': 100
+      };
+
+      if (currentStep && stepProgress[currentStep]) {
+        routeProgress = stepProgress[currentStep];
+      } else {
+        // Fallback progress based on status
+        switch (booking.status) {
+          case 'CONFIRMED':
+            routeProgress = 15;
+            break;
+          case 'DRAFT':
+            routeProgress = 5;
+            break;
+          case 'PENDING_PAYMENT':
+            routeProgress = 10;
+            break;
+          case 'COMPLETED':
+            routeProgress = 100;
+            break;
+          default:
+            routeProgress = 0;
+        }
       }
 
-      // Simple ETA calculation
+      // Enhanced ETA calculation
       if (booking.scheduledAt) {
         const now = new Date();
         const scheduledTime = new Date(booking.scheduledAt);
@@ -86,31 +120,102 @@ export async function GET(request: Request, { params }: { params: { code: string
         if (timeDiff > 0) {
           eta = {
             estimatedArrival: scheduledTime,
-            minutesRemaining: Math.round(timeDiff / (1000 * 60))
+            minutesRemaining: Math.round(timeDiff / (1000 * 60)),
+            isOnTime: timeDiff > -15 * 60 * 1000 // 15 minutes grace period
+          };
+        } else if (timeDiff > -60 * 60 * 1000) { // Within 1 hour of scheduled time
+          eta = {
+            estimatedArrival: new Date(now.getTime() + 30 * 60 * 1000), // 30 minutes from now
+            minutesRemaining: 30,
+            isOnTime: false
           };
         }
       }
+
+      // Calculate estimated duration based on distance and current progress
+      if (currentLocation && booking.pickupAddress && booking.dropoffAddress) {
+        const pickupCoords = { lat: booking.pickupAddress.lat, lng: booking.pickupAddress.lng };
+        const dropoffCoords = { lat: booking.dropoffAddress.lat, lng: booking.dropoffAddress.lng };
+        
+        // Simple distance calculation (Haversine would be better)
+        const distance = Math.sqrt(
+          Math.pow(dropoffCoords.lat - pickupCoords.lat, 2) + 
+          Math.pow(dropoffCoords.lng - pickupCoords.lng, 2)
+        ) * 111; // Rough km conversion
+        
+        estimatedDuration = Math.round(distance * 2); // 2 minutes per km
+      }
     }
+
+    // Get tracking channel for real-time updates
+    const trackingChannel = `tracking-${booking.id}`;
+
+    // Prepare job timeline
+    const jobTimeline = booking.Assignment?.JobEvent?.map(event => ({
+      step: event.step,
+      label: getStepLabel(event.step),
+      timestamp: event.createdAt,
+      notes: event.notes,
+      payload: event.payload
+    })) || [];
 
     return Response.json({
       id: booking.id,
       reference: booking.reference,
       status: booking.status,
-      pickupAddress: booking.pickupAddress,
-      dropoffAddress: booking.dropoffAddress,
+      pickupAddress: {
+        label: booking.pickupAddress.label,
+        postcode: booking.pickupAddress.postcode,
+        coordinates: {
+          lat: booking.pickupAddress.lat,
+          lng: booking.pickupAddress.lng
+        }
+      },
+      dropoffAddress: {
+        label: booking.dropoffAddress.label,
+        postcode: booking.dropoffAddress.postcode,
+        coordinates: {
+          lat: booking.dropoffAddress.lng,
+          lng: booking.dropoffAddress.lng
+        }
+      },
       scheduledAt: booking.scheduledAt,
       driver: booking.driver ? {
-        name: booking.driver.user.name
+        name: booking.driver.user.name,
+        email: booking.driver.user.email
       } : null,
       routeProgress,
       currentLocation,
       eta,
-      lastEvent: booking.Assignment?.JobEvent[0] || null
+      estimatedDuration,
+      lastEvent: booking.Assignment?.JobEvent[0] || null,
+      jobTimeline,
+      trackingChannel,
+      lastUpdated: new Date().toISOString()
     });
   } catch (error) {
     console.error("Error fetching tracking data:", error);
     return new Response("Internal server error", { status: 500 });
   }
+}
+
+function getStepLabel(step: string): string {
+  const stepLabels: Record<string, string> = {
+    'navigate_to_pickup': 'En Route to Pickup',
+    'arrived_at_pickup': 'Arrived at Pickup',
+    'loading_started': 'Loading Started',
+    'loading_completed': 'Loading Completed',
+    'en_route_to_dropoff': 'En Route to Delivery',
+    'arrived_at_dropoff': 'Arrived at Delivery',
+    'unloading_started': 'Unloading Started',
+    'unloading_completed': 'Unloading Completed',
+    'job_completed': 'Job Completed',
+    'customer_signature': 'Customer Signature',
+    'damage_notes': 'Damage Notes',
+    'item_count_verification': 'Item Count Verification'
+  };
+  
+  return stepLabels[step] || step.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 

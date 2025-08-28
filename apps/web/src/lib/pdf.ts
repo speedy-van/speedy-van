@@ -34,9 +34,11 @@ export async function buildInvoicePDF(input: {
     currency: string;
     status: string;
     paidAt?: Date | null;
-    customerName: string;
-    customerEmail: string;
-    customerPhone?: string;
+    customer: {
+      name: string;
+      email: string;
+      phone?: string;
+    };
     pickupAddress?: string;
     dropoffAddress?: string;
     vanSize?: string;
@@ -83,9 +85,9 @@ export async function buildInvoicePDF(input: {
   // Customer Details
   doc.fontSize(14).font('Helvetica-Bold').text('Bill To:', { underline: true }).moveDown(0.5);
   doc.fontSize(12).font('Helvetica');
-  doc.text(input.invoice.customerName);
-  doc.text(input.invoice.customerEmail);
-  if (input.invoice.customerPhone) doc.text(input.invoice.customerPhone);
+  doc.text(input.invoice.customer.name);
+  doc.text(input.invoice.customer.email);
+  if (input.invoice.customer.phone) doc.text(input.invoice.customer.phone);
   doc.moveDown();
 
   // Service Details

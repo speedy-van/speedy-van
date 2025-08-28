@@ -31,7 +31,7 @@ model Message {
 - Created a dedicated system user for guest messages
 - Added script: `scripts/create-system-user.js`
 - System user details:
-  - Email: `system@speedyvan.com`
+  - Email: `system@speedy-van.co.uk`
   - Name: `System`
   - Role: `admin`
   - ID: `cmesqlfr40000ucsw4q4ng9y3`
@@ -102,7 +102,7 @@ INSERT INTO "User" (
   id, email, name, password, role, "isActive", "emailVerified", "createdAt", "updatedAt"
 ) VALUES (
   'cmesqlfr40000ucsw4q4ng9y3',
-  'system@speedyvan.com',
+  'system@speedy-van.co.uk',
   'System',
   '$2a$12$...', -- bcrypt hash
   'admin',

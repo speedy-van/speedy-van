@@ -154,7 +154,7 @@ export default function SchedulePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          availability: 'online',
+          status: 'online',
           locationConsent: !locationConsent 
         }),
       });

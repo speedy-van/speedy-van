@@ -125,7 +125,7 @@ Returns detailed information about a specific booking.
       "id": "string",
       "user": {
         "name": "John Driver",
-        "email": "driver@speedyvan.com"
+        "email": "driver@speedy-van.co.uk"
       },
       "rating": 4.8
     },

@@ -8,7 +8,7 @@ async function createSystemUser() {
     // Check if system user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
-        email: 'system@speedyvan.com'
+        email: 'system@speedy-van.co.uk'
       }
     });
 
@@ -23,7 +23,7 @@ async function createSystemUser() {
     // Create the system user
     const systemUser = await prisma.user.create({
       data: {
-        email: 'system@speedyvan.com',
+        email: 'system@speedy-van.co.uk',
         name: 'System',
         password: passwordHash,
         role: 'admin',

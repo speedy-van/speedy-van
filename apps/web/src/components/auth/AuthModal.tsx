@@ -37,6 +37,7 @@ import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import { useRoleBasedRedirect } from '@/hooks/useRoleBasedRedirect';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -81,6 +82,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
   const initialRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const { returnTo, handleAuthRedirect } = useAuthRedirect();
+  const { userRole } = useRoleBasedRedirect();
 
   // Focus trap functionality
   useEffect(() => {
@@ -149,33 +151,11 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
     if (session && isOpen) {
       onClose();
       
-      // Handle role-based redirects with the established session
-      const userRole = (session as any)?.role;
-      let redirectUrl = returnTo || '/';
-      
-      if (!returnTo) {
-        // Default role-based redirects
-        switch (userRole) {
-          case 'customer':
-            redirectUrl = '/customer-portal';
-            break;
-          case 'driver':
-            redirectUrl = '/driver/dashboard';
-            break;
-          case 'admin':
-            redirectUrl = '/admin';
-            break;
-          default:
-            redirectUrl = '/';
-        }
-      }
-      
-      // Perform redirect
-      if (redirectUrl !== window.location.pathname) {
-        router.push(redirectUrl);
-      }
+      // Let the useRoleBasedRedirect hook handle the redirect
+      // This ensures consistent role-based routing across the app
+      console.log('✅ Session established, closing modal and letting role-based redirect handle routing');
     }
-  }, [session, isOpen, onClose, returnTo, router]);
+  }, [session, isOpen, onClose]);
 
   const handleSignIn = async (data: SignInFormData) => {
     setIsLoading(true);
@@ -205,12 +185,9 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
           isClosable: true,
         });
         
-        // Close modal and let the useEffect handle the redirect
-        // This ensures the session is properly established
+        // Close modal and let the useRoleBasedRedirect hook handle the redirect
+        // This ensures consistent role-based routing and prevents race conditions
         onClose();
-        
-        // The useEffect will handle the redirect once the session is available
-        // This prevents race conditions and 401 errors
       }
     } catch (error) {
       console.error('Sign in error:', error);

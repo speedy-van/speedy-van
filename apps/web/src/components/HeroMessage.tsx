@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, Heading } from '@chakra-ui/react';
+import { Box, Heading, Text, Badge, HStack, VStack, Icon } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaMapMarkerAlt, FaTruck, FaShieldAlt, FaStar } from 'react-icons/fa';
 
 const phrases = [
   "Man and van London to Manchester from £65",
@@ -67,6 +68,7 @@ const phrases = [
 ];
 
 const MotionHeading = motion.create(Heading);
+const MotionBox = motion.create(Box);
 
 export default function HeroMessage() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -80,25 +82,141 @@ export default function HeroMessage() {
   }, []);
 
   return (
-    <Box as="section" textAlign="center" py={20}>
-      <AnimatePresence mode="wait">
-        <MotionHeading
-          key={currentIndex}
-          size="2xl"
-          mb={4}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-          bgGradient="linear(to-r, #00E0FF, #B026FF)"
-          bgClip="text"
-          fontWeight="bold"
-          aria-live="polite"
-          aria-label={`Current message: ${phrases[currentIndex]}`}
-        >
-          {phrases[currentIndex]}
-        </MotionHeading>
-      </AnimatePresence>
+    <Box as="section" textAlign="center" py={{ base: 16, md: 24 }} position="relative" overflow="hidden">
+      {/* Background Pattern */}
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        opacity={0.03}
+        background="radial-gradient(circle at 30% 70%, rgba(0,194,255,0.1) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(0,209,143,0.1) 0%, transparent 50%)"
+        pointerEvents="none"
+      />
+      
+      <Box maxW="7xl" mx="auto" px={4} position="relative" zIndex={1}>
+        <VStack spacing={{ base: 8, md: 12 }}>
+          {/* Trust Indicators */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <HStack spacing={6} justify="center" flexWrap="wrap" mb={6}>
+              <Badge 
+                colorScheme="green" 
+                variant="solid" 
+                size="lg"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="semibold"
+                boxShadow="0 4px 15px rgba(0,209,143,0.3)"
+              >
+                <Icon as={FaShieldAlt} mr={2} />
+                Fully Insured
+              </Badge>
+              <Badge 
+                colorScheme="blue" 
+                variant="solid" 
+                size="lg"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="semibold"
+                boxShadow="0 4px 15px rgba(0,194,255,0.3)"
+              >
+                <Icon as={FaTruck} mr={2} />
+                Same-Day Available
+              </Badge>
+              <Badge 
+                colorScheme="yellow" 
+                variant="solid" 
+                size="lg"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="semibold"
+                boxShadow="0 4px 15px rgba(255,193,7,0.3)"
+              >
+                <Icon as={FaStar} mr={2} />
+                Best Prices
+              </Badge>
+            </HStack>
+          </MotionBox>
+
+          {/* Main Message */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <AnimatePresence mode="wait">
+              <MotionHeading
+                key={currentIndex}
+                size={{ base: "xl", md: "2xl", lg: "3xl" }}
+                mb={6}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                bgGradient="linear(to-r, #00E0FF, #B026FF)"
+                bgClip="text"
+                fontWeight="extrabold"
+                aria-live="polite"
+                aria-label={`Current message: ${phrases[currentIndex]}`}
+                lineHeight="1.3"
+                maxW="5xl"
+                mx="auto"
+                textShadow="0 2px 10px rgba(0,0,0,0.1)"
+              >
+                {phrases[currentIndex]}
+              </MotionHeading>
+            </AnimatePresence>
+          </MotionBox>
+
+          {/* Additional Information */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <VStack spacing={4}>
+              <Text 
+                fontSize={{ base: "md", md: "lg" }} 
+                color="text.secondary" 
+                maxW="3xl" 
+                mx="auto"
+                lineHeight="1.6"
+                fontWeight="medium"
+              >
+                Instant quotes • No hidden fees • Professional drivers • Live tracking
+              </Text>
+              
+              <HStack spacing={6} justify="center" flexWrap="wrap" color="text.tertiary">
+                <HStack spacing={2}>
+                  <Icon as={FaMapMarkerAlt} color="neon.400" />
+                  <Text fontSize="sm">Nationwide Coverage</Text>
+                </HStack>
+                <Text fontSize="sm">•</Text>
+                <HStack spacing={2}>
+                  <Icon as={FaTruck} color="neon.400" />
+                  <Text fontSize="sm">24/7 Service</Text>
+                </HStack>
+                <Text fontSize="sm">•</Text>
+                <HStack spacing={2}>
+                  <Icon as={FaShieldAlt} color="neon.400" />
+                  <Text fontSize="sm">Full Insurance</Text>
+                </HStack>
+              </HStack>
+            </VStack>
+          </MotionBox>
+        </VStack>
+      </Box>
       
       {/* Hidden phrases for SEO - all phrases remain in DOM */}
       <Box as="div" display="none" aria-hidden="true">

@@ -144,7 +144,7 @@ async function createStripeCheckoutSession(amount: number, bookingData: any) {
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://speedy-van.co.uk'}/booking/cancel?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         bookingId: bookingData.bookingId || 'pending',
-        customerEmail: bookingData.customerEmail || '',
+        customerEmail: bookingData.customer?.email || '',
         sessionId: '{CHECKOUT_SESSION_ID}',
       },
     });

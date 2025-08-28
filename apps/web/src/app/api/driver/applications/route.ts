@@ -7,6 +7,169 @@ import { parseJson, parseQueryParams } from '@/lib/validation/helpers';
 import { driverApplicationCreate, paginationQuery, searchQuery } from '@/lib/validation/schemas';
 import { prisma } from '@/lib/prisma';
 
+// Function to send admin notification for new driver application
+async function sendDriverApplicationNotification(application: any, files: { [key: string]: string }) {
+  try {
+    // Create comprehensive admin notification
+    const notification = await prisma.adminNotification.create({
+      data: {
+        type: 'new_driver_application',
+        title: `New Driver Application: ${application.firstName} ${application.lastName}`,
+        message: `A new driver application has been submitted with email ${application.email}`,
+        priority: 'high',
+        data: {
+          applicationId: application.id,
+          driverName: `${application.firstName} ${application.lastName}`,
+          email: application.email,
+          phone: application.phone,
+          dateOfBirth: application.dateOfBirth,
+          nationalInsuranceNumber: application.nationalInsuranceNumber,
+          
+          // Address information
+          address: {
+            line1: application.addressLine1,
+            line2: application.addressLine2,
+            city: application.city,
+            postcode: application.postcode,
+            county: application.county,
+          },
+          
+          // Driving information
+          driving: {
+            licenseNumber: application.drivingLicenseNumber,
+            licenseExpiry: application.drivingLicenseExpiry,
+            licenseFrontImage: files.drivingLicenseFront || null,
+            licenseBackImage: files.drivingLicenseBack || null,
+          },
+          
+          // Insurance information
+          insurance: {
+            provider: application.insuranceProvider,
+            policyNumber: application.insurancePolicyNumber,
+            expiry: application.insuranceExpiry,
+            document: files.insuranceDocument || null,
+          },
+          
+          // Banking information
+          banking: {
+            bankName: application.bankName,
+            accountHolderName: application.accountHolderName,
+            sortCode: application.sortCode,
+            accountNumber: application.accountNumber,
+          },
+          
+          // Right to work
+          rightToWork: {
+            shareCode: application.rightToWorkShareCode,
+            document: files.rightToWorkDocument || null,
+          },
+          
+          // Emergency contact
+          emergencyContact: {
+            name: application.emergencyContactName,
+            phone: application.emergencyContactPhone,
+            relationship: application.emergencyContactRelationship,
+          },
+          
+          // Terms agreement
+          terms: {
+            agreeToTerms: application.agreeToTerms,
+            agreeToDataProcessing: application.agreeToDataProcessing,
+            agreeToBackgroundCheck: application.agreeToBackgroundCheck,
+          },
+          
+          // Application metadata
+          applicationDate: application.applicationDate,
+          status: application.status,
+        },
+        actionUrl: `/admin/drivers/applications/${application.id}`,
+        actorId: application.userId,
+        actorRole: 'driver_applicant',
+        isRead: false,
+        createdAt: new Date(),
+      }
+    });
+
+    console.log('✅ Admin notification created for driver application:', notification.id);
+
+    // Send email notification to admin
+    try {
+      const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/driver-application-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          applicationData: {
+            applicationId: application.id,
+            userId: application.userId,
+            driverName: `${application.firstName} ${application.lastName}`,
+            email: application.email,
+            phone: application.phone,
+            dateOfBirth: application.dateOfBirth,
+            nationalInsuranceNumber: application.nationalInsuranceNumber,
+            address: {
+              line1: application.addressLine1,
+              line2: application.addressLine2,
+              city: application.city,
+              postcode: application.postcode,
+              county: application.county,
+            },
+            driving: {
+              licenseNumber: application.drivingLicenseNumber,
+              licenseExpiry: application.drivingLicenseExpiry,
+              licenseFrontImage: files.drivingLicenseFront || null,
+              licenseBackImage: files.drivingLicenseBack || null,
+            },
+            insurance: {
+              provider: application.insuranceProvider,
+              policyNumber: application.insurancePolicyNumber,
+              expiry: application.insuranceExpiry,
+              document: files.insuranceDocument || null,
+            },
+            banking: {
+              bankName: application.bankName,
+              accountHolderName: application.accountHolderName,
+              sortCode: application.sortCode,
+              accountNumber: application.accountNumber,
+            },
+            rightToWork: {
+              shareCode: application.rightToWorkShareCode,
+              document: files.rightToWorkDocument || null,
+            },
+            emergencyContact: {
+              name: application.emergencyContactName,
+              phone: application.emergencyContactPhone,
+              relationship: application.emergencyContactRelationship,
+            },
+            terms: {
+              agreeToTerms: application.agreeToTerms,
+              agreeToDataProcessing: application.agreeToDataProcessing,
+              agreeToBackgroundCheck: application.agreeToBackgroundCheck,
+            },
+            applicationDate: application.applicationDate,
+            status: application.status,
+          }
+        }),
+      });
+
+      if (emailResponse.ok) {
+        console.log('✅ Email notification sent for driver application');
+      } else {
+        console.warn('⚠️ Failed to send email notification:', await emailResponse.text());
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Error sending email notification:', emailError);
+      // Don't fail the application submission if email fails
+    }
+
+    return notification;
+  } catch (error) {
+    console.error('❌ Error creating admin notification:', error);
+    // Don't throw error - notification failure shouldn't break the application submission
+  }
+}
+
 // POST /api/driver/applications - Submit driver application
 export const POST = withApiHandler(async (request: NextRequest) => {
   // No auth required for public driver applications
@@ -184,6 +347,9 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     where: { id: application.id },
     data: { userId: user.id },
   });
+
+  // Send comprehensive admin notification with all application details
+  await sendDriverApplicationNotification(application, files);
 
   return httpJson(201, {
     message: 'Application submitted successfully',

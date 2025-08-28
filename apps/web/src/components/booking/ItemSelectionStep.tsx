@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Text, 
@@ -39,18 +39,99 @@ import {
   useDisclosure,
   Flex,
   Spacer,
-  Select
+  Select,
+  Spinner
 } from '@chakra-ui/react';
 import { FaBox, FaArrowRight, FaArrowLeft, FaPlus, FaTrash, FaSearch, FaFilter } from 'react-icons/fa';
 import PricingDisplay from './PricingDisplay';
 import BookingNavigationButtons from './BookingNavigationButtons';
-import { 
-  ITEM_CATALOG, 
-  ITEM_CATEGORIES, 
-  getItemsByCategory, 
-  getItemByKey,
-  type CatalogItem 
-} from '../../lib/pricing/item-catalog';
+
+// Define the API catalog item interface
+interface APICatalogItem {
+  id: string;
+  canonicalName: string;
+  category: string;
+  synonyms: string;
+  volumeFactor: number;
+  requiresTwoPerson: boolean;
+  isFragile: boolean;
+  requiresDisassembly: boolean;
+  basePriceHint: number;
+}
+
+// Define the component catalog item interface
+interface CatalogItem {
+  key: string;
+  name: string;
+  price: number;
+  category: string;
+  image: string;
+  description?: string;
+  size: 'small' | 'medium' | 'large';
+}
+
+const ITEM_CATEGORIES = [
+  {
+    id: 'sofas',
+    name: 'Sofas & Chairs',
+    icon: '🪑',
+    description: 'Sofas, chairs, and seating furniture'
+  },
+  {
+    id: 'beds',
+    name: 'Beds & Bedroom',
+    icon: '🛏️',
+    description: 'Beds, mattresses, and bedroom furniture'
+  },
+  {
+    id: 'tables',
+    name: 'Tables & Desks',
+    icon: '🪑',
+    description: 'Dining tables, desks, and work surfaces'
+  },
+  {
+    id: 'storage',
+    name: 'Storage & Cabinets',
+    icon: '🗄️',
+    description: 'Wardrobes, cabinets, and storage units'
+  },
+  {
+    id: 'appliances',
+    name: 'Appliances',
+    icon: '🔌',
+    description: 'Kitchen and home appliances'
+  },
+  {
+    id: 'electronics',
+    name: 'Electronics',
+    icon: '💻',
+    description: 'Computers, TVs, and electronic devices'
+  },
+  {
+    id: 'outdoor',
+    name: 'Outdoor & Garden',
+    icon: '🌿',
+    description: 'Garden furniture and outdoor items'
+  },
+  {
+    id: 'sports',
+    name: 'Sports & Music',
+    icon: '🎵',
+    description: 'Sports equipment and musical instruments'
+  },
+  {
+    id: 'boxes',
+    name: 'Boxes & Containers',
+    icon: '📦',
+    description: 'Moving boxes and storage containers'
+  },
+  {
+    id: 'misc',
+    name: 'Miscellaneous',
+    icon: '📋',
+    description: 'Other items and custom objects'
+  }
+];
 
 interface ItemSelectionStepProps {
   bookingData: any;
@@ -67,13 +148,127 @@ export default function ItemSelectionStep({
 }: ItemSelectionStepProps) {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('furniture');
+  const [selectedCategory, setSelectedCategory] = useState('sofas');
   const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
   const [itemQuantity, setItemQuantity] = useState(1);
   const [customItemName, setCustomItemName] = useState('');
   const [customItemPrice, setCustomItemPrice] = useState(20);
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Fetch catalog data from API
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/pricing/catalog');
+        if (!response.ok) {
+          throw new Error('Failed to fetch catalog');
+        }
+        const apiItems: APICatalogItem[] = await response.json();
+        
+        // Transform API items to component format
+        const transformedItems: CatalogItem[] = apiItems.map(item => {
+          // Map item IDs to available image files
+          const imageMap: { [key: string]: string } = {
+            'armchair-1seat': '/items/armchair.png',
+            'sofa-2seat': '/items/sofa.png',
+            'sofa-3seat': '/items/sofa.png',
+            'sofa-4seat': '/items/sofa.png',
+            'sofa-corner': '/items/sofa.png',
+            'recliner': '/items/armchair.png',
+            'sofa-bed': '/items/sofa.png',
+            'loveseat': '/items/sofa.png',
+            'chesterfield': '/items/sofa.png',
+            'bed-single': '/items/bed.png',
+            'bed-double': '/items/bed.png',
+            'bed-king': '/items/bed.png',
+            'bed-superking': '/items/bed.png',
+            'bed-frame': '/items/bed_frame.png',
+            'mattress-single': '/items/mattress.png',
+            'mattress-double': '/items/mattress.png',
+            'mattress-king': '/items/mattress.png',
+            'wardrobe': '/items/wardrobe.png',
+            'chest-drawers': '/items/filing_cabinet.png',
+            'bookshelf': '/items/bookshelf.png',
+            'bookcase': '/items/book_shelf.png',
+            'dining-table': '/items/dining_table.png',
+            'coffee-table': '/items/coffee_table.png',
+            'side-table': '/items/small_table.png',
+            'desk': '/items/desk.png',
+            'office-chair': '/items/office_chair.png',
+            'dining-chairs': '/items/chairs.png',
+            'chair': '/items/chair.png',
+            'fridge': '/items/refrigerator.png',
+            'freezer': '/items/fridge_freezer.png',
+            'washing-machine': '/items/washer.png',
+            'dryer': '/items/dryer.png',
+            'dishwasher': '/items/dishwasher.png',
+            'oven': '/items/oven.png',
+            'microwave': '/items/microwave.png',
+            'kettle': '/items/kettle.png',
+            'toaster': '/items/toaster.png',
+            'vacuum-cleaner': '/items/vacuum_cleaner.png',
+            'tv': '/items/tv.png',
+            'television': '/items/television.png',
+            'computer': '/items/computer.png',
+            'monitor': '/items/computer_monitor.png',
+            'printer': '/items/printer_scanner.png',
+            'piano': '/items/piano.png',
+            'bicycle': '/items/bicycle.png',
+            'treadmill': '/items/treadmill.png',
+            'mirror': '/items/mirror.png',
+            'lamp': '/items/lamp.png',
+            'box-small': '/items/small-box.png',
+            'box-medium': '/items/medium-box.png',
+            'box-large': '/items/large-box.png',
+            'suitcase': '/items/suitcase.png',
+            'plastic-bin': '/items/plastic_bin.png',
+            'plant-pot': '/items/plant_pot.png',
+            'painting-frame': '/items/painting_frame.png',
+            'patio-chair': '/items/patio_chair.png',
+            'garden-table': '/items/garden_table.png',
+            'bbq-grill': '/items/bbq_grill.png',
+            'lawn-mower': '/items/lawn_mower.png',
+            'air-conditioner': '/items/air_conditioner.png',
+            'fan': '/items/fan.png',
+            'stove': '/items/stove.png',
+            'mini-fridge': '/items/mini_fridge.png',
+            'kitchen-cabinet': '/items/kitchen_cabinet.png',
+            'filing-cabinet': '/items/filing_cabinet.png',
+            'whiteboard': '/items/whiteboard.png'
+          };
+
+          return {
+            key: item.id,
+            name: item.canonicalName,
+            price: item.basePriceHint,
+            category: item.category,
+            image: imageMap[item.id] || `/items/${item.category}.png` || '/items/placeholder.svg',
+            description: item.synonyms,
+            size: item.volumeFactor <= 1 ? 'small' : item.volumeFactor <= 2 ? 'medium' : 'large'
+          };
+        });
+        
+        setCatalogItems(transformedItems);
+      } catch (error) {
+        console.error('Error fetching catalog:', error);
+        toast({
+          title: 'Error loading catalog',
+          description: 'Please refresh the page to try again',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCatalog();
+  }, [toast]);
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -100,38 +295,81 @@ export default function ItemSelectionStep({
   };
 
   const handleItemClick = (item: CatalogItem) => {
-    setSelectedItem(item);
-    setItemQuantity(1);
-    onOpen();
+    try {
+      if (!item || !item.key) {
+        console.error('Invalid item selected:', item);
+        toast({
+          title: 'Error',
+          description: 'Invalid item selected. Please try again.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      setSelectedItem(item);
+      setItemQuantity(1);
+      onOpen();
+    } catch (error) {
+      console.error('Error handling item click:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to select item. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   const addItem = () => {
-    if (!selectedItem) return;
+    try {
+      if (!selectedItem || !selectedItem.key || !selectedItem.name) {
+        console.error('Invalid selected item:', selectedItem);
+        toast({
+          title: 'Error',
+          description: 'Invalid item data. Please try again.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
 
-    const newItem = {
-      key: selectedItem.key,
-      name: selectedItem.name,
-      quantity: itemQuantity,
-      price: selectedItem.price,
-      category: selectedItem.category,
-      image: selectedItem.image
-    };
+      const newItem = {
+        key: selectedItem.key,
+        name: selectedItem.name,
+        quantity: itemQuantity,
+        price: selectedItem.price,
+        category: selectedItem.category,
+        image: selectedItem.image
+      };
 
-    const updatedItems = [...(bookingData.items || []), newItem];
-    updateBookingData({ items: updatedItems });
+      const updatedItems = [...(bookingData.items || []), newItem];
+      updateBookingData({ items: updatedItems });
 
-    // Reset and close modal
-    setSelectedItem(null);
-    setItemQuantity(1);
-    onClose();
+      // Reset and close modal
+      setSelectedItem(null);
+      setItemQuantity(1);
+      onClose();
 
-    toast({
-      title: 'Item Added',
-      description: `${selectedItem.name} has been added to your list`,
-      status: 'success',
-      duration: 2000,
-      isClosable: true,
-    });
+      toast({
+        title: 'Item Added',
+        description: `${selectedItem.name} has been added to your list`,
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error adding item:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add item. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   const addCustomItem = () => {
@@ -190,9 +428,10 @@ export default function ItemSelectionStep({
   };
 
   // Filter items based on search and category
-  const filteredItems = ITEM_CATALOG.filter(item => {
+  const filteredItems = catalogItems.filter(item => {
+    if (!item || !item.name) return false;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+                         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -235,6 +474,19 @@ export default function ItemSelectionStep({
       </CardBody>
     </Card>
   );
+
+  if (loading) {
+    return (
+      <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">
+        <VStack spacing={6} align="center" justify="center" minH="400px">
+          <Spinner size="xl" color="neon.500" />
+          <Text fontSize="lg" color="text.secondary">
+            Loading catalog items...
+          </Text>
+        </VStack>
+      </Box>
+    );
+  }
 
   return (
     <Box p={6} borderWidth="1px" borderRadius="xl" bg="bg.card" borderColor="border.primary" boxShadow="md" className="booking-step-card">

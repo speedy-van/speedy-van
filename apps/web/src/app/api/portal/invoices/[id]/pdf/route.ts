@@ -48,8 +48,8 @@ export async function GET(
       company: {
         name: 'Speedy Van',
         address: '123 Moving Street, London, UK',
-        email: 'hello@speedyvan.com',
-        phone: '+44 20 1234 5678',
+        email: 'hello@speedy-van.co.uk',
+        phone: '07901846297',
         vatNumber: 'GB123456789'
       },
       invoice: {
@@ -61,9 +61,11 @@ export async function GET(
         currency: 'GBP',
         status: booking.paidAt ? 'paid' : 'unpaid',
         paidAt: booking.paidAt,
-        customerName: booking.customer?.name || booking.customerName || 'Customer',
-        customerEmail: booking.customer?.email || booking.customerEmail || '',
-        customerPhone: booking.customerPhone ?? undefined,
+        customer: {
+          name: booking.customer?.name || booking.customerName || 'Customer',
+          email: booking.customer?.email || booking.customerEmail || '',
+          phone: booking.customerPhone
+        },
         crewSize: booking.crewSize ? (booking.crewSize === 'ONE' ? 1 : booking.crewSize === 'TWO' ? 2 : booking.crewSize === 'THREE' ? 3 : booking.crewSize === 'FOUR' ? 4 : 2) : undefined
       }
     });

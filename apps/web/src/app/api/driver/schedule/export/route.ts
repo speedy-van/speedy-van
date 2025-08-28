@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       
       icsContent.push(
         'BEGIN:VEVENT',
-        `UID:shift-${shift.id}@speedyvan.com`,
+        `UID:shift-${shift.id}@speedy-van.co.uk`,
         `DTSTAMP:${created}`,
         `DTSTART:${start}`,
         `DTEND:${end}`,
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
       
       icsContent.push(
         'BEGIN:VEVENT',
-        `UID:job-${assignment.id}@speedyvan.com`,
+        `UID:job-${assignment.id}@speedy-van.co.uk`,
         `DTSTAMP:${created}`,
         `DTSTART:${start}`,
         `DTEND:${end}`,

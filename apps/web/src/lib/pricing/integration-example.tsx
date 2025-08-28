@@ -7,25 +7,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { computeQuote, type PricingInputs, type PricingResult } from './engine';
+import { computeQuote, type PricingInputs, type PricingResponse } from './engine';
 
 interface PricingFormProps {
-  onQuoteUpdate?: (quote: PricingResult) => void;
+  onQuoteUpdate?: (quote: PricingResponse) => void;
 }
 
 export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
   const [formData, setFormData] = useState<PricingInputs>({
-    miles: 25,
+    distanceMiles: 25,
     items: [
-      { key: 'sofa', quantity: 1 },
-      { key: 'dining_table', quantity: 1 },
+      { id: 'sofa', canonicalName: 'Sofa', quantity: 1, volumeFactor: 1.5, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 45 },
+      { id: 'dining_table', canonicalName: 'Dining Table', quantity: 1, volumeFactor: 1.4, requiresTwoPerson: true, isFragile: false, requiresDisassembly: true, basePriceHint: 38 },
     ],
-    workersTotal: 2,
-
-    vatRegistered: true,
+    pickupFloors: 1,
+    pickupHasLift: false,
+    dropoffFloors: 1,
+    dropoffHasLift: false,
+    helpersCount: 2,
+    extras: { ulez: false, vat: true },
   });
 
-  const [quote, setQuote] = useState<PricingResult | null>(null);
+  const [quote, setQuote] = useState<PricingResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Compute quote when form data changes
@@ -67,7 +70,7 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
     }
   };
 
-  const updateItem = (index: number, field: 'key' | 'quantity', value: string | number) => {
+  const updateItem = (index: number, field: 'id' | 'quantity', value: string | number) => {
     const newItems = [...formData.items];
     newItems[index] = { ...newItems[index], [field]: value };
     setFormData({ ...formData, items: newItems });
@@ -76,7 +79,7 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { key: 'box', quantity: 1 }],
+      items: [...formData.items, { id: 'box', canonicalName: 'Box', quantity: 1, volumeFactor: 0.2, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 4 }],
     });
   };
 
@@ -97,8 +100,8 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
         <input
           type="number"
           min="0"
-          value={formData.miles}
-          onChange={(e) => setFormData({ ...formData, miles: Number(e.target.value) })}
+          value={formData.distanceMiles}
+          onChange={(e) => setFormData({ ...formData, distanceMiles: Number(e.target.value) })}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -109,8 +112,8 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
         {formData.items.map((item, index) => (
           <div key={index} className="flex gap-2 mb-2">
             <select
-              value={item.key}
-              onChange={(e) => updateItem(index, 'key', e.target.value)}
+              value={item.id}
+              onChange={(e) => updateItem(index, 'id', e.target.value)}
               className="flex-1 p-2 border rounded"
             >
               <option value="sofa">Sofa</option>
@@ -153,8 +156,8 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
         <input
           type="number"
           min="1"
-          value={formData.workersTotal}
-          onChange={(e) => setFormData({ ...formData, workersTotal: Number(e.target.value) })}
+          value={formData.helpersCount}
+          onChange={(e) => setFormData({ ...formData, helpersCount: Number(e.target.value) })}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -165,8 +168,8 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
         <label className="flex items-center">
           <input
             type="checkbox"
-            checked={formData.vatRegistered}
-            onChange={(e) => setFormData({ ...formData, vatRegistered: e.target.checked })}
+            checked={formData.extras.vat}
+            onChange={(e) => setFormData({ ...formData, extras: { ...formData.extras, vat: e.target.checked } })}
             className="mr-2"
           />
           VAT Registered Business
@@ -178,25 +181,25 @@ export function PricingForm({ onQuoteUpdate }: PricingFormProps) {
         <div className="mt-6 p-4 bg-gray-50 rounded">
           <h3 className="text-lg font-semibold mb-2">Your Quote</h3>
           <div className="text-3xl font-bold text-green-600 mb-4">
-            £{quote.totalGBP}
+            £{quote.breakdown.total}
           </div>
           
           <div className="text-sm space-y-1">
             <div className="flex justify-between">
               <span>Base Rate:</span>
-              <span>£{quote.breakdown.baseRate}</span>
+                              <span>£{quote.breakdown.distanceBase}</span>
             </div>
             <div className="flex justify-between">
-              <span>Distance ({formData.miles} miles):</span>
-              <span>£{quote.breakdown.distanceCost}</span>
+                              <span>Distance ({formData.distanceMiles} miles):</span>
+                              <span>£{quote.breakdown.distanceBase}</span>
             </div>
             <div className="flex justify-between">
               <span>Items:</span>
-              <span>£{quote.breakdown.itemsCost}</span>
+                              <span>£{quote.breakdown.totalVolumeFactor}</span>
             </div>
             <div className="flex justify-between">
               <span>Extra Workers:</span>
-              <span>£{quote.breakdown.workersCost}</span>
+                              <span>£{quote.breakdown.helpersCost}</span>
             </div>
             {quote.breakdown.vat > 0 && (
               <div className="flex justify-between">

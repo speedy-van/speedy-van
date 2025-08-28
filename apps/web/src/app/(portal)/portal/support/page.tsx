@@ -123,10 +123,10 @@ export default async function PortalSupport() {
             <CardBody>
               <VStack align="stretch" spacing={3}>
                 <Text fontSize="sm">
-                  <strong>Phone:</strong> 0800 123 4567
+                  <strong>Phone:</strong> 07901846297
                 </Text>
                 <Text fontSize="sm">
-                  <strong>Email:</strong> support@speedyvan.com
+                  <strong>Email:</strong> support@speedy-van.co.uk
                 </Text>
                 <Text fontSize="sm">
                   <strong>Hours:</strong> Mon-Fri 8am-8pm, Sat 9am-6pm

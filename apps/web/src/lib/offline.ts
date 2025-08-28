@@ -340,7 +340,7 @@ export async function queueAvailabilityUpdate(status: string): Promise<string> {
     url: '/api/driver/availability',
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ availability: status }),
+    body: JSON.stringify({ status: status }),
     maxRetries: 3,
     metadata: { status }
   });

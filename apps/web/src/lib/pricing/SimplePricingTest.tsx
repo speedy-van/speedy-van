@@ -9,13 +9,17 @@ export function SimplePricingTest() {
   const testPricing = () => {
     try {
       const testInput = {
-        miles: 25,
+        distanceMiles: 25,
         items: [
-          { key: 'sofa', quantity: 1 },
-          { key: 'dining_table', quantity: 1 },
+          { id: 'sofa', canonicalName: 'Sofa', quantity: 1, volumeFactor: 1.5, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 45 },
+          { id: 'dining_table', canonicalName: 'Dining Table', quantity: 1, volumeFactor: 1.4, requiresTwoPerson: true, isFragile: false, requiresDisassembly: true, basePriceHint: 38 },
         ],
-        workersTotal: 2,
-        vatRegistered: true,
+        pickupFloors: 1,
+        pickupHasLift: false,
+        dropoffFloors: 1,
+        dropoffHasLift: false,
+        helpersCount: 2,
+        extras: { ulez: false, vat: true },
       };
 
       const quote = computeQuote(testInput);
@@ -46,13 +50,12 @@ export function SimplePricingTest() {
           ) : (
             <div>
               <div className="text-2xl font-bold text-green-600 mb-2">
-                £{result.totalGBP}
+                £{result.breakdown.total}
               </div>
               <div className="text-sm text-gray-600">
-                <div>السعر الأساسي: £{result.breakdown.base}</div>
-                <div>المسافة: £{result.breakdown.distance}</div>
-                <div>العناصر: £{result.breakdown.items}</div>
-                <div>الضريبة: £{result.breakdown.vatGBP}</div>
+                <div>السعر الأساسي: £{result.breakdown.distanceBase}</div>
+                <div>العناصر: £{result.breakdown.totalVolumeFactor}</div>
+                <div>الضريبة: £{result.breakdown.vat}</div>
               </div>
             </div>
           )}

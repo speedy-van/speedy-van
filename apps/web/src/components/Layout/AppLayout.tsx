@@ -44,23 +44,7 @@ export const Header = () => (
   </Box>
 );
 
-export const Footer = () => (
-  <Box as="footer"
-    mt="6" 
-    pt="6" 
-    pb="6"
-    className="safe-area-bottom"
-    bg="bg.footer" 
-    color="text.secondary"
-    borderTop="1px solid" 
-    borderColor="border.primary">
-    <Container maxW="container.lg">
-      <Box textAlign="center" fontSize="sm">
-        © 2024 Speedy Van. All rights reserved.
-      </Box>
-    </Container>
-  </Box>
-);
+// Footer component removed - using unified Footer from @/components/site/Footer
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -73,7 +57,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         bg="bg.canvas">
         {children}
       </Box>
-      <Footer />
+      {/* Footer removed - using unified Footer from public layout */}
     </Box>
   );
 }

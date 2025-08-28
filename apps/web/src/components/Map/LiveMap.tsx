@@ -31,8 +31,18 @@ interface TrackingBooking {
   id: string;
   reference: string;
   status: string;
-  pickupAddress: string;
-  dropoffAddress: string;
+  addresses: {
+    pickup: {
+      label: string;
+      postcode: string;
+      coordinates: { lat: number; lng: number };
+    };
+    dropoff: {
+      label: string;
+      postcode: string;
+      coordinates: { lat: number; lng: number };
+    };
+  };
   currentLocation?: {
     lat: number;
     lng: number;

@@ -3,7 +3,6 @@ import { Box } from "@chakra-ui/react";
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import SkipLink from "@/components/site/SkipLink";
-import CookieBar from "@/components/Layout/CookieBar";
 
 export default function PublicLayout({
   children,
@@ -15,35 +14,22 @@ export default function PublicLayout({
       <SkipLink />
       <Box
         minH="100dvh"
-        display="flex"
-        flexDirection="column"
+        display="grid"
+        gridTemplateRows="auto 1fr auto"
         w="100%"
       >
         <Header />
         
         <Box
           as="main"
-          flex="1"
           pb="env(safe-area-inset-bottom)"
           className="safe-area-bottom"
         >
           {children}
         </Box>
         
-        <Box
-          as="footer"
-          flexShrink={0}
-          mt="6"
-          pt="6"
-          pb="6"
-          className="safe-area-bottom"
-        >
-          <Footer />
-        </Box>
+        <Footer />
       </Box>
-      
-      {/* Cookie bar component rendered AFTER footer, sticky bottom */}
-      <CookieBar />
     </>
   );
 }

@@ -83,6 +83,36 @@ class FeatureFlagService {
             version: '1.2.0',
           },
         },
+        {
+          name: 'pricing.normalization.enabled',
+          enabled: process.env.NEXT_PUBLIC_FEATURE_PRICING_NORMALIZATION === 'true',
+          rolloutPercentage: parseInt(process.env.NEXT_PUBLIC_FEATURE_PRICING_NORMALIZATION_ROLLOUT || '0'),
+          targetEnvironments: ['production', 'staging', 'development'],
+          metadata: {
+            description: 'Item normalization and volume factor pricing',
+            version: '2.0.0',
+          },
+        },
+        {
+          name: 'pricing.autocomplete.enabled',
+          enabled: process.env.NEXT_PUBLIC_FEATURE_PRICING_AUTOCOMPLETE === 'true',
+          rolloutPercentage: parseInt(process.env.NEXT_PUBLIC_FEATURE_PRICING_AUTOCOMPLETE_ROLLOUT || '0'),
+          targetEnvironments: ['production', 'staging', 'development'],
+          metadata: {
+            description: 'Smart item autocomplete suggestions',
+            version: '2.0.0',
+          },
+        },
+        {
+          name: 'pricing.volume_factor.enabled',
+          enabled: process.env.NEXT_PUBLIC_FEATURE_PRICING_VOLUME_FACTOR === 'true',
+          rolloutPercentage: parseInt(process.env.NEXT_PUBLIC_FEATURE_PRICING_VOLUME_FACTOR_ROLLOUT || '0'),
+          targetEnvironments: ['production', 'staging', 'development'],
+          metadata: {
+            description: 'Volume factor based pricing calculation',
+            version: '2.0.0',
+          },
+        },
       ];
 
       defaultFlags.forEach(flag => {

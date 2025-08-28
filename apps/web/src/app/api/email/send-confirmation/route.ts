@@ -111,7 +111,7 @@ function generateEmailHTML(bookingData: any): string {
           
           <p>If you have any questions or need to make changes to your booking, please don't hesitate to contact us:</p>
           
-          <p><strong>📞 Customer Support:</strong> 0800 123 4567<br>
+          <p><strong>📞 Customer Support:</strong> 07901846297<br>
           <strong>📧 Email:</strong> support@speedyvan.co.uk<br>
           <strong>🆘 Emergency (24/7):</strong> 07700 900 123</p>
         </div>
@@ -152,7 +152,7 @@ function generateEmailText(bookingData: any): string {
     4. We'll handle everything with care
     
     CONTACT US:
-    - Customer Support: 0800 123 4567
+    - Customer Support: 07901846297
     - Email: support@speedyvan.co.uk
     - Emergency (24/7): 07700 900 123
     

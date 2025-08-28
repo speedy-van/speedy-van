@@ -417,10 +417,10 @@ export default function Success() {
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '14px' }}>
           <span style={{ color: '#374151' }}>
-            📧 <strong>support@speedyvan.com</strong>
+            📧 <strong>support@speedy-van.co.uk</strong>
           </span>
           <span style={{ color: '#374151' }}>
-            📞 <strong>0800 123 4567</strong>
+            📞 <strong>07901846297</strong>
           </span>
         </div>
       </div>

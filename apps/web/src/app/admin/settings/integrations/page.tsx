@@ -104,7 +104,7 @@ const mockIntegrations: Integration[] = [
     isEnabled: true,
     config: {
       apiKey: 'SG...',
-      fromEmail: 'noreply@speedyvan.com',
+      fromEmail: 'noreply@speedy-van.co.uk',
       fromName: 'Speedy Van',
     },
   },

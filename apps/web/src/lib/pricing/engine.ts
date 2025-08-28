@@ -1,205 +1,306 @@
 // src/lib/pricing/engine.ts
 // -----------------------------------------------------------------------------
-// Simplified pricing engine for Speedy Van (UK market).
+// Enhanced pricing engine for Speedy Van (UK market) with volume factor system.
 // Currency: GBP (£). Distance unit: miles.
-// Implements: flat base fares, item-based pricing, simplified worker pricing,
-// simplified stairs pricing, VAT, plus clear breakdown.
+// Implements: distance-based pricing × volume factor + floors + helpers + extras + VAT.
 // -----------------------------------------------------------------------------
 
-import { getItemPrice } from './item-catalog';
-import { getCurrentPricingSettings } from './settings';
+import { NormalizedItem, QuoteBreakdown } from './types';
 
-// ===== Types =================================================================
-
-export type ItemSize = "small" | "medium" | "large";
-
-export interface QuoteItem {
-  key: string;              // item key from catalog
-  quantity: number;         // >= 1
-}
-
-export interface AddressMeta {
-  floors?: number;          // number of floors (0 = ground floor)
-  hasLift?: boolean;        // true if lift is available
-}
-
+// Legacy interface for backward compatibility
 export interface PricingInputs {
-  miles: number;                       // total trip distance in miles
-  items: QuoteItem[];                  // list of items by size
-  workersTotal: number;                // total people on-site (driver + helpers)
-  pickup?: AddressMeta;
-  dropoff?: AddressMeta;
-  extras?: {
-    ulezApplicable?: boolean;          // +£12.50
+  distanceMiles: number;
+  items: NormalizedItem[];
+  pickupFloors: number;
+  pickupHasLift: boolean;
+  dropoffFloors: number;
+  dropoffHasLift: boolean;
+  helpersCount: number;
+  extras: {
+    ulez: boolean;
+    vat: boolean;
   };
-  vatRegistered?: boolean;             // if true => +20%
 }
 
-export interface PricingBreakdown {
-  baseRate: number;
-  distanceCost: number;
-  itemsCost: number;
-  workersCost: number;
-  stairsCost: number;
-  extrasCost: number;
-  subtotal: number;
-  vat: number;
-  total: number;
-  priceAdjustment: number; // Percentage adjustment applied (0 if none)
-}
-
-export interface PricingResult {
-  totalGBP: number;
-  breakdown: PricingBreakdown;
-}
-
-// ===== Constants =============================================================
-
-// Flat base fares
-const BASE_FARE_CITY = 40;        // ≤10 miles
-const BASE_FARE_REGIONAL = 60;    // ≤50 miles
-const RATE_PER_EXTRA_MILE = 1.20; // beyond 50 miles
-
-// Item pricing will be calculated from catalog
-
-// Worker pricing
-const WORKER_INCLUDED = 1;         // 1 worker included in base rate
-const EXTRA_WORKER_COST = 20;      // £20 per additional worker
-
-// Stairs pricing
-const STAIRS_PER_FLOOR = 10;       // £10 per floor after first (no lift)
-
-// Extras
-const ULEZ_GBP = 12.50;
-
-// Hard guardrails
-const MINIMUM_PRICE_GBP = 50;
-const MAXIMUM_PRICE_GBP = 5000;
-const VAT_RATE = 0.2;
-
-// ===== Helpers ===============================================================
-
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const roundGBP = (v: number) => Math.round(v); // nearest pound
-
-function calculateBaseFare(miles: number): { base: number; extraMiles: number } {
-  if (miles <= 10) {
-    return { base: BASE_FARE_CITY, extraMiles: 0 };
-  } else if (miles <= 50) {
-    return { base: BASE_FARE_REGIONAL, extraMiles: 0 };
-  } else {
-    const extraMiles = miles - 50;
-    return { base: BASE_FARE_REGIONAL, extraMiles };
-  }
-}
-
-function calculateItemsCost(items: QuoteItem[]): number {
-  console.log('Pricing engine - calculating items cost for:', items);
-  const total = items.reduce((total, item) => {
-    const itemPrice = getItemPrice(item.key);
-    console.log(`Pricing engine - item ${item.key} x${item.quantity}: £${itemPrice} = £${itemPrice * item.quantity}`);
-    return total + (itemPrice * item.quantity);
-  }, 0);
-  console.log('Pricing engine - total items cost:', total);
-  return total;
-}
-
-function calculateWorkersCost(workersTotal: number): number {
-  const extraWorkers = Math.max(0, workersTotal - WORKER_INCLUDED);
-  return extraWorkers * EXTRA_WORKER_COST;
-}
-
-function calculateStairsCost(pickup?: AddressMeta, dropoff?: AddressMeta): number {
-  let totalCost = 0;
-  
-  // Pickup stairs
-  if (pickup?.floors && pickup.floors > 1 && !pickup.hasLift) {
-    totalCost += (pickup.floors - 1) * STAIRS_PER_FLOOR;
-  }
-  
-  // Dropoff stairs
-  if (dropoff?.floors && dropoff.floors > 1 && !dropoff.hasLift) {
-    totalCost += (dropoff.floors - 1) * STAIRS_PER_FLOOR;
-  }
-  
-  return totalCost;
-}
-
-// ===== Engine ================================================================
-
-export async function computeQuote(input: PricingInputs): Promise<PricingResult> {
-  console.log('Pricing engine - computeQuote called with inputs:', input);
-  
-  // Get current pricing settings
-  const pricingSettings = await getCurrentPricingSettings();
-  console.log('Pricing engine - pricing settings:', pricingSettings);
-  
-  const miles = Math.max(0, input.miles);
-  console.log('Pricing engine - miles:', miles);
-  
-  // Base fare calculation
-  const { base: baseRate, extraMiles } = calculateBaseFare(miles);
-  const distanceCost = extraMiles * RATE_PER_EXTRA_MILE;
-  console.log('Pricing engine - baseRate:', baseRate, 'extraMiles:', extraMiles, 'distanceCost:', distanceCost);
-  
-  // Items cost
-  const itemsCost = calculateItemsCost(input.items || []);
-  console.log('Pricing engine - itemsCost:', itemsCost);
-  
-  // Workers cost
-  const workersCost = calculateWorkersCost(input.workersTotal || 1);
-  console.log('Pricing engine - workersCost:', workersCost);
-  
-  // Stairs cost
-  const stairsCost = calculateStairsCost(input.pickup, input.dropoff);
-  console.log('Pricing engine - stairsCost:', stairsCost);
-  
-  // Extras cost
-  const extrasCost = input.extras?.ulezApplicable ? ULEZ_GBP : 0;
-  console.log('Pricing engine - extrasCost:', extrasCost);
-  
-  // Subtotal
-  const subtotal = baseRate + distanceCost + itemsCost + workersCost + stairsCost + extrasCost;
-  console.log('Pricing engine - subtotal before adjustment:', subtotal);
-  
-  // Apply pricing adjustment if settings are active
-  let adjustedSubtotal = subtotal;
-  if (pricingSettings.isActive && pricingSettings.customerPriceAdjustment !== 0) {
-    const adjustmentMultiplier = 1 + pricingSettings.customerPriceAdjustment;
-    adjustedSubtotal = subtotal * adjustmentMultiplier;
-    console.log('Pricing engine - applied adjustment:', pricingSettings.customerPriceAdjustment * 100 + '%', 'new subtotal:', adjustedSubtotal);
-  }
-  
-  // Apply minimum/maximum boundaries
-  const clampedSubtotal = clamp(adjustedSubtotal, MINIMUM_PRICE_GBP, MAXIMUM_PRICE_GBP);
-  console.log('Pricing engine - clampedSubtotal:', clampedSubtotal);
-  
-  // VAT
-  const vat = input.vatRegistered ? roundGBP(clampedSubtotal * VAT_RATE) : 0;
-  console.log('Pricing engine - vat:', vat);
-  
-  // Total
-  const total = clampedSubtotal + vat;
-  console.log('Pricing engine - final total:', total);
-  
-  const result = {
-    totalGBP: Math.round(total * 100) / 100, // Round to 2 decimal places
-    breakdown: {
-      baseRate: Math.round(baseRate * 100) / 100,
-      distanceCost: Math.round(distanceCost * 100) / 100,
-      itemsCost: Math.round(itemsCost * 100) / 100,
-      workersCost: Math.round(workersCost * 100) / 100,
-      stairsCost: Math.round(stairsCost * 100) / 100,
-      extrasCost: Math.round(extrasCost * 100) / 100,
-      subtotal: Math.round(clampedSubtotal * 100) / 100,
-      vat: Math.round(vat * 100) / 100,
-      total: Math.round(total * 100) / 100,
-      priceAdjustment: pricingSettings.isActive && pricingSettings.customerPriceAdjustment !== 0 
-        ? Math.round(pricingSettings.customerPriceAdjustment * 100) / 100 
-        : 0,
-    },
+export interface PricingRequest {
+  distanceMiles: number;
+  items: NormalizedItem[];
+  pickupFloors: number;
+  pickupHasLift: boolean;
+  dropoffFloors: number;
+  dropoffHasLift: boolean;
+  helpersCount: number;
+  extras: {
+    ulez: boolean;
+    vat: boolean;
   };
-  
-  console.log('Pricing engine - returning result:', result);
-  return result;
+}
+
+export interface PricingResponse {
+  success: boolean;
+  breakdown: QuoteBreakdown;
+  requiresHelpers: boolean;
+  suggestions: string[];
+  errors?: string[];
+}
+
+export class PricingEngine {
+  private static readonly BASE_PRICES = {
+    SHORT_DISTANCE: 40,    // 0-10 miles
+    MEDIUM_DISTANCE: 60,   // 10-50 miles
+    LONG_DISTANCE_RATE: 1.20, // £1.20 per mile beyond 50
+    LONG_DISTANCE_THRESHOLD: 50
+  };
+
+  private static readonly FLOOR_COST = 10; // £10 per floor without lift
+  private static readonly LIFT_DISCOUNT = 0.6; // 60% discount with lift
+  private static readonly HELPER_COST = 20; // £20 per helper
+  private static readonly ULEZ_COST = 12.50; // £12.50 ULEZ charge
+  private static readonly VAT_RATE = 0.20; // 20% VAT
+  private static readonly MINIMUM_TOTAL = 55; // £55 minimum
+
+  public calculateQuote(request: PricingRequest): PricingResponse {
+    const errors: string[] = [];
+    const suggestions: string[] = [];
+
+    // Validate inputs
+    if (request.distanceMiles < 0) {
+      errors.push('Distance cannot be negative');
+    }
+
+    if (request.items.length === 0) {
+      errors.push('At least one item is required');
+    }
+
+    if (request.pickupFloors < 0 || request.dropoffFloors < 0) {
+      errors.push('Floor numbers cannot be negative');
+    }
+
+    if (request.helpersCount < 0) {
+      errors.push('Helper count cannot be negative');
+    }
+
+    if (errors.length > 0) {
+      return {
+        success: false,
+        breakdown: this.createEmptyBreakdown(),
+        requiresHelpers: false,
+        suggestions: [],
+        errors
+      };
+    }
+
+    try {
+      // Calculate base price based on distance
+      const distanceBase = this.calculateDistanceBase(request.distanceMiles);
+
+      // Calculate total volume factor
+      const totalVolumeFactor = this.calculateTotalVolumeFactor(request.items);
+
+      // Calculate floors cost
+      const floorsCost = this.calculateFloorsCost(
+        request.pickupFloors,
+        request.pickupHasLift,
+        request.dropoffFloors,
+        request.dropoffHasLift
+      );
+
+      // Calculate helpers cost
+      const helpersCost = this.calculateHelpersCost(request.items, request.helpersCount);
+
+      // Check if helpers are required but not provided
+      const requiresHelpers = this.checkIfHelpersRequired(request.items) && request.helpersCount === 0;
+      if (requiresHelpers) {
+        suggestions.push('Consider adding helpers for items requiring two people');
+      }
+
+      // Calculate extras cost
+      const extrasCost = this.calculateExtrasCost(request.extras);
+
+      // Calculate subtotal
+      const subtotal = distanceBase * totalVolumeFactor + floorsCost + helpersCost + extrasCost;
+
+      // Apply VAT if required
+      const vat = request.extras.vat ? subtotal * PricingEngine.VAT_RATE : 0;
+
+      // Calculate final total
+      let total = subtotal + vat;
+
+      // Apply minimum total
+      if (total < PricingEngine.MINIMUM_TOTAL) {
+        total = PricingEngine.MINIMUM_TOTAL;
+        suggestions.push(`Minimum charge of £${PricingEngine.MINIMUM_TOTAL} applied`);
+      }
+
+      const breakdown: QuoteBreakdown = {
+        distanceBase,
+        totalVolumeFactor,
+        floorsCost,
+        helpersCost,
+        extrasCost,
+        vat,
+        total
+      };
+
+      return {
+        success: true,
+        breakdown,
+        requiresHelpers,
+        suggestions,
+        errors: []
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        breakdown: this.createEmptyBreakdown(),
+        requiresHelpers: false,
+        suggestions: [],
+        errors: [`Calculation error: ${error}`]
+      };
+    }
+  }
+
+  private calculateDistanceBase(distanceMiles: number): number {
+    if (distanceMiles <= 10) {
+      return PricingEngine.BASE_PRICES.SHORT_DISTANCE;
+    } else if (distanceMiles <= 50) {
+      return PricingEngine.BASE_PRICES.MEDIUM_DISTANCE;
+    } else {
+      const baseCost = PricingEngine.BASE_PRICES.MEDIUM_DISTANCE;
+      const additionalMiles = distanceMiles - PricingEngine.BASE_PRICES.LONG_DISTANCE_THRESHOLD;
+      const additionalCost = additionalMiles * PricingEngine.BASE_PRICES.LONG_DISTANCE_RATE;
+      return baseCost + additionalCost;
+    }
+  }
+
+  private calculateTotalVolumeFactor(items: NormalizedItem[]): number {
+    return items.reduce((total, item) => {
+      return total + (item.quantity * item.volumeFactor);
+    }, 0);
+  }
+
+  private calculateFloorsCost(
+    pickupFloors: number,
+    pickupHasLift: boolean,
+    dropoffFloors: number,
+    dropoffHasLift: boolean
+  ): number {
+    let totalCost = 0;
+
+    // Pickup floors cost
+    if (pickupFloors > 0) {
+      const pickupCost = pickupFloors * PricingEngine.FLOOR_COST;
+      totalCost += pickupHasLift ? pickupCost * PricingEngine.LIFT_DISCOUNT : pickupCost;
+    }
+
+    // Dropoff floors cost
+    if (dropoffFloors > 0) {
+      const dropoffCost = dropoffFloors * PricingEngine.FLOOR_COST;
+      totalCost += dropoffHasLift ? dropoffCost * PricingEngine.LIFT_DISCOUNT : dropoffCost;
+    }
+
+    return totalCost;
+  }
+
+  private calculateHelpersCost(items: NormalizedItem[], helpersCount: number): number {
+    // Check if any items require two people
+    const requiresTwoPerson = items.some(item => item.requiresTwoPerson);
+    
+    if (requiresTwoPerson && helpersCount === 0) {
+      // Suggest adding a helper
+      return PricingEngine.HELPER_COST;
+    }
+
+    return helpersCount * PricingEngine.HELPER_COST;
+  }
+
+  private checkIfHelpersRequired(items: NormalizedItem[]): boolean {
+    return items.some(item => item.requiresTwoPerson);
+  }
+
+  private calculateExtrasCost(extras: { ulez: boolean; vat: boolean }): number {
+    let cost = 0;
+
+    if (extras.ulez) {
+      cost += PricingEngine.ULEZ_COST;
+    }
+
+    // VAT is calculated separately, not included in extras cost
+    return cost;
+  }
+
+  private createEmptyBreakdown(): QuoteBreakdown {
+    return {
+      distanceBase: 0,
+      totalVolumeFactor: 0,
+      floorsCost: 0,
+      helpersCost: 0,
+      extrasCost: 0,
+      vat: 0,
+      total: 0
+    };
+  }
+
+  // Utility methods for testing and debugging
+  public getPricingConstants() {
+    return {
+      BASE_PRICES: PricingEngine.BASE_PRICES,
+      FLOOR_COST: PricingEngine.FLOOR_COST,
+      LIFT_DISCOUNT: PricingEngine.LIFT_DISCOUNT,
+      HELPER_COST: PricingEngine.HELPER_COST,
+      ULEZ_COST: PricingEngine.ULEZ_COST,
+      VAT_RATE: PricingEngine.VAT_RATE,
+      MINIMUM_TOTAL: PricingEngine.MINIMUM_TOTAL
+    };
+  }
+
+  public validateItems(items: NormalizedItem[]): string[] {
+    const errors: string[] = [];
+
+    items.forEach((item, index) => {
+      if (item.quantity <= 0) {
+        errors.push(`Item ${index + 1}: Quantity must be positive`);
+      }
+
+      if (item.volumeFactor < 0) {
+        errors.push(`Item ${index + 1}: Volume factor cannot be negative`);
+      }
+
+      if (item.volumeFactor > 10) {
+        errors.push(`Item ${index + 1}: Volume factor seems unusually high (${item.volumeFactor})`);
+      }
+    });
+
+    return errors;
+  }
+
+  public estimateVolume(items: NormalizedItem[]): {
+    totalVolume: number;
+    volumeBreakdown: Array<{ item: string; volume: number; percentage: number }>;
+  } {
+    const totalVolume = this.calculateTotalVolumeFactor(items);
+    const volumeBreakdown = items.map(item => ({
+      item: item.canonicalName,
+      volume: item.quantity * item.volumeFactor,
+      percentage: ((item.quantity * item.volumeFactor) / totalVolume) * 100
+    }));
+
+    return {
+      totalVolume,
+      volumeBreakdown: volumeBreakdown.sort((a, b) => b.volume - a.volume)
+    };
+  }
+}
+
+// Legacy function for backward compatibility
+export async function computeQuote(inputs: PricingInputs): Promise<PricingResponse> {
+  const engine = new PricingEngine();
+  return engine.calculateQuote(inputs);
+}
+
+// Convenience function for synchronous usage
+export function computeQuoteSync(inputs: PricingInputs): PricingResponse {
+  const engine = new PricingEngine();
+  return engine.calculateQuote(inputs);
 }

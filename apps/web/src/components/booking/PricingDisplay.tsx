@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { 
   Box, 
   Text, 
@@ -18,7 +18,7 @@ import {
   Icon
 } from '@chakra-ui/react';
 import { FaPoundSign, FaInfoCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { computeQuote, type PricingInputs, type PricingResult } from '@/lib/pricing/engine';
+import { computeQuote, type PricingInputs, type PricingResponse } from '@/lib/pricing/engine';
 import { getPricingDistance } from '@/lib/pricing/distance-calculator';
 
 interface PricingDisplayProps {
@@ -34,63 +34,68 @@ export default function PricingDisplay({
   compact = false,
   onPriceChange
 }: PricingDisplayProps) {
-  const [quote, setQuote] = useState<PricingResult | null>(null);
+  const [quote, setQuote] = useState<PricingResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(showBreakdown);
 
   // Convert booking data to pricing inputs
-  const convertToPricingInputs = (data: any): PricingInputs | null => {
+  const convertToPricingInputs = useCallback((data: any): PricingInputs | null => {
     try {
-      // Calculate distance using the distance calculator
-      const distance = data.pickupAddress && data.dropoffAddress 
-        ? getPricingDistance(data.pickupAddress, data.dropoffAddress)
-        : 0;
+      // Use distance from booking data or calculate from addresses
+      let distance = data.distanceMiles || 0;
+      if (!distance && data.pickupAddress && data.dropoffAddress) {
+        distance = getPricingDistance(data.pickupAddress, data.dropoffAddress);
+      }
 
-            // Convert items to pricing format using catalog keys
+      // Convert items to pricing format
       const items = (data.items || []).map((item: any) => {
         return {
-          key: item.key || item.name || 'custom',
-          quantity: item.quantity || 1
+          id: item.id || item.key || 'custom',
+          canonicalName: item.canonicalName || item.name || 'Custom Item',
+          quantity: item.quantity || 1,
+          volumeFactor: item.volumeFactor || 1,
+          requiresTwoPerson: item.requiresTwoPerson || false,
+          isFragile: item.isFragile || false,
+          requiresDisassembly: item.requiresDisassembly || false,
+          basePriceHint: item.basePriceHint || 0
         };
       });
 
-      // Convert property details (simplified)
-      const pickup = data.pickupProperty ? {
-        floors: data.pickupProperty.floor || 1,
-        hasLift: data.pickupProperty.hasLift || false
-      } : undefined;
-
-      const dropoff = data.dropoffProperty ? {
-        floors: data.dropoffProperty.floor || 1,
-        hasLift: data.dropoffProperty.hasLift || false
-      } : undefined;
-
       return {
-        miles: distance,
+        distanceMiles: distance,
         items,
-        workersTotal: data.crewSize || 2,
-        pickup,
-        dropoff,
-        vatRegistered: false, // Default to false for individual customers
+        pickupFloors: data.pickupFloors || data.pickupProperty?.floor || 0,
+        pickupHasLift: data.pickupHasLift || data.pickupProperty?.hasLift || false,
+        dropoffFloors: data.dropoffFloors || data.dropoffProperty?.floor || 0,
+        dropoffHasLift: data.dropoffHasLift || data.dropoffProperty?.hasLift || false,
+        helpersCount: data.helpersCount || (data.crewSize || 2) - 2,
         extras: {
-          ulezApplicable: false // Default to false
+          ulez: data.ulez || false,
+          vat: data.vat || false
         }
       };
     } catch (err) {
       console.error('Error converting booking data:', err);
       return null;
     }
-  };
+  }, []);
+
+  // Memoize the converted inputs to prevent unnecessary recalculations
+  const pricingInputs = useMemo(() => {
+    return convertToPricingInputs(bookingData);
+  }, [bookingData, convertToPricingInputs]);
 
   // Calculate quote when booking data changes
   useEffect(() => {
-    const calculateQuote = async () => {
+    // Add a small delay to prevent excessive calculations
+    const timeoutId = setTimeout(async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const inputs = convertToPricingInputs(bookingData);
+        // Use memoized inputs
+        const inputs = pricingInputs;
         
         // Debug logging
         console.log('PricingDisplay - bookingData:', bookingData);
@@ -116,8 +121,8 @@ export default function PricingDisplay({
         
         // Notify parent component of price change
         if (onPriceChange) {
-          console.log('PricingDisplay - calling onPriceChange with:', result.totalGBP);
-          onPriceChange(result.totalGBP);
+          console.log('PricingDisplay - calling onPriceChange with:', result.breakdown.total);
+          onPriceChange(result.breakdown.total);
         }
       } catch (err) {
         console.error('Pricing calculation error:', err);
@@ -125,10 +130,10 @@ export default function PricingDisplay({
       } finally {
         setLoading(false);
       }
-    };
+    }, 100); // 100ms debounce
 
-    calculateQuote().catch(console.error);
-  }, [bookingData]);
+    return () => clearTimeout(timeoutId);
+  }, [pricingInputs, onPriceChange]);
 
   return (
     <Box p={4} bg="bg.surface" borderRadius="lg" shadow="sm" border="1px" borderColor="border.primary">
@@ -163,7 +168,7 @@ export default function PricingDisplay({
               <HStack spacing={2}>
                 <Icon as={FaPoundSign} color="neon.500" />
                 <Text fontSize="lg" fontWeight="bold" color="neon.500">
-                  £{quote.totalGBP?.toFixed(2) || '0.00'}
+                  £{quote.breakdown.total?.toFixed(2) || '0.00'}
                 </Text>
               </HStack>
             </HStack>
@@ -175,7 +180,7 @@ export default function PricingDisplay({
             <HStack justify="center" spacing={2} mb={2}>
               <Icon as={FaPoundSign} color="neon.500" />
               <Text fontSize="2xl" fontWeight="bold" color="neon.500">
-                £{quote.totalGBP?.toFixed(2) || '0.00'}
+                £{quote.breakdown.total?.toFixed(2) || '0.00'}
               </Text>
             </HStack>
             <Text fontSize="sm" color="text.tertiary">
@@ -201,41 +206,31 @@ export default function PricingDisplay({
               
               <VStack spacing={3} align="stretch">
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Base Rate</Text>
-                  <Text fontSize="sm">£{quote.breakdown?.baseRate?.toFixed(2) || '0.00'}</Text>
+                  <Text fontSize="sm" color="text.secondary">Distance Base</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.distanceBase?.toFixed(2) || '0.00'}</Text>
                 </HStack>
                 
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Distance Cost</Text>
-                  <Text fontSize="sm">£{quote.breakdown?.distanceCost?.toFixed(2) || '0.00'}</Text>
+                  <Text fontSize="sm" color="text.secondary">Volume Factor</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.totalVolumeFactor?.toFixed(2) || '0.00'}</Text>
                 </HStack>
                 
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Items Cost</Text>
-                  <Text fontSize="sm">£{quote.breakdown?.itemsCost?.toFixed(2) || '0.00'}</Text>
+                  <Text fontSize="sm" color="text.secondary">Floors Cost</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.floorsCost?.toFixed(2) || '0.00'}</Text>
                 </HStack>
                 
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Extra Workers</Text>
-                  <Text fontSize="sm">£{quote.breakdown?.workersCost?.toFixed(2) || '0.00'}</Text>
+                  <Text fontSize="sm" color="text.secondary">Helpers Cost</Text>
+                  <Text fontSize="sm">£{quote.breakdown?.helpersCost?.toFixed(2) || '0.00'}</Text>
                 </HStack>
                 
                 <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Stairs Cost</Text>
-                  <Text fontSize="sm">£{quote.breakdown?.stairsCost?.toFixed(2) || '0.00'}</Text>
-                </HStack>
-                
-                <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Extras</Text>
+                  <Text fontSize="sm" color="text.secondary">Extras Cost</Text>
                   <Text fontSize="sm">£{quote.breakdown?.extrasCost?.toFixed(2) || '0.00'}</Text>
                 </HStack>
                 
                 <Divider />
-                
-                <HStack justify="space-between">
-                  <Text fontSize="sm" color="text.secondary">Subtotal</Text>
-                  <Text fontSize="sm">£{quote.breakdown?.subtotal?.toFixed(2) || '0.00'}</Text>
-                </HStack>
                 
                 <HStack justify="space-between">
                   <Text fontSize="sm" color="text.secondary">VAT (20%)</Text>

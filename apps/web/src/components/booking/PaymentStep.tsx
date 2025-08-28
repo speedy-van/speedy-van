@@ -209,7 +209,7 @@ export default function PaymentStep({
             
             <VStack spacing={3}>
               <Text fontSize="3xl" fontWeight="bold" color="neon.500" letterSpacing="wide">
-                Step 8: Secure Payment
+                Secure Payment (Combined with Summary)
               </Text>
               <Text fontSize="lg" color="text.secondary" maxW="500px" lineHeight="tall">
                 Complete your booking with enterprise-grade security and instant confirmation
@@ -637,25 +637,7 @@ export default function PaymentStep({
                 </VStack>
               </HStack>
               
-              <HStack spacing={4} w="full">
-                <Box
-                  p={2}
-                  borderRadius="lg"
-                  bg="linear-gradient(135deg, rgba(0,209,143,0.1), rgba(0,194,255,0.1))"
-                  borderWidth="1px"
-                  borderColor="brand.500"
-                >
-                  <Icon as={FaUsers} color="brand.500" boxSize={5} />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="sm" color="text.tertiary" fontWeight="medium">
-                    Crew Size
-                  </Text>
-                  <Text fontSize="md" fontWeight="bold" color="text.primary">
-                    {bookingData.crewSize} person{bookingData.crewSize !== 1 ? 's' : ''}
-                  </Text>
-                </VStack>
-              </HStack>
+              
               
               <HStack spacing={4} w="full">
                 <Box

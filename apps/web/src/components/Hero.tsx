@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from "react";
-import { Box, Heading, Text, Stack, Button, useColorModeValue } from "@chakra-ui/react";
+import { Box, Heading, Text, Stack, Button, useColorModeValue, Icon, Badge, HStack, VStack } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { FaTruck, FaShieldAlt, FaStar, FaMapMarkerAlt, FaPhone } from "react-icons/fa";
 import { rotatingPhrases } from "../lib/rotatingPhrases";
 import HeaderButton from "./common/HeaderButton";
 
@@ -72,7 +73,7 @@ export default function Hero() {
   }, [videoLoaded, videoError]);
 
   return (
-    <Box as="section" bg="transparent" py={16} textAlign="center" position="relative" overflow="hidden" minH="80vh">
+    <Box as="section" bg="transparent" py={20} textAlign="center" position="relative" overflow="hidden" minH="90vh">
       {/* Video Background */}
       <Box className="hero-video-background">
         <video
@@ -106,59 +107,212 @@ export default function Hero() {
         )}
       </Box>
 
-      <Box maxW="6xl" mx="auto" px={4} className="hero-text-overlay">
+      <Box maxW="7xl" mx="auto" px={4} className="hero-text-overlay">
         <MotionBox
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8 }}
         >
+          {/* Trust Badges */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            mb={8}
+          >
+            <HStack spacing={4} justify="center" flexWrap="wrap">
+              <Badge 
+                colorScheme="green" 
+                variant="solid" 
+                size="lg"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="semibold"
+                boxShadow="0 4px 15px rgba(0,209,143,0.3)"
+              >
+                <Icon as={FaShieldAlt} mr={2} />
+                Fully Insured
+              </Badge>
+              <Badge 
+                colorScheme="blue" 
+                variant="solid" 
+                size="lg"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="semibold"
+                boxShadow="0 4px 15px rgba(0,194,255,0.3)"
+              >
+                <Icon as={FaStar} mr={2} />
+                5-Star Rated
+              </Badge>
+              <Badge 
+                colorScheme="purple" 
+                variant="solid" 
+                size="lg"
+                px={4}
+                py={2}
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="semibold"
+                boxShadow="0 4px 15px rgba(128,90,213,0.3)"
+              >
+                <Icon as={FaMapMarkerAlt} mr={2} />
+                Nationwide
+              </Badge>
+            </HStack>
+          </MotionBox>
+
+          {/* Main Heading */}
           <AnimatePresence mode="wait">
             <MotionBox
               key={currentPhrase}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.6 }}
             >
               <Heading 
                 as="h1" 
-                size="2xl" 
-                mb={4}
-                minH="80px"
+                size={{ base: "2xl", md: "3xl", lg: "4xl" }} 
+                mb={6}
+                minH={{ base: "80px", md: "120px" }}
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
-                fontWeight="bold"
+                fontWeight="extrabold"
+                color="white"
+                textShadow="0 4px 20px rgba(0,0,0,0.8)"
+                lineHeight="1.2"
+                maxW="6xl"
+                mx="auto"
               >
                 {rotatingPhrases[currentPhrase]}
               </Heading>
             </MotionBox>
           </AnimatePresence>
           
-          <Text mt={3} fontSize="lg">
-            Book a professional van in minutes with real-time tracking.
-          </Text>
+          {/* Subtitle */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            mb={8}
+          >
+            <Text 
+              fontSize={{ base: "lg", md: "xl", lg: "2xl" }} 
+              color="gray.200"
+              maxW="3xl"
+              mx="auto"
+              lineHeight="1.6"
+              fontWeight="medium"
+              textShadow="0 2px 10px rgba(0,0,0,0.6)"
+            >
+              Book a professional van in minutes with real-time tracking and guaranteed delivery times.
+            </Text>
+          </MotionBox>
+
+          {/* Additional Benefits */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            mb={10}
+          >
+            <VStack spacing={3}>
+              <Text 
+                fontSize={{ base: "md", md: "lg" }} 
+                color="neon.300"
+                fontWeight="semibold"
+                textShadow="0 2px 10px rgba(0,194,255,0.3)"
+              >
+                🚚 Same-day & Next-day Delivery Available
+              </Text>
+              <Text 
+                fontSize={{ base: "sm", md: "md" }} 
+                color="gray.300"
+                maxW="2xl"
+                mx="auto"
+              >
+                From £50 • Fully Insured • Professional Drivers • Live Tracking
+              </Text>
+            </VStack>
+          </MotionBox>
           
-          <Stack direction={{ base: "column", sm: "row" }} justify="center" mt={8} spacing={4}>
-            <HeaderButton 
-              href="/book" 
-              label="Get a quote"
-              size="lg"
-              px={8}
-              py={6}
-              fontSize="lg"
-              fontWeight="semibold"
-            />
-            <HeaderButton 
-              href="/track" 
-              label="Track a move"
-              size="lg"
-              px={8}
-              py={6}
-              fontSize="lg"
-              fontWeight="semibold"
-            />
-          </Stack>
+          {/* Action Buttons */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <Stack direction={{ base: "column", sm: "row" }} justify="center" spacing={6}>
+              <HeaderButton 
+                href="/book" 
+                label="Get a Quote Now"
+                size="xl"
+                px={10}
+                py={8}
+                fontSize="lg"
+                fontWeight="bold"
+                bg="linear-gradient(135deg, #00C2FF, #00D18F)"
+                _hover={{
+                  bg: "linear-gradient(135deg, #00D18F, #00C2FF)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 8px 25px rgba(0,194,255,0.4)"
+                }}
+                transition="all 0.3s ease"
+                rightIcon={<FaTruck />}
+              />
+              <HeaderButton 
+                href="/track" 
+                label="Track Your Move"
+                size="xl"
+                px={10}
+                py={8}
+                fontSize="lg"
+                fontWeight="semibold"
+                variant="outline"
+                borderColor="neon.400"
+                color="neon.300"
+                _hover={{
+                  bg: "neon.400",
+                  color: "black",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 8px 25px rgba(0,194,255,0.3)"
+                }}
+                transition="all 0.3s ease"
+                rightIcon={<FaMapMarkerAlt />}
+              />
+            </Stack>
+          </MotionBox>
+
+          {/* Quick Contact */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            mt={12}
+          >
+            <HStack spacing={6} justify="center" flexWrap="wrap">
+              <HStack spacing={2} color="gray.300">
+                <Icon as={FaPhone} color="neon.400" />
+                <Text fontSize="sm">07901846297</Text>
+              </HStack>
+              <Text color="gray.400" fontSize="sm">•</Text>
+              <HStack spacing={2} color="gray.300">
+                <Icon as={FaTruck} color="neon.400" />
+                <Text fontSize="sm">Available 24/7</Text>
+              </HStack>
+              <Text color="gray.400" fontSize="sm">•</Text>
+              <HStack spacing={2} color="gray.300">
+                <Icon as={FaShieldAlt} color="neon.400" />
+                <Text fontSize="sm">Fully Insured</Text>
+              </HStack>
+            </HStack>
+          </MotionBox>
         </MotionBox>
       </Box>
     </Box>

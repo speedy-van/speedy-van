@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// User model with enhanced role-based access control
 model User {
   id                      String                           @id @default(cuid())
   email                   String                           @unique
@@ -30,21 +31,22 @@ model User {
   addresses               Address[]
   auditLogs               AuditLog[]
   bookings                Booking[]
+  chatParticipants        ChatParticipant[]
+  chatSessionsClosed      ChatSession[]                    @relation("ChatSessionClosedBy")
+  chatSessions            ChatSession[]                    @relation("ChatSessionCreatedBy")
   contacts                Contact[]
   notificationPrefs       CustomerNotificationPreferences?
   driver                  Driver?
   driverApplication       DriverApplication?
-  supportTickets          SupportTicket[]
-  pricingSettingsCreated  PricingSettings[] @relation("PricingSettingsCreatedBy")
-  pricingSettingsUpdated  PricingSettings[] @relation("PricingSettingsUpdatedBy")
-  chatSessions            ChatSession[] @relation("ChatSessionCreatedBy")
-  chatSessionsClosed      ChatSession[] @relation("ChatSessionClosedBy")
-  chatParticipants        ChatParticipant[]
   messages                Message[]
+  pricingSettingsCreated  PricingSettings[]                @relation("PricingSettingsCreatedBy")
+  pricingSettingsUpdated  PricingSettings[]                @relation("PricingSettingsUpdatedBy")
+  supportTickets          SupportTicket[]
 
   @@index([role])
 }
 
+/// Driver model - only created after admin approval
 model Driver {
   id                      String                         @id @default(cuid())
   userId                  String                         @unique
@@ -79,7 +81,6 @@ model Driver {
   vehicles                DriverVehicle[]
   pushSubscriptions       PushSubscription[]
   TrackingPing            TrackingPing[]
-
 }
 
 model DriverVehicle {
@@ -718,6 +719,7 @@ model ContentAuditLog {
 }
 
 /// Driver Application model for UK employment law compliance
+/// This model handles the application process before a user becomes an approved driver
 model DriverApplication {
   id                           String                  @id @default(cuid())
   email                        String                  @unique
@@ -765,150 +767,81 @@ model DriverApplication {
   @@index([nationalInsuranceNumber])
 }
 
-/// ─────────────────────────
-/// PREMIUM BOOKING SYSTEM - WORKFLOW ALIGNED MODELS
-/// ─────────────────────────
-
-/// ─────────────────────────
-/// ENUMS
-/// ─────────────────────────
-enum BookingStatus {
-  DRAFT
-  PENDING_PAYMENT
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-enum PropertyType {
-  DETACHED
-  SEMI_DETACHED
-  TERRACED
-  BUNGALOW
-  FLAT
-  MAISONETTE
-  COTTAGE
-  STUDIO
-}
-
-enum AccessType {
-  GROUND_FLOOR
-  WITH_LIFT
-  WITHOUT_LIFT
-}
-
-enum CrewSize {
-  ONE
-  TWO
-  THREE
-  FOUR
-}
-
-/// ─────────────────────────
-/// MODELS
-/// ─────────────────────────
-
 model BookingAddress {
-  id        String   @id @default(cuid())
-  label     String   // full address line from Mapbox
-  postcode  String
-  lat       Float
-  lng       Float
-
-  // Relations (optional reverse lookups)
-  pickupBookings  Booking[] @relation("PickupAddress")
+  id              String    @id @default(cuid())
+  label           String
+  postcode        String
+  lat             Float
+  lng             Float
   dropoffBookings Booking[] @relation("DropoffAddress")
+  pickupBookings  Booking[] @relation("PickupAddress")
 }
 
 model PropertyDetails {
-  id           String       @id @default(cuid())
-  propertyType PropertyType
-  accessType   AccessType
-  floors       Int          @default(0) // floors above ground; 0 = ground
-
-  // Relations
-  pickupBookings  Booking[] @relation("PickupProperty")
-  dropoffBookings Booking[] @relation("DropoffProperty")
+  id              String       @id @default(cuid())
+  propertyType    PropertyType
+  accessType      AccessType
+  floors          Int          @default(0)
+  dropoffBookings Booking[]    @relation("DropoffProperty")
+  pickupBookings  Booking[]    @relation("PickupProperty")
 }
 
 model BookingItem {
   id        String  @id @default(cuid())
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingId String
   name      String
-  volumeM3  Float
   quantity  Int     @default(1)
+  volumeM3  Float
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
 }
 
 /// Main booking entity - CLEAN PREMIUM WORKFLOW VERSION
 model Booking {
-  id        String        @id @default(cuid())
-  reference String        @unique // e.g. "SV-AB12CD"
-
-  // Addresses
-  pickupAddress   BookingAddress  @relation("PickupAddress", fields: [pickupAddressId], references: [id])
-  pickupAddressId String
-  dropoffAddress  BookingAddress  @relation("DropoffAddress", fields: [dropoffAddressId], references: [id])
-  dropoffAddressId String
-
-  // Property details
-  pickupProperty   PropertyDetails @relation("PickupProperty", fields: [pickupPropertyId], references: [id])
-  pickupPropertyId String
-  dropoffProperty  PropertyDetails @relation("DropoffProperty", fields: [dropoffPropertyId], references: [id])
-  dropoffPropertyId String
-
-  // Items
-  items BookingItem[]
-
-  // Scheduling
-  scheduledAt DateTime
-  estimatedDurationMinutes Int
-
-  // Crew
-  crewSize CrewSize @default(TWO)
-
-  // Pricing breakdown (all GBP, integer pennies not needed if you prefer whole GBP)
-  baseDistanceMiles             Float
-  distanceCostGBP               Int
+  id                            String          @id @default(cuid())
+  customerId                    String?
+  paidAt                        DateTime?
+  createdAt                     DateTime        @default(now())
+  updatedAt                     DateTime        @updatedAt
+  driverId                      String?
+  customerName                  String
+  customerPhone                 String
+  reference                     String          @unique
   accessSurchargeGBP            Int
-  weatherSurchargeGBP           Int
+  availabilityMultiplierPercent Int
+  baseDistanceMiles             Float
+  crewMultiplierPercent         Int
+  customerEmail                 String
+  distanceCostGBP               Int
+  dropoffAddressId              String
+  dropoffPropertyId             String
+  estimatedDurationMinutes      Int
   itemsSurchargeGBP             Int
-  crewMultiplierPercent         Int   // e.g. +20 for THREE, -15 for ONE
-  availabilityMultiplierPercent Int   // e.g. 20 for 1.2x load
+  pickupAddressId               String
+  pickupPropertyId              String
+  scheduledAt                   DateTime
+  stripePaymentIntentId         String?         @unique
   totalGBP                      Int
-
-  // Customer
-  customerName  String
-  customerPhone String
-  customerEmail String
-
-  // Payment
-  status                BookingStatus @default(DRAFT)
-  stripePaymentIntentId String?       @unique
-  paidAt                DateTime?
-
-  // Audit
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations to existing models
-  Assignment Assignment?
-  Payment    Payment[]
-  TrackingPing TrackingPing[]
-  chatSessions ChatSession[]
-  
-  // Relations to User and Driver (for existing references)
-  customerId String?
-  customer   User?   @relation(fields: [customerId], references: [id])
-  driverId   String?
-  driver     Driver? @relation(fields: [driverId], references: [id])
+  weatherSurchargeGBP           Int
+  status                        BookingStatus   @default(DRAFT)
+  crewSize                      CrewSize        @default(TWO)
+  Assignment                    Assignment?
+  customer                      User?           @relation(fields: [customerId], references: [id])
+  driver                        Driver?         @relation(fields: [driverId], references: [id])
+  dropoffAddress                BookingAddress  @relation("DropoffAddress", fields: [dropoffAddressId], references: [id])
+  dropoffProperty               PropertyDetails @relation("DropoffProperty", fields: [dropoffPropertyId], references: [id])
+  pickupAddress                 BookingAddress  @relation("PickupAddress", fields: [pickupAddressId], references: [id])
+  pickupProperty                PropertyDetails @relation("PickupProperty", fields: [pickupPropertyId], references: [id])
+  items                         BookingItem[]
+  chatSessions                  ChatSession[]
+  Payment                       Payment[]
+  TrackingPing                  TrackingPing[]
 
   @@index([scheduledAt])
   @@index([status])
-  @@index([customerEmail, scheduledAt]) // For customer portal queries
-  @@index([status, createdAt]) // For admin dashboard filtering
+  @@index([customerEmail, scheduledAt])
+  @@index([status, createdAt])
 }
 
 model Assignment {
@@ -949,18 +882,17 @@ model JobEvent {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  sessionId String
+  id        String        @id @default(cuid())
   senderId  String
   content   String
-  type      MessageType @default(text)
-  status    MessageStatus @default(sent)
+  createdAt DateTime      @default(now())
   metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sender    User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sessionId String
+  status    MessageStatus @default(sent)
+  type      MessageType   @default(text)
+  updatedAt DateTime      @updatedAt
+  sender    User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  session   ChatSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
   @@index([senderId])
@@ -969,22 +901,21 @@ model Message {
 }
 
 model ChatSession {
-  id          String   @id @default(cuid())
-  type        ChatSessionType
-  title       String?
-  bookingId   String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  closedAt    DateTime?
-  closedBy    String?
-  createdBy   String?
-  
-  booking     Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  closedByUser User?   @relation("ChatSessionClosedBy", fields: [closedBy], references: [id], onDelete: SetNull)
-  createdByUser User?  @relation("ChatSessionCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-  participants ChatParticipant[]
-  messages    Message[]
+  id            String            @id @default(cuid())
+  type          ChatSessionType
+  title         String?
+  bookingId     String?
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  closedAt      DateTime?
+  closedBy      String?
+  createdBy     String?
+  participants  ChatParticipant[]
+  booking       Booking?          @relation(fields: [bookingId], references: [id])
+  closedByUser  User?             @relation("ChatSessionClosedBy", fields: [closedBy], references: [id])
+  createdByUser User?             @relation("ChatSessionCreatedBy", fields: [createdBy], references: [id])
+  messages      Message[]
 
   @@index([type])
   @@index([bookingId])
@@ -993,18 +924,17 @@ model ChatSession {
 }
 
 model ChatParticipant {
-  id              String   @id @default(cuid())
-  sessionId       String
-  userId          String?
-  guestName       String?
-  guestEmail      String?
-  role            ChatParticipantRole
-  lastReadAt      DateTime?
-  isTyping        Boolean  @default(false)
-  joinedAt        DateTime @default(now())
-  
-  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String              @id @default(cuid())
+  sessionId  String
+  userId     String?
+  guestName  String?
+  guestEmail String?
+  role       ChatParticipantRole
+  lastReadAt DateTime?
+  isTyping   Boolean             @default(false)
+  joinedAt   DateTime            @default(now())
+  session    ChatSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user       User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, userId])
   @@unique([sessionId, guestEmail])
@@ -1082,10 +1012,10 @@ model Refund {
   reason      String
   status      RefundStatus @default(pending)
   processedAt DateTime?
-  notes       String?
   metadata    Json?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  notes       String?
   Payment     Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
@@ -1102,6 +1032,80 @@ model TrackingPing {
   createdAt DateTime @default(now())
   Booking   Booking  @relation(fields: [bookingId], references: [id])
   Driver    Driver   @relation(fields: [driverId], references: [id])
+}
+
+model PricingSettings {
+  id                      String   @id @default(cuid())
+  customerPriceAdjustment Decimal  @default(0) @db.Decimal(5, 4)
+  driverRateMultiplier    Decimal  @default(1) @db.Decimal(5, 4)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  createdBy               String
+  updatedBy               String?
+  createdByUser           User     @relation("PricingSettingsCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser           User?    @relation("PricingSettingsUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+/// Admin notifications for system-wide alerts and driver application notifications
+model AdminNotification {
+  id        String    @id @default(cuid())
+  type      String
+  title     String
+  message   String
+  priority  String    @default("medium")
+  data      Json?
+  actionUrl String?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  actorId   String?
+  actorRole String?
+
+  @@index([type])
+  @@index([priority])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([actorId])
+}
+
+/// ─────────────────────────
+/// ENUMS
+/// ─────────────────────────
+enum BookingStatus {
+  DRAFT
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PropertyType {
+  DETACHED
+  SEMI_DETACHED
+  TERRACED
+  BUNGALOW
+  FLAT
+  MAISONETTE
+  COTTAGE
+  STUDIO
+}
+
+enum AccessType {
+  GROUND_FLOOR
+  WITH_LIFT
+  WITHOUT_LIFT
+}
+
+enum CrewSize {
+  ONE
+  TWO
+  THREE
+  FOUR
 }
 
 enum Role {
@@ -1282,24 +1286,6 @@ enum RefundStatus {
   cancelled
 }
 
-model PricingSettings {
-  id                    String   @id @default(cuid())
-  customerPriceAdjustment Decimal @db.Decimal(5, 4) @default(0) // Percentage adjustment for customer pricing (-1.00 to 1.00)
-  driverRateMultiplier  Decimal @db.Decimal(5, 4) @default(1) // Multiplier for driver earnings (0.50 to 2.00)
-  isActive              Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  createdBy             String
-  updatedBy             String?
-  
-  // Relations
-  createdByUser         User     @relation("PricingSettingsCreatedBy", fields: [createdBy], references: [id])
-  updatedByUser         User?    @relation("PricingSettingsUpdatedBy", fields: [updatedBy], references: [id])
-  
-  @@index([isActive])
-  @@index([createdAt])
-}
-
 enum MessageType {
   text
   image
@@ -1330,5 +1316,3 @@ enum ChatParticipantRole {
   guest
   support
 }
-
-

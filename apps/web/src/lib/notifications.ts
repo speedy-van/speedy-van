@@ -2,6 +2,14 @@ import { prisma } from './prisma';
 import { getPusherServer } from './pusher';
 import { NotificationType } from '@prisma/client';
 
+// Helper function to derive timeSlot from scheduledAt
+function getTimeSlotFromDate(scheduledAt: Date): string {
+  const hour = scheduledAt.getHours();
+  if (hour < 12) return '09:00-12:00'; // AM slot
+  if (hour < 17) return '12:00-17:00'; // PM slot
+  return '17:00-21:00'; // Evening slot
+}
+
 interface CreateNotificationData {
   driverId: string;
   type: NotificationType;
@@ -186,4 +194,167 @@ export async function notifyDocumentExpiry(driverId: string, documentData: any) 
     message: `Your ${documentData.type} expires on ${documentData.expiryDate}`,
     data: { documentId: documentData.id, type: documentData.type, expiryDate: documentData.expiryDate },
   });
+}
+
+export interface AdminNotificationData {
+  type: 'new_booking' | 'payment_completed' | 'booking_cancelled' | 'driver_assigned';
+  title: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  data: any;
+  actionUrl?: string;
+}
+
+export async function sendAdminNotification(booking: any, session?: any) {
+  try {
+    console.log('📧 Sending admin notification for booking:', booking.reference);
+
+    // Create admin notification in database
+    const notification = await prisma.adminNotification.create({
+      data: {
+        type: 'new_booking',
+        title: `New Booking Confirmed - ${booking.unifiedBookingId || booking.reference}`,
+        message: `Customer ${booking.customerName} has completed a booking for £${booking.totalGBP}`,
+        priority: 'high',
+        data: {
+          bookingId: booking.id,
+          reference: booking.reference,
+          unifiedBookingId: booking.unifiedBookingId,
+          customer: {
+            name: booking.customerName,
+            email: booking.customerEmail,
+            phone: booking.customerPhone
+          },
+          addresses: {
+            pickup: {
+              line1: booking.pickupAddress?.label,
+              city: booking.pickupAddress?.city,
+              postcode: booking.pickupAddress?.postcode
+            },
+            dropoff: {
+              line1: booking.dropoffAddress?.label,
+              city: booking.dropoffAddress?.city,
+              postcode: booking.dropoffAddress?.postcode
+            }
+          },
+          properties: {
+            pickup: {
+              type: booking.pickupProperty?.propertyType,
+              floor: booking.pickupProperty?.floors,
+              access: booking.pickupProperty?.accessType
+            },
+            dropoff: {
+              type: booking.dropoffProperty?.propertyType,
+              floor: booking.dropoffProperty?.floors,
+              access: booking.dropoffProperty?.accessType
+            }
+          },
+          schedule: {
+            date: booking.scheduledAt,
+            timeSlot: getTimeSlotFromDate(booking.scheduledAt)
+          },
+          items: booking.items || [],
+          pricing: {
+            total: booking.totalGBP,
+            breakdown: booking.metadata?.pricingBreakdown || {}
+          },
+          payment: {
+            stripeSessionId: session?.id,
+            stripePaymentIntentId: session?.payment_intent,
+            amount: session?.amount_total,
+            currency: session?.currency
+          }
+        },
+        actionUrl: `/admin/bookings/${booking.id}`,
+        isRead: false,
+        createdAt: new Date()
+      }
+    });
+
+    console.log('✅ Admin notification created:', notification.id);
+
+    // Send email notification to admin (if configured)
+    await sendAdminEmailNotification(notification);
+
+    // Send real-time notification via Pusher (if configured)
+    await sendRealtimeNotification(notification);
+
+    return notification;
+
+  } catch (error) {
+    console.error('❌ Error sending admin notification:', error);
+    // Don't throw error - notification failure shouldn't break the booking flow
+  }
+}
+
+async function sendAdminEmailNotification(notification: any) {
+  try {
+    // Get admin email addresses
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        role: 'admin',
+        isActive: true,
+        emailVerified: true
+      },
+      select: {
+        email: true,
+        name: true
+      }
+    });
+
+    if (adminUsers.length === 0) {
+      console.log('ℹ️ No admin users found for email notification');
+      return;
+    }
+
+    // TODO: Implement email sending logic
+    // This would typically use SendGrid, AWS SES, or similar service
+    console.log(`📧 Would send email notification to ${adminUsers.length} admin users`);
+    
+    for (const admin of adminUsers) {
+      console.log(`  - ${admin.name} (${admin.email})`);
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending admin email notification:', error);
+  }
+}
+
+async function sendRealtimeNotification(notification: any) {
+  try {
+    // TODO: Implement real-time notification via Pusher
+    // This would send a notification to the admin dashboard
+    console.log('🔔 Would send real-time notification via Pusher');
+    
+  } catch (error) {
+    console.error('❌ Error sending real-time notification:', error);
+  }
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  try {
+    await prisma.adminNotification.update({
+      where: { id: notificationId },
+      data: { isRead: true, readAt: new Date() }
+    });
+    
+    console.log('✅ Notification marked as read:', notificationId);
+  } catch (error) {
+    console.error('❌ Error marking notification as read:', error);
+  }
+}
+
+export async function getUnreadNotifications() {
+  try {
+    const notifications = await prisma.adminNotification.findMany({
+      where: { isRead: false },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+    
+    return notifications;
+  } catch (error) {
+    console.error('❌ Error getting unread notifications:', error);
+    return [];
+  }
 }

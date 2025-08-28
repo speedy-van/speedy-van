@@ -79,9 +79,9 @@ function generateProfessionalInvoice(data: {
     header: {
       companyName: 'SPEEDY VAN LTD',
       companyAddress: '123 Business Street, London, SW1A 1AA',
-      companyPhone: '+44 20 1234 5678',
-      companyEmail: 'accounts@speedyvan.co.uk',
-      companyWebsite: 'www.speedyvan.co.uk',
+      companyPhone: '07901846297',
+      companyEmail: 'support@speedy-van.co.uk',
+      companyWebsite: 'www.speedy-van.co.uk',
       logo: '🚚' // In production, use actual logo
     },
     invoice: {

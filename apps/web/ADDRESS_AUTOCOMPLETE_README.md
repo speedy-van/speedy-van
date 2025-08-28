@@ -223,7 +223,7 @@ curl "https://api.mapbox.com/geocoding/v5/mapbox.places/London.json?access_token
 ## 📞 **Support**
 
 For technical support or feature requests:
-- **Email**: support@speedy-van.com
+- **Email**: support@speedy-van.co.uk
 - **Documentation**: See main README.md
 - **Issues**: Create GitHub issue for bugs
 

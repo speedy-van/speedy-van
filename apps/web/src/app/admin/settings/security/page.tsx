@@ -142,7 +142,7 @@ const mockSecurityStats = {
 const mockRecentActivity = [
   {
     id: '1',
-    user: 'john@speedyvan.com',
+    user: 'john@speedy-van.co.uk',
     action: 'Failed login attempt',
     ip: '192.168.1.100',
     timestamp: '2025-01-15T10:30:00Z',
@@ -150,7 +150,7 @@ const mockRecentActivity = [
   },
   {
     id: '2',
-    user: 'sarah@speedyvan.com',
+    user: 'sarah@speedy-van.co.uk',
     action: 'Password changed',
     ip: '10.0.0.50',
     timestamp: '2025-01-15T09:15:00Z',
@@ -158,7 +158,7 @@ const mockRecentActivity = [
   },
   {
     id: '3',
-    user: 'admin@speedyvan.com',
+    user: 'admin@speedy-van.co.uk',
     action: '2FA enabled',
     ip: '203.0.113.1',
     timestamp: '2025-01-15T08:45:00Z',

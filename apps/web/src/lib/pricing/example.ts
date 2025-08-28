@@ -3,7 +3,7 @@
 // Example usage of the simplified pricing engine
 // -----------------------------------------------------------------------------
 
-import { computeQuote, type PricingInputs, type QuoteItem } from "./engine";
+import { computeQuote, type PricingInputs } from "./engine";
 
 // ===== Example Scenarios =====================================================
 
@@ -11,16 +11,18 @@ function example1_CityMove() {
   console.log("\n=== Example 1: City Move (≤10 miles) ===");
   
   const input: PricingInputs = {
-    miles: 8,
+    distanceMiles: 8,
     items: [
-      { key: "small", quantity: 5 },   // 5 small items
-      { key: "medium", quantity: 3 },  // 3 medium items
-      { key: "large", quantity: 1 }    // 1 large item
+      { id: "small", canonicalName: "Small Item", quantity: 5, volumeFactor: 0.5, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 10 },
+      { id: "medium", canonicalName: "Medium Item", quantity: 3, volumeFactor: 1.0, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 20 },
+      { id: "large", canonicalName: "Large Item", quantity: 1, volumeFactor: 2.0, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 40 }
     ],
-    workersTotal: 2,
-    pickup: { floors: 2, hasLift: false },
-    dropoff: { floors: 1, hasLift: true },
-    vatRegistered: true
+    pickupFloors: 2,
+    pickupHasLift: false,
+    dropoffFloors: 1,
+    dropoffHasLift: true,
+    helpersCount: 2,
+    extras: { ulez: false, vat: true }
   };
 
   const result = computeQuote(input);
@@ -35,17 +37,18 @@ function example2_RegionalMove() {
   console.log("\n=== Example 2: Regional Move (≤50 miles) ===");
   
   const input: PricingInputs = {
-    miles: 35,
+    distanceMiles: 35,
     items: [
-      { key: "small", quantity: 10 },
-      { key: "medium", quantity: 8 },
-      { key: "large", quantity: 3 }
+      { id: "small", canonicalName: "Small Item", quantity: 10, volumeFactor: 0.5, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 10 },
+      { id: "medium", canonicalName: "Medium Item", quantity: 8, volumeFactor: 1.0, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 20 },
+      { id: "large", canonicalName: "Large Item", quantity: 3, volumeFactor: 2.0, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 40 }
     ],
-    workersTotal: 3,
-    pickup: { floors: 3, hasLift: false },
-    dropoff: { floors: 2, hasLift: false },
-    extras: { ulezApplicable: true },
-    vatRegistered: true
+    pickupFloors: 3,
+    pickupHasLift: false,
+    dropoffFloors: 2,
+    dropoffHasLift: false,
+    helpersCount: 3,
+    extras: { ulez: true, vat: true }
   };
 
   const result = computeQuote(input);
@@ -60,16 +63,18 @@ function example3_LongDistanceMove() {
   console.log("\n=== Example 3: Long Distance Move (>50 miles) ===");
   
   const input: PricingInputs = {
-    miles: 120,
+    distanceMiles: 120,
     items: [
-      { key: "small", quantity: 15 },
-      { key: "medium", quantity: 12 },
-      { key: "large", quantity: 5 }
+      { id: "small", canonicalName: "Small Item", quantity: 15, volumeFactor: 0.5, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 10 },
+      { id: "medium", canonicalName: "Medium Item", quantity: 12, volumeFactor: 1.0, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 20 },
+      { id: "large", canonicalName: "Large Item", quantity: 5, volumeFactor: 2.0, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 40 }
     ],
-    workersTotal: 4,
-    pickup: { floors: 1, hasLift: true },
-    dropoff: { floors: 1, hasLift: true },
-    vatRegistered: true
+    pickupFloors: 1,
+    pickupHasLift: true,
+    dropoffFloors: 1,
+    dropoffHasLift: true,
+    helpersCount: 4,
+    extras: { ulez: false, vat: true }
   };
 
   const result = computeQuote(input);
@@ -84,14 +89,16 @@ function example4_MinimalMove() {
   console.log("\n=== Example 4: Minimal Move (Testing Minimum) ===");
   
   const input: PricingInputs = {
-    miles: 5,
+    distanceMiles: 5,
     items: [
-      { key: "small", quantity: 1 }
+      { id: "small", canonicalName: "Small Item", quantity: 1, volumeFactor: 0.5, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 10 }
     ],
-    workersTotal: 1,
-    pickup: { floors: 1, hasLift: true },
-    dropoff: { floors: 1, hasLift: true },
-    vatRegistered: false
+    pickupFloors: 1,
+    pickupHasLift: true,
+    dropoffFloors: 1,
+    dropoffHasLift: true,
+    helpersCount: 1,
+    extras: { ulez: false, vat: false }
   };
 
   const result = computeQuote(input);
@@ -106,17 +113,18 @@ function example5_ComplexMove() {
   console.log("\n=== Example 5: Complex Move (All Factors) ===");
   
   const input: PricingInputs = {
-    miles: 75,
+    distanceMiles: 75,
     items: [
-      { key: "small", quantity: 20 },
-      { key: "medium", quantity: 15 },
-      { key: "large", quantity: 8 }
+      { id: "small", canonicalName: "Small Item", quantity: 20, volumeFactor: 0.5, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 10 },
+      { id: "medium", canonicalName: "Medium Item", quantity: 15, volumeFactor: 1.0, requiresTwoPerson: false, isFragile: false, requiresDisassembly: false, basePriceHint: 20 },
+      { id: "large", canonicalName: "Large Item", quantity: 8, volumeFactor: 2.0, requiresTwoPerson: true, isFragile: false, requiresDisassembly: false, basePriceHint: 40 }
     ],
-    workersTotal: 5,
-    pickup: { floors: 4, hasLift: false },
-    dropoff: { floors: 3, hasLift: false },
-    extras: { ulezApplicable: true },
-    vatRegistered: true
+    pickupFloors: 4,
+    pickupHasLift: false,
+    dropoffFloors: 3,
+    dropoffHasLift: false,
+    helpersCount: 5,
+    extras: { ulez: true, vat: true }
   };
 
   const result = computeQuote(input);
@@ -131,13 +139,11 @@ function example5_ComplexMove() {
 
 function showPricingBreakdown(result: any) {
   console.log("\n--- Pricing Breakdown ---");
-  console.log(`Base Rate: £${result.breakdown.baseRate}`);
-  console.log(`Distance Cost: £${result.breakdown.distanceCost}`);
-  console.log(`Items Cost: £${result.breakdown.itemsCost}`);
-  console.log(`Workers Cost: £${result.breakdown.workersCost}`);
-  console.log(`Stairs Cost: £${result.breakdown.stairsCost}`);
+  console.log(`Distance Base: £${result.breakdown.distanceBase}`);
+  console.log(`Total Volume Factor: ${result.breakdown.totalVolumeFactor}`);
+  console.log(`Floors Cost: £${result.breakdown.floorsCost}`);
+  console.log(`Helpers Cost: £${result.breakdown.helpersCost}`);
   console.log(`Extras Cost: £${result.breakdown.extrasCost}`);
-  console.log(`Subtotal: £${result.breakdown.subtotal}`);
   console.log(`VAT: £${result.breakdown.vat}`);
   console.log(`Total: £${result.breakdown.total}`);
 }

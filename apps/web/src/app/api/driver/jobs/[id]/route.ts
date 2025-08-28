@@ -1,59 +1,50 @@
-import { NextResponse } from "next/server";
-import { requireDriver } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { generateCrewRecommendation } from '@/lib/driver-notifications';
 
+// Helper function to derive timeSlot from scheduledAt
+function getTimeSlotFromDate(scheduledAt: Date): string {
+  const hour = scheduledAt.getHours();
+  if (hour < 12) return '09:00-12:00'; // AM slot
+  if (hour < 17) return '12:00-17:00'; // PM slot
+  return '17:00-21:00'; // Evening slot
+}
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await requireDriver();
-  
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const userId = (session.user as any).id;
-    
-    // Get the driver record
-    const driver = await prisma.driver.findUnique({
-      where: { userId }
-    });
-
-    if (!driver) {
-      return NextResponse.json({ error: "Driver not found" }, { status: 404 });
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Login required' },
+        { status: 401 }
+      );
     }
 
-    // Get the job details
-    const job = await prisma.booking.findUnique({
-      where: {
-        id: params.id
-      },
+    const bookingId = params.id;
+
+    // Get the complete booking data
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
       include: {
-        customer: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
-        items: true,
         pickupAddress: true,
         dropoffAddress: true,
+        pickupProperty: true,
+        dropoffProperty: true,
+        items: true,
         Assignment: {
-          where: {
-            driverId: driver.id
-          },
           include: {
             Driver: {
               include: {
-                user: {
-                  select: {
-                    name: true,
-                    email: true
-                  }
-                }
+                user: true
               }
             }
           }
@@ -61,42 +52,227 @@ export async function GET(
       }
     });
 
-    if (!job) {
-      return NextResponse.json({ error: "Job not found" }, { status: 404 });
+    if (!booking) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
     }
 
-    // Check if job is available or claimed by this driver
-    const isAvailable = !job.Assignment;
-    const isClaimedByMe = job.Assignment && job.Assignment.driverId === driver.id;
+    // Check if the driver is assigned to this job
+    const isAssigned = booking.Assignment?.Driver?.id === session.user.id;
+    const isDriver = (session.user as any).role === 'driver';
 
-    // Get items from the BookingItem relation
-    const items = job.items || [];
+    if (!isAssigned && !isDriver) {
+      return NextResponse.json(
+        { error: 'Access denied - You are not assigned to this job' },
+        { status: 403 }
+      );
+    }
 
-    // Format the response
+    // Generate crew recommendation
+    const crewRecommendation = await generateCrewRecommendation(booking);
+
+    // Format the response for the driver (excluding customer email)
     const jobDetails = {
-      id: job.id,
-      reference: job.reference,
-      status: isAvailable ? 'available' : (isClaimedByMe ? 'claimed' : 'claimed_by_other'),
-      pickupAddress: job.pickupAddress?.label || '',
-      dropoffAddress: job.dropoffAddress?.label || '',
-      scheduledAt: job.scheduledAt?.toISOString().split('T')[0] || '',
-      totalGBP: job.totalGBP || 0,
-      distance: job.baseDistanceMiles || 0,
-      estimatedDuration: job.estimatedDurationMinutes || 0,
-      items: items.map((item: any) => ({
-        name: item.name || 'Unknown Item',
-        quantity: item.quantity || 1,
-        volumeM3: item.volumeM3 || 0
+      id: booking.id,
+      reference: booking.reference,
+      unifiedBookingId: booking.reference, // Using reference as unified ID
+      customer: {
+        name: booking.customerName,
+        phone: booking.customerPhone,
+        // Email is intentionally excluded for driver privacy
+      },
+      addresses: {
+        pickup: {
+          line1: booking.pickupAddress?.label,
+
+          postcode: booking.pickupAddress?.postcode,
+          coordinates: {
+            lat: booking.pickupAddress?.lat,
+            lng: booking.pickupAddress?.lng
+          }
+        },
+        dropoff: {
+          line1: booking.dropoffAddress?.label,
+
+          postcode: booking.dropoffAddress?.postcode,
+          coordinates: {
+            lat: booking.dropoffAddress?.lat,
+            lng: booking.dropoffAddress?.lng
+          }
+        }
+      },
+      properties: {
+        pickup: {
+          type: booking.pickupProperty?.propertyType,
+          floor: booking.pickupProperty?.floors,
+          access: booking.pickupProperty?.accessType,
+
+        },
+        dropoff: {
+          type: booking.dropoffProperty?.propertyType,
+          floor: booking.dropoffProperty?.floors,
+          access: booking.dropoffProperty?.accessType,
+
+        }
+      },
+      schedule: {
+        date: booking.scheduledAt,
+        timeSlot: getTimeSlotFromDate(booking.scheduledAt),
+        estimatedDuration: booking.estimatedDurationMinutes
+      },
+      items: booking.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        volumeM3: item.volumeM3
       })),
-      customer: job.customer,
-      createdAt: job.createdAt.toISOString(),
-      claimedAt: job.Assignment?.claimedAt?.toISOString(),
-      driverId: job.Assignment?.driverId
+      pricing: {
+        total: booking.totalGBP,
+        breakdown: {}
+      },
+      crewRecommendation,
+      specialRequirements: '',
+      status: booking.status,
+      assignment: booking.Assignment ? {
+        id: booking.Assignment.id,
+        status: booking.Assignment.status,
+        claimedAt: booking.Assignment.claimedAt,
+        driver: {
+          id: booking.Assignment.Driver?.id,
+          name: booking.Assignment.Driver?.user?.name || 'Unknown'
+        }
+      } : null
     };
 
-    return NextResponse.json({ job: jobDetails });
+    return NextResponse.json({
+      success: true,
+      job: jobDetails
+    });
+
   } catch (error) {
-    console.error('Error fetching job details:', error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('❌ Error fetching driver job details:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch job details' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Login required' },
+        { status: 401 }
+      );
+    }
+
+    const bookingId = params.id;
+    const { action } = await request.json();
+
+    // Get the booking and assignment
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        Assignment: {
+          include: {
+            Driver: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if the driver is assigned to this job
+    const isAssigned = booking.Assignment?.Driver?.id === session.user.id;
+    if (!isAssigned) {
+      return NextResponse.json(
+        { error: 'Access denied - You are not assigned to this job' },
+        { status: 403 }
+      );
+    }
+
+    let updateData: any = {};
+
+    switch (action) {
+      case 'accept':
+        updateData = {
+          status: 'claimed',
+          claimedAt: new Date()
+        };
+        break;
+
+      case 'start':
+        updateData = {
+          status: 'in_progress',
+          startedAt: new Date()
+        };
+        break;
+
+      case 'complete':
+        updateData = {
+          status: 'completed',
+          completedAt: new Date()
+        };
+        break;
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        );
+    }
+
+    // Update the assignment
+    const updatedAssignment = await prisma.assignment.update({
+      where: { id: booking.Assignment!.id },
+      data: updateData
+    });
+
+    // Create a job event log
+    await prisma.jobEvent.create({
+      data: {
+        id: `je_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        assignmentId: booking.Assignment!.id,
+        step: action === 'accept' ? 'navigate_to_pickup' : 
+              action === 'start' ? 'loading_started' : 'job_completed',
+        createdBy: session.user.id,
+        notes: `Driver ${action}ed the job`,
+        payload: {
+          action,
+          timestamp: new Date().toISOString(),
+          driverId: session.user.id
+        },
+        mediaUrls: []
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      assignment: updatedAssignment
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating driver job:', error);
+    return NextResponse.json(
+      { error: 'Failed to update job' },
+      { status: 500 }
+    );
   }
 }

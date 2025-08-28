@@ -306,7 +306,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
           <Card>
             <CardBody>
               <VStack spacing={2}>
-                <Icon as={FiX} size="24px" color="red.500" />
+                <Icon as={FiX} boxSize="24px" color="red.500" />
                 <Text fontWeight="medium">Critical</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="red.500">
                   {criticalIssues.length}
@@ -318,7 +318,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
           <Card>
             <CardBody>
               <VStack spacing={2}>
-                <Icon as={FiAlertTriangle} size="24px" color="orange.500" />
+                <Icon as={FiAlertTriangle} boxSize="24px" color="orange.500" />
                 <Text fontWeight="medium">High Priority</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="orange.500">
                   {highIssues.length}
@@ -330,7 +330,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
           <Card>
             <CardBody>
               <VStack spacing={2}>
-                <Icon as={FiClock} size="24px" color="yellow.500" />
+                <Icon as={FiClock} boxSize="24px" color="yellow.500" />
                 <Text fontWeight="medium">Medium Priority</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="yellow.500">
                   {mediumIssues.length}
@@ -342,7 +342,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
           <Card>
             <CardBody>
               <VStack spacing={2}>
-                <Icon as={FiCheck} size="24px" color="blue.500" />
+                <Icon as={FiCheck} boxSize="24px" color="blue.500" />
                 <Text fontWeight="medium">Low Priority</Text>
                 <Text fontSize="2xl" fontWeight="bold" color="blue.500">
                   {lowIssues.length}
@@ -486,7 +486,7 @@ export default function ComplianceManager({ drivers }: ComplianceManagerProps) {
 
             {filteredIssues.length === 0 && (
               <VStack spacing={4} py={8}>
-                <Icon as={FiCheck} size="48px" color="green.400" />
+                <Icon as={FiCheck} boxSize="48px" color="green.400" />
                 <Text color="text.tertiary">No compliance issues found</Text>
               </VStack>
             )}
