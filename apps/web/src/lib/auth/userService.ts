@@ -78,7 +78,7 @@ export class UserService {
       return userWithoutPassword as User;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`Validation error: ${error.issues.map(e => e.message).join(', ')}`);
       }
       throw error;
     }
@@ -119,7 +119,7 @@ export class UserService {
       return { user: userWithoutPassword, isValid: true };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`Validation error: ${error.issues.map(e => e.message).join(', ')}`);
       }
       throw error;
     }
@@ -156,7 +156,7 @@ export class UserService {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`Validation error: ${error.issues.map(e => e.message).join(', ')}`);
       }
       throw error;
     }
@@ -178,7 +178,7 @@ export class UserService {
       return userWithoutPassword;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`Validation error: ${error.issues.map(e => e.message).join(', ')}`);
       }
       throw error;
     }

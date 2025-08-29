@@ -1,7 +1,7 @@
 import { Role, AdminRole } from '@prisma/client';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 // Permission definitions
 export enum Permission {
@@ -96,33 +96,58 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.UPDATE_OWN_PROFILE,
   ],
   
-  [Role.super_admin]: [
-    ...ROLE_PERMISSIONS[Role.admin],
-    Permission.MANAGE_SYSTEM,
-  ],
+  // Super admin permissions (for users with AdminRole.superadmin)
+  // Note: This is handled separately in the hasPermission function
 };
 
 // Admin role specific permissions
 export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
-  [AdminRole.booking_manager]: [
+  [AdminRole.superadmin]: [
+    Permission.MANAGE_SYSTEM,
+    Permission.VIEW_LOGS,
+    Permission.MANAGE_SETTINGS,
+    Permission.READ_USER,
+    Permission.READ_DRIVER,
+    Permission.READ_BOOKING,
+    Permission.CREATE_USER,
+    Permission.UPDATE_USER,
+    Permission.DELETE_USER,
+    Permission.CREATE_DRIVER,
+    Permission.UPDATE_DRIVER,
+    Permission.DELETE_DRIVER,
+  ],
+  
+  [AdminRole.ops]: [
     Permission.READ_BOOKING,
     Permission.UPDATE_BOOKING,
     Permission.APPROVE_BOOKING,
     Permission.REJECT_BOOKING,
     Permission.READ_USER,
     Permission.VIEW_LOGS,
-  ],
-  
-  [AdminRole.driver_manager]: [
     Permission.READ_DRIVER,
     Permission.UPDATE_DRIVER,
     Permission.APPROVE_DRIVER,
     Permission.REJECT_DRIVER,
+  ],
+  
+  [AdminRole.support]: [
     Permission.READ_BOOKING,
+    Permission.READ_USER,
+    Permission.READ_DRIVER,
     Permission.VIEW_LOGS,
   ],
   
-  [AdminRole.finance_manager]: [
+  [AdminRole.reviewer]: [
+    Permission.READ_BOOKING,
+    Permission.APPROVE_BOOKING,
+    Permission.REJECT_BOOKING,
+    Permission.READ_DRIVER,
+    Permission.APPROVE_DRIVER,
+    Permission.REJECT_DRIVER,
+    Permission.VIEW_LOGS,
+  ],
+  
+  [AdminRole.finance]: [
     Permission.READ_PAYMENTS,
     Permission.PROCESS_REFUNDS,
     Permission.VIEW_INVOICES,
@@ -130,13 +155,11 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     Permission.VIEW_LOGS,
   ],
   
-  [AdminRole.system_admin]: [
-    Permission.MANAGE_SYSTEM,
-    Permission.VIEW_LOGS,
-    Permission.MANAGE_SETTINGS,
+  [AdminRole.read_only]: [
+    Permission.READ_BOOKING,
     Permission.READ_USER,
     Permission.READ_DRIVER,
-    Permission.READ_BOOKING,
+    Permission.VIEW_LOGS,
   ],
 };
 
