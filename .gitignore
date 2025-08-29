@@ -9,6 +9,16 @@ node_modules
 .next
 out
 dist
+.turbo
+.swc
+tsconfig.tsbuildinfo
+
+# Test results and reports
+test-results/
+playwright-report/
+coverage/
+.cache
+.eslintcache
 
 # Env files
 .env
@@ -29,10 +39,10 @@ yarn-error.log*
 *.log
 *.logs
 
-# Coverage & cache
-coverage
-.cache
-.eslintcache
+# Debug and temporary files
+debug-*.png
+*.sql
+*.ps1
 
 # Prisma
 prisma/dev.db
