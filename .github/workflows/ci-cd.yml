@@ -21,7 +21,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
@@ -59,7 +58,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
@@ -92,7 +90,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
@@ -107,14 +104,15 @@ jobs:
       
     - name: Run unit tests
       working-directory: ./apps/web
-      run: pnpm test:unit
+      run: pnpm test
       
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
+    - name: Upload test coverage
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        directory: ./apps/web/coverage
-        flags: unittests
-        name: codecov-umbrella
+        name: coverage
+        path: apps/web/coverage/
+        retention-days: 30
         
   # E2E tests
   e2e-tests:
@@ -128,7 +126,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
@@ -169,7 +166,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
@@ -205,7 +201,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
@@ -220,7 +215,7 @@ jobs:
       
     - name: Run security audit
       working-directory: ./apps/web
-      run: npm audit --audit-level=moderate
+      run: pnpm audit --audit-level=moderate
       
     - name: Check for sensitive files
       run: |
@@ -267,7 +262,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Enable Corepack
       run: corepack enable
