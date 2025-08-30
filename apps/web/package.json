@@ -39,7 +39,11 @@
     "performance:build": "npm run build",
     "performance:start": "npm run start",
     "performance:lighthouse": "npx lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html",
-    "seo-check": "tsx scripts/seo-check.ts"
+    "seo-check": "tsx scripts/seo-check.ts",
+    "sitemap": "next-sitemap",
+    "postbuild": "next-sitemap",
+    "test:schema": "playwright test tests/schema-validator.spec.ts",
+    "generate:favicons": "node generate-favicons.js ./public/favicon-base.png ./public"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.6",
@@ -63,6 +67,7 @@
     "mapbox-gl": "^3.14.0",
     "next": "14.2.31",
     "next-auth": "^4.24.11",
+    "next-sitemap": "^4.2.3",
     "otplib": "^12.0.1",
     "pdfkit": "^0.17.1",
     "pusher": "^5.2.0",
@@ -96,6 +101,7 @@
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "prisma": "^6.15.0",
+    "sharp": "^0.34.3",
     "tsx": "^4.19.2",
     "typescript": "5.9.2"
   },
