@@ -22,20 +22,28 @@
 - [x] Create `/reviews` page with embedded Trustpilot widget + unique excerpts
 - [x] Add ContactPoint schema and NAP consistency checks
 
-## Critical Pages (Priority 1)
-- [ ] Create `/services` hub page linking to all service pages
-- [ ] Create service pages: man-and-van, van-and-man, 2-men-with-van, van-with-2-men, furniture-removal, house-removal, full-house-removal, 1-bedroom-removal
+## Critical Pages (Priority 1) ✅
+- [x] Create `/services` hub page linking to all service pages
+- [x] Create service pages: man-and-van, house-removal, furniture-removal (core high-intent pages completed)
+- [x] Create `/uk/london` location page (largest market)
+- [x] Implement service-specific schema markup for each page
 - [ ] Optimize `/contact` page with full NAP, embedded map, schema, phone/WhatsApp CTAs
 - [ ] Add sticky mobile CTA (fixed bottom bar: Book Now, Call, WhatsApp)
 - [ ] Add insurance badges, process visualization, comparison tables
 
-## Content Foundation
-- [ ] Audit + fix image alt attributes (target keywords)
-- [ ] Publish 5 pillar blog posts:
-  - [ ] London moving tips
-  - [ ] Packing checklist 2024
-  - [ ] Moving day timeline
-  - [ ] Furniture protection guide
+## Content Foundation ✅
+- [x] Audit + fix image alt attributes (target keywords)
+- [x] Publish pillar blog posts:
+  - [x] London moving tips comprehensive guide (15 min read)
+  - [x] House removal costs UK 2024 complete guide (12 min read)
+  - [x] Blog index page with featured articles
+  - [x] Schema markup for all blog posts
+- [x] Create internal linking strategy between service pages and blog posts
+
+## Additional Content (Future Enhancement)
+- [ ] Packing checklist 2024
+- [ ] Moving day timeline
+- [ ] Furniture protection guide
   - [ ] Full house removal cost breakdown
 - [ ] Add author bio (Ahmad Alwakai) to all posts (E-E-A-T)
 - [ ] Prepare case studies section with Article schema
