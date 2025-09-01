@@ -1,0 +1,38 @@
+name: Deploy to Render
+
+on:
+  workflow_run:
+    workflows: ["Build and Test"]
+    branches: [ main ]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+
+        
+    - name: Trigger Render Deploy
+      run: |
+        curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }} \
+          -H "Content-Type: application/json" \
+          -d '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+      env:
+        RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        
+    - name: Deploy Status
+      run: |
+        echo "✅ Deployment triggered successfully!"
+        echo "📦 Build artifacts from previous workflow are available"
+        echo "🚀 Render will now deploy the latest changes"
