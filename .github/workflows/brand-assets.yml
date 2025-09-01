@@ -73,3 +73,10 @@ jobs:
           else
             echo "No SVG changes to commit."
           fi
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
