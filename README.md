@@ -17,7 +17,11 @@ pnpm install --filter ./apps/web...
 ### Develop
 
 ```
-cd apps/web
+
+## 🚀 Project Management
+
+We track issues and progress in our public project board:  
+👉 [Speedy Van – Stabilization](https://github.com/orgs/speedy-van/projects/1)
 pnpm dev
 ```
 
