@@ -66,3 +66,10 @@ jobs:
           echo "Checking Next.js build integrity..."
           pnpm --filter ./apps/web run seo-check
           echo "✅ SEO checks completed successfully"
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
