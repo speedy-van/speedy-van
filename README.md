@@ -1,27 +1,17 @@
-# Speedy Van Monorepo
+# Speedy Van 🚐
+Fast • Reliable • Professional
 
-Bootstrap skeleton for web app with Next.js (App Router), Prisma, and health/book routes.
+![Speedy Van Logo](./assets/logo.png)
 
-## Getting Started
+## 🌍 Website
+https://speedy-van.co.uk/
 
-- Node: see `.nvmrc` (20.12.2)
-- Package manager: pnpm (Corepack)
+## 📦 Projects
+- **Speedy Van** – Professional van delivery and logistics platform
+- **AI Agent** – Smart assistant for customers & drivers
 
-### Install
+## 📍 Location
+Glasgow, UK
 
-```
-corepack enable
-pnpm install --filter ./apps/web...
-```
-
-### Develop
-
-```
-cd apps/web
-pnpm dev
-```
-
-### Health checks
-- `/api/health` -> 200 JSON
-- `/` redirects to `/book`
+---
 
