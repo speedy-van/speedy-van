@@ -15,5 +15,10 @@
   },
   "devDependencies": {
     "tsx": "^4.20.4"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.0.0",
+    "lodash": "^4.17.21",
+    "uuid": "^11.1.0"
   }
 }
