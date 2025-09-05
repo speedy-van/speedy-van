@@ -1,0 +1,92 @@
+{
+  "name": "Speedy Van - Professional Moving Services",
+  "short_name": "Speedy Van",
+  "description": "Premium moving and delivery services with real-time tracking and professional van solutions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#00E0FF",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "transportation", "utilities"],
+  "icons": [
+    {
+      "src": "/logo/speedy-van-icon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo/speedy-van-minimal-icon.svg",
+      "sizes": "48x48",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo/speedy-van-logo-dark.svg",
+      "sizes": "240x80",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-booking.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Booking interface on desktop"
+    },
+    {
+      "src": "/screenshots/mobile-booking.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Booking interface on mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book a Move",
+      "short_name": "Book",
+      "description": "Start a new moving service booking",
+      "url": "/booking",
+      "icons": [
+        {
+          "src": "/logo/speedy-van-minimal-icon.svg",
+          "sizes": "48x48"
+        }
+      ]
+    },
+    {
+      "name": "Track Booking",
+      "short_name": "Track",
+      "description": "Track your current booking status",
+      "url": "/track",
+      "icons": [
+        {
+          "src": "/logo/speedy-van-minimal-icon.svg",
+          "sizes": "48x48"
+        }
+      ]
+    },
+    {
+      "name": "Driver Application",
+      "short_name": "Apply",
+      "description": "Apply to become a Speedy Van driver",
+      "url": "/driver-application",
+      "icons": [
+        {
+          "src": "/logo/speedy-van-minimal-icon.svg",
+          "sizes": "48x48"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

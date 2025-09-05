@@ -1,0 +1,499 @@
+// src/lib/pricing/uat-test-scenarios.ts
+// -----------------------------------------------------------------------------
+// UAT test scenarios for the enhanced pricing system.
+// These scenarios validate the volume factor pricing, stairs calculations, and helpers.
+// Includes tests for the new synonym index and normalization features.
+// -----------------------------------------------------------------------------
+
+import { computeQuote, type PricingInputs } from './engine';
+
+export interface UATScenario {
+  name: string;
+  description: string;
+  inputs: PricingInputs;
+  expectedTotal: number;
+  expectedBreakdown: {
+    baseRate: number;
+    volumeMultiplier: number;
+    volumeAdjustedBase: number;
+    stairsCost: number;
+    workersCost: number;
+    extrasCost: number;
+  };
+  tolerance: number; // Acceptable variance in GBP
+}
+
+export interface UATResult {
+  scenario: UATScenario;
+  actual: any;
+  passed: boolean;
+  variance: number;
+  notes: string[];
+}
+
+// UAT Test Scenarios
+export const UAT_SCENARIOS: UATScenario[] = [
+  // Core pricing scenarios
+  {
+    name: "Small Sofa + 6 Large Boxes - Ground to Ground",
+    description: "Small sofa (2-seat) + 6 large boxes, 12 miles, ground floor to ground floor",
+    inputs: {
+      distanceMiles: 12,
+      items: [
+        {
+          id: "sofa-2seat",
+          canonicalName: "Sofa – 2-seat",
+          quantity: 1,
+          volumeFactor: 1.2,
+          requiresTwoPerson: false,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 32
+        },
+        {
+          id: "box-large",
+          canonicalName: "Box - Large",
+          quantity: 6,
+          volumeFactor: 0.4,
+          requiresTwoPerson: false,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 9
+        }
+      ],
+      pickupFloors: 0,
+      pickupHasLift: false,
+      dropoffFloors: 0,
+      dropoffHasLift: false,
+      helpersCount: 1,
+      extras: { ulez: false, vat: false }
+    },
+    expectedTotal: 216,
+    expectedBreakdown: {
+      baseRate: 60, // 10-50 miles = £60
+      volumeMultiplier: 3.6, // 1.2 + (6 × 0.4) = 3.6
+      volumeAdjustedBase: 216, // 60 × 3.6 = 216
+      stairsCost: 0, // Ground to ground
+      workersCost: 0, // 1 worker included
+      extrasCost: 0 // No ULEZ
+    },
+    tolerance: 5
+  },
+  
+  // Enhanced feature test scenarios
+  {
+    name: "Synonym Normalization - 'small sofa' to 'sofa-2seat'",
+    description: "Test synonym normalization with size qualifiers",
+    inputs: {
+      miles: 8,
+      items: [
+        {
+          id: "sofa-2seat",
+          canonicalName: "Sofa – 2-seat",
+          quantity: 1,
+          volumeFactor: 1.2,
+          requiresTwoPerson: false,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 32
+        }
+      ],
+      workersTotal: 1,
+      pickup: { floors: 0, hasLift: false },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 48, // £40 × 1.2 = £48
+    expectedBreakdown: {
+      baseRate: 40, // 0-10 miles = £40
+      volumeMultiplier: 1.2,
+      volumeAdjustedBase: 48,
+      stairsCost: 0,
+      workersCost: 0,
+      extrasCost: 0
+    },
+    tolerance: 5
+  },
+  
+  {
+    name: "Category-Based Search - Electronics Items",
+    description: "Test category-based item search and pricing",
+    inputs: {
+      miles: 15,
+      items: [
+        {
+          id: "tv-43-55",
+          name: "TV 43-55\"",
+          quantity: 1,
+          volumeFactor: 0.5,
+          requiresTwoPerson: false,
+          isFragile: true,
+          requiresDisassembly: false,
+          basePriceHint: 22
+        },
+        {
+          id: "sound-system",
+          name: "Sound System (bundle)",
+          quantity: 1,
+          volumeFactor: 0.8,
+          requiresTwoPerson: false,
+          isFragile: true,
+          requiresDisassembly: false,
+          basePriceHint: 28
+        }
+      ],
+      workersTotal: 1,
+      pickup: { floors: 0, hasLift: false },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 78, // £60 × 1.3 = £78
+    expectedBreakdown: {
+      baseRate: 60, // 10-50 miles = £60
+      volumeMultiplier: 1.3, // 0.5 + 0.8 = 1.3
+      volumeAdjustedBase: 78,
+      stairsCost: 0,
+      workersCost: 0,
+      extrasCost: 0
+    },
+    tolerance: 5
+  },
+  
+  {
+    name: "Feature Flag Disabled - Volume Factor Pricing Off",
+    description: "Test fallback to distance-only pricing when volume factor feature is disabled",
+    inputs: {
+      miles: 25,
+      items: [
+        {
+          id: "sofa-3seat",
+          name: "Sofa – 3-seat",
+          quantity: 1,
+          volumeFactor: 1.6,
+          requiresTwoPerson: true,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 48
+        }
+      ],
+      workersTotal: 2,
+      pickup: { floors: 0, hasLift: false },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 80, // £60 base + £20 helper = £80 (volume factor ignored)
+    expectedBreakdown: {
+      baseRate: 60, // 10-50 miles = £60
+      volumeMultiplier: 1.0, // Default when feature disabled
+      volumeAdjustedBase: 60,
+      stairsCost: 0,
+      workersCost: 20, // Extra helper required
+      extrasCost: 0
+    },
+    tolerance: 5
+  },
+
+  {
+    name: "Corner Sofa + American Fridge - 2nd Floor No Lift",
+    description: "Corner sofa + American fridge, 7 miles, pickup 2nd floor no lift",
+    inputs: {
+      miles: 7,
+      items: [
+        {
+          id: "sofa-corner",
+          name: "Corner Sofa (L-shape)",
+          quantity: 1,
+          volumeFactor: 2.5,
+          requiresTwoPerson: true,
+          isFragile: false,
+          requiresDisassembly: true,
+          basePriceHint: 85
+        },
+        {
+          id: "fridge-american",
+          name: "American Fridge Freezer",
+          quantity: 1,
+          volumeFactor: 2.5,
+          requiresTwoPerson: true,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 80
+        }
+      ],
+      workersTotal: 2,
+      pickup: { floors: 2, hasLift: false },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 230,
+    expectedBreakdown: {
+      baseRate: 40, // 0-10 miles = £40
+      volumeMultiplier: 5.0, // 2.5 + 2.5 = 5.0
+      volumeAdjustedBase: 200, // 40 × 5.0 = 200
+      stairsCost: 10, // 1 floor above ground = £10
+      workersCost: 20, // 1 extra worker = £20
+      extrasCost: 0 // No ULEZ
+    },
+    tolerance: 5
+  },
+
+  {
+    name: "Studio Package - Ground to Ground",
+    description: "Studio apartment move with typical items, 18 miles, ground floor to ground floor",
+    inputs: {
+      miles: 18,
+      items: [
+        {
+          id: "bed-double",
+          name: "Double Bed Frame",
+          quantity: 1,
+          volumeFactor: 1.4,
+          requiresTwoPerson: true,
+          isFragile: false,
+          requiresDisassembly: true,
+          basePriceHint: 42
+        },
+        {
+          id: "sofa-3seat",
+          name: "Sofa – 3-seat",
+          quantity: 1,
+          volumeFactor: 1.6,
+          requiresTwoPerson: true,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 48
+        },
+        {
+          id: "box-large",
+          name: "Box - Large",
+          quantity: 5,
+          volumeFactor: 0.4,
+          requiresTwoPerson: false,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 9
+        },
+        {
+          id: "fridge-standard",
+          name: "Fridge Freezer (standard)",
+          quantity: 1,
+          volumeFactor: 1.6,
+          requiresTwoPerson: true,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 45
+        }
+      ],
+      workersTotal: 2,
+      pickup: { floors: 0, hasLift: false },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 384,
+    expectedBreakdown: {
+      baseRate: 60, // 10-50 miles = £60
+      volumeMultiplier: 6.4, // 1.4 + 1.6 + (5 × 0.4) + 1.6 = 6.4
+      volumeAdjustedBase: 384, // 60 × 6.4 = 384
+      stairsCost: 0, // Ground to ground
+      workersCost: 20, // 1 extra worker = £20
+      extrasCost: 0 // No ULEZ
+    },
+    tolerance: 5
+  },
+
+  {
+    name: "Piano Move - 3rd Floor with Lift",
+    description: "Upright piano, 25 miles, pickup 3rd floor with lift, dropoff ground floor",
+    inputs: {
+      miles: 25,
+      items: [
+        {
+          id: "piano-upright",
+          name: "Upright Piano",
+          quantity: 1,
+          volumeFactor: 5.0,
+          requiresTwoPerson: true,
+          isFragile: true,
+          requiresDisassembly: false,
+          basePriceHint: 140
+        }
+      ],
+      workersTotal: 2,
+      pickup: { floors: 3, hasLift: true },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 320,
+    expectedBreakdown: {
+      baseRate: 60, // 10-50 miles = £60
+      volumeMultiplier: 5.0, // Piano = 5.0
+      volumeAdjustedBase: 300, // 60 × 5.0 = 300
+      stairsCost: 8, // 2 floors with lift = 2 × 10 × 0.4 = £8
+      workersCost: 20, // 1 extra worker = £20
+      extrasCost: 0 // No ULEZ
+    },
+    tolerance: 5
+  },
+
+  {
+    name: "Minimum Price Test",
+    description: "Single small item, 5 miles, should hit minimum price of £55",
+    inputs: {
+      miles: 5,
+      items: [
+        {
+          id: "box-small",
+          name: "Box - Small",
+          quantity: 1,
+          volumeFactor: 0.2,
+          requiresTwoPerson: false,
+          isFragile: false,
+          requiresDisassembly: false,
+          basePriceHint: 4
+        }
+      ],
+      workersTotal: 1,
+      pickup: { floors: 0, hasLift: false },
+      dropoff: { floors: 0, hasLift: false },
+      extras: { ulezApplicable: false },
+      vatRegistered: false
+    },
+    expectedTotal: 55,
+    expectedBreakdown: {
+      baseRate: 40, // 0-10 miles = £40
+      volumeMultiplier: 0.2, // Small box = 0.2
+      volumeAdjustedBase: 8, // 40 × 0.2 = 8 (below minimum)
+      stairsCost: 0, // Ground to ground
+      workersCost: 0, // 1 worker included
+      extrasCost: 0 // No ULEZ
+    },
+    tolerance: 0 // Exact match for minimum price
+  }
+];
+
+// Run UAT tests
+export async function runUATTests(): Promise<UATResult[]> {
+  const results: UATResult[] = [];
+
+  for (const scenario of UAT_SCENARIOS) {
+    try {
+      console.log(`Running UAT test: ${scenario.name}`);
+      
+      const actual = await computeQuote(scenario.inputs);
+      const variance = Math.abs(actual.totalGBP - scenario.expectedTotal);
+      const passed = variance <= scenario.tolerance;
+      
+      const notes: string[] = [];
+      
+      // Check breakdown components
+      if (Math.abs(actual.breakdown.baseRate - scenario.expectedBreakdown.baseRate) > 1) {
+        notes.push(`Base rate variance: expected £${scenario.expectedBreakdown.baseRate}, got £${actual.breakdown.baseRate}`);
+      }
+      
+      if (Math.abs(actual.breakdown.volumeMultiplier - scenario.expectedBreakdown.volumeMultiplier) > 0.1) {
+        notes.push(`Volume multiplier variance: expected ${scenario.expectedBreakdown.volumeMultiplier}, got ${actual.breakdown.volumeMultiplier}`);
+      }
+      
+      if (Math.abs(actual.breakdown.volumeAdjustedBase - scenario.expectedBreakdown.volumeAdjustedBase) > 5) {
+        notes.push(`Volume adjusted base variance: expected £${scenario.expectedBreakdown.volumeAdjustedBase}, got £${actual.breakdown.volumeAdjustedBase}`);
+      }
+      
+      if (Math.abs(actual.breakdown.stairsCost - scenario.expectedBreakdown.stairsCost) > 1) {
+        notes.push(`Stairs cost variance: expected £${scenario.expectedBreakdown.stairsCost}, got £${actual.breakdown.stairsCost}`);
+      }
+      
+      if (Math.abs(actual.breakdown.workersCost - scenario.expectedBreakdown.workersCost) > 1) {
+        notes.push(`Workers cost variance: expected £${scenario.expectedBreakdown.workersCost}, got £${actual.breakdown.workersCost}`);
+      }
+
+      results.push({
+        scenario,
+        actual,
+        passed,
+        variance,
+        notes
+      });
+
+      console.log(`UAT test ${scenario.name}: ${passed ? 'PASSED' : 'FAILED'} (variance: £${variance})`);
+      
+    } catch (error) {
+      console.error(`UAT test ${scenario.name} failed with error:`, error);
+      
+      results.push({
+        scenario,
+        actual: null,
+        passed: false,
+        variance: Infinity,
+        notes: [`Test execution failed: ${error}`]
+      });
+    }
+  }
+
+  return results;
+}
+
+// Generate UAT report
+export function generateUATReport(results: UATResult[]): string {
+  const totalTests = results.length;
+  const passedTests = results.filter(r => r.passed).length;
+  const failedTests = totalTests - passedTests;
+  
+  let report = `# UAT Test Report\n\n`;
+  report += `## Summary\n`;
+  report += `- Total Tests: ${totalTests}\n`;
+  report += `- Passed: ${passedTests}\n`;
+  report += `- Failed: ${failedTests}\n`;
+  report += `- Success Rate: ${((passedTests / totalTests) * 100).toFixed(1)}%\n\n`;
+  
+  report += `## Test Results\n\n`;
+  
+  for (const result of results) {
+    const status = result.passed ? '✅ PASSED' : '❌ FAILED';
+    report += `### ${result.scenario.name}\n`;
+    report += `**Status:** ${status}\n`;
+    report += `**Description:** ${result.scenario.description}\n`;
+    report += `**Expected Total:** £${result.scenario.expectedTotal}\n`;
+    
+    if (result.actual) {
+      report += `**Actual Total:** £${result.actual.totalGBP}\n`;
+      report += `**Variance:** £${result.variance}\n`;
+      report += `**Tolerance:** £${result.scenario.tolerance}\n`;
+    }
+    
+    if (result.notes.length > 0) {
+      report += `**Notes:**\n`;
+      for (const note of result.notes) {
+        report += `- ${note}\n`;
+      }
+    }
+    
+    report += `\n`;
+  }
+  
+  return report;
+}
+
+// Quick test runner for development
+export async function quickTest(): Promise<void> {
+  console.log('Running quick UAT test...');
+  
+  const results = await runUATTests();
+  const report = generateUATReport(results);
+  
+  console.log('\n' + report);
+  
+  // Log results to console for easy debugging
+  for (const result of results) {
+    if (!result.passed) {
+      console.error(`❌ ${result.scenario.name} FAILED:`, result.notes);
+    } else {
+      console.log(`✅ ${result.scenario.name} PASSED`);
+    }
+  }
+}
