@@ -32,6 +32,11 @@ coverage
 prisma/dev.db
 prisma/dev.db-journal
 
+# Turbo
+.turbo
+**/.turbo
+**/tsconfig.tsbuildinfo
+
 # OS/Editor files
 .DS_Store
 Thumbs.db
