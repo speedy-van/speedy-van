@@ -78,7 +78,7 @@ export async function PATCH(
       user = await prisma.user.create({
         data: {
           email: application.email,
-          name: `${application.firstName} ${application.lastName}`,
+          name: application.fullName,
           role: 'driver',
           password: tempPassword, // Add the missing password field
           // Note: In production, you'd send a proper password reset email
@@ -198,7 +198,7 @@ export async function PATCH(
     try {
       const emailResult = await unifiedEmailService.sendDriverApplicationStatus({
         driverEmail: application.email,
-        driverName: (application as any).fullName,
+        driverName: application.fullName,
         applicationId: application.id,
         status: 'approved',
         reviewedAt: new Date().toISOString(),
@@ -237,7 +237,7 @@ export async function PATCH(
         driverId: driver.id,
         userId: user.id,
         email: application.email,
-        fullName: `${application.firstName} ${application.lastName}`,
+        fullName: application.fullName,
         status: 'approved',
         nextSteps: [
           'Driver account has been created',
