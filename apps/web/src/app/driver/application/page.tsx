@@ -62,7 +62,7 @@ interface ApplicationData {
   vehicleYear: string;
   
   // Bank Account
-  bankAccountName: string;
+  accountHolderName: string;
   bankName: string;
   bankSortCode: string;
   bankAccountNumber: string;
@@ -85,7 +85,7 @@ const initialData: ApplicationData = {
   vehicleReg: '',
   vehicleType: '',
   vehicleYear: '',
-  bankAccountName: '',
+    accountHolderName: '',
   bankName: '',
   bankSortCode: '',
   bankAccountNumber: '',
@@ -161,7 +161,7 @@ export default function DriverApplicationPage() {
       case 1: // Vehicle Details
         return !!(formData.vehicleMake && formData.vehicleModel && formData.vehicleReg && formData.vehicleType);
       case 2: // Bank Details
-        return !!(formData.bankAccountName && formData.bankName && formData.bankSortCode && formData.bankAccountNumber);
+        return !!(formData.accountHolderName && formData.bankName && formData.bankSortCode && formData.bankAccountNumber);
       case 3: // Documents
         return !!(formData.licenseImage && formData.idImage);
       case 4: // Review
@@ -186,7 +186,7 @@ export default function DriverApplicationPage() {
           year: formData.vehicleYear,
         },
         bankAccount: {
-          accountName: formData.bankAccountName,
+          accountName: formData.accountHolderName,
           bankName: formData.bankName,
           sortCode: formData.bankSortCode,
           accountNumber: formData.bankAccountNumber,
@@ -357,8 +357,8 @@ export default function DriverApplicationPage() {
               <FormControl isRequired>
                 <FormLabel>Account Holder Name</FormLabel>
                 <Input
-                  value={formData.bankAccountName}
-                  onChange={(e) => handleInputChange('bankAccountName', e.target.value)}
+                  value={formData.accountHolderName}
+                  onChange={(e) => handleInputChange('accountHolderName', e.target.value)}
                   placeholder="Name on bank account"
                 />
               </FormControl>
@@ -583,7 +583,7 @@ export default function DriverApplicationPage() {
               </CardHeader>
               <CardBody>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2}>
-                  <Text><strong>Account Name:</strong> {formData.bankAccountName}</Text>
+                  <Text><strong>Account Name:</strong> {formData.accountHolderName}</Text>
                   <Text><strong>Bank:</strong> {formData.bankName}</Text>
                   <Text><strong>Sort Code:</strong> {formData.bankSortCode}</Text>
                   <Text><strong>Account Number:</strong> {formData.bankAccountNumber}</Text>
