@@ -141,7 +141,21 @@ export async function POST(request: NextRequest) {
 
     // Check if user is authenticated
     const session = await getServerSession(authOptions);
-    const customerId = session?.user?.id || null;
+    let customerId = null;
+    
+    if (session?.user?.id) {
+      // Verify the user exists in the database
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true }
+      });
+      
+      if (user) {
+        customerId = user.id;
+      } else {
+        console.warn('⚠️ Session user ID not found in database:', session.user.id);
+      }
+    }
 
     console.log('📝 Creating new booking with validated data:', {
       customer: bookingData.customer,
