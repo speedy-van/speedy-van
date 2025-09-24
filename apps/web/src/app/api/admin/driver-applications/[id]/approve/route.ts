@@ -28,10 +28,22 @@ export async function PATCH(
     const adminUserId = (session.user as any).id;
     console.log('🔧 [APPROVE DEBUG] Admin user ID:', adminUserId);
 
-    // Get the application
-    const application = await prisma.driverApplication.findUnique({
-      where: { id: applicationId },
-    });
+    // Get the application with additional validation
+    let application;
+    try {
+      application = await prisma.driverApplication.findUnique({
+        where: { id: applicationId },
+      });
+    } catch (dbError) {
+      console.error('❌ [APPROVE DEBUG] Database error fetching application:', dbError);
+      return NextResponse.json(
+        { 
+          error: 'Database error',
+          details: 'Unable to fetch application from database'
+        },
+        { status: 500 }
+      );
+    }
 
     if (!application) {
       console.log('❌ [APPROVE DEBUG] Application not found:', applicationId);
@@ -267,11 +279,37 @@ export async function PATCH(
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace',
       applicationId: params.id,
+      errorType: error?.constructor?.name || 'Unknown',
+      timestamp: new Date().toISOString(),
     });
+
+    // Provide more specific error information for debugging
+    let errorMessage = 'Failed to approve application';
+    let errorDetails = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (error instanceof Error) {
+      // Check for specific error types
+      if (error.message.includes('Unique constraint')) {
+        errorMessage = 'User already exists as a driver';
+        errorDetails = 'This email is already registered as a driver in the system';
+      } else if (error.message.includes('Foreign key constraint')) {
+        errorMessage = 'Database relationship error';
+        errorDetails = 'There was an issue with the database relationships';
+      } else if (error.message.includes('Connection')) {
+        errorMessage = 'Database connection error';
+        errorDetails = 'Unable to connect to the database';
+      } else if (error.message.includes('Transaction')) {
+        errorMessage = 'Database transaction error';
+        errorDetails = 'The database transaction failed';
+      }
+    }
+
     return NextResponse.json(
       {
-        error: 'Failed to approve application',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
+        details: errorDetails,
+        applicationId: params.id,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
