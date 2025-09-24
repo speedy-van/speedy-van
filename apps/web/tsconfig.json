@@ -18,6 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@speedy-van/shared": ["../../packages/shared/src/index.ts", "../../packages/shared/dist/index.d.ts"],
       "@speedy-van/shared/*": ["../../packages/shared/dist/*"],
       "@speedy-van/utils/*": ["../../packages/utils/dist/*"],
       "@speedy-van/pricing/*": ["../../packages/pricing/dist/*"]

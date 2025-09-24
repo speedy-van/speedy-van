@@ -6,7 +6,9 @@ services:
     buildCommand: |
       corepack enable
       pnpm install --frozen-lockfile
+      echo "Building shared packages first..."
       pnpm -r --filter @speedy-van/shared... build
+      echo "Shared packages built, now building web app..."
       pnpm -r --filter @speedy-van/app build
     startCommand: pnpm -r --filter @speedy-van/app start
     envVars:

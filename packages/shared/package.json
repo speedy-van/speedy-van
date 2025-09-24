@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "rimraf dist && tsc -b",
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts,.tsx",
@@ -36,6 +36,7 @@
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.5",
     "prisma": "^6.15.0",
+    "rimraf": "^5.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.3.3"
   },
