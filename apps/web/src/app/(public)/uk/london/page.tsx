@@ -11,6 +11,10 @@ import {
   Badge,
   Flex,
 } from '@chakra-ui/react';
+
+// Force ISR to prevent SSG timeout
+export const revalidate = 300; // 5 minutes ISR
+export const dynamic = 'force-dynamic';
 import {
   MapPin,
   Truck,
