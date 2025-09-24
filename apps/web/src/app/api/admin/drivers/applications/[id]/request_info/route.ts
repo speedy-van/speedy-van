@@ -18,21 +18,14 @@ export async function POST(
 
     const { id } = params;
     const body = await request.json();
-    const { reviewNotes } = body;
-
-    if (!reviewNotes) {
-      return NextResponse.json(
-        { error: 'Review notes are required when requesting additional information' },
-        { status: 400 }
-      );
-    }
+    const { rejectionReason } = body;
 
     // Update application status
     const updatedApplication = await prisma.driverApplication.update({
       where: { id },
       data: {
         status: 'requires_additional_info',
-        reviewNotes,
+        reviewNotes: rejectionReason || 'Additional information required',
         reviewedAt: new Date(),
         reviewedBy: user.name || user.email,
       },
@@ -61,7 +54,7 @@ export async function POST(
             driverId: driverRecord.id,
             type: 'system_alert',
             title: 'Additional Information Required',
-            message: `We need additional information for your driver application. Details: ${reviewNotes}`,
+            message: `We need additional information for your driver application. Details: ${rejectionReason || 'Additional information required'}`,
             read: false,
           },
         });

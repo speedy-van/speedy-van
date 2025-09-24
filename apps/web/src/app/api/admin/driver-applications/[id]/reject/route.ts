@@ -52,7 +52,7 @@ export async function PATCH(
       where: { id: applicationId },
       data: {
         status: 'rejected',
-        // rejectionReason removed - not in schema
+        // Using reviewNotes instead of rejectionReason
         reviewedBy: adminUserId,
         reviewedAt: new Date(),
       },
@@ -62,7 +62,7 @@ export async function PATCH(
       applicationId,
       email: application.email,
       fullName: `${application.firstName} ${application.lastName}`,
-      rejectionReason: rejectionReason || 'No reason provided',
+      reviewNotes: rejectionReason || 'No reason provided',
       rejectedBy: adminUserId,
     });
 
@@ -102,7 +102,7 @@ export async function PATCH(
       data: {
         applicationId,
         status: 'rejected',
-        rejectionReason: rejectionReason || 'Application rejected by admin',
+        reviewNotes: rejectionReason || 'Application rejected by admin',
         rejectedAt: updatedApplication.reviewedAt,
         rejectedBy: adminUserId,
       },

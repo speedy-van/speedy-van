@@ -52,7 +52,7 @@ export async function PATCH(
       where: { id: applicationId },
       data: {
         status: 'requires_additional_info',
-        rejectionReason: additionalInfoRequired || 'Additional information required',
+        reviewNotes: additionalInfoRequired || 'Additional information required',
         reviewedBy: adminUserId,
         reviewedAt: new Date(),
       } as any,
@@ -70,7 +70,7 @@ export async function PATCH(
     try {
       const emailResult = await unifiedEmailService.sendDriverApplicationStatus({
         driverEmail: application.email,
-        driverName: (application as any).fullName,
+        driverName: `${application.firstName} ${application.lastName}`,
         applicationId: application.id,
         status: 'requires_additional_info',
         rejectionReason: additionalInfoRequired || 'Additional information required',

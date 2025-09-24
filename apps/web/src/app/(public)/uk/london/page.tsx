@@ -60,28 +60,28 @@ export const metadata: Metadata = {
 
 const londonServices = [
   {
-    icon: Truck,
+    iconName: 'Truck',
     title: 'Man and Van London',
     price: 'From £25/hour',
     description: 'Professional man and van service across all London boroughs',
     href: '/uk/london/man-and-van',
   },
   {
-    icon: Home,
+    iconName: 'Home',
     title: 'House Removals London',
     price: 'From £150',
     description: 'Complete house removal service for London homes',
     href: '/uk/london/house-removal',
   },
   {
-    icon: Package,
+    iconName: 'Package',
     title: 'Furniture Delivery London',
     price: 'From £35/hour',
     description: 'Safe furniture delivery and assembly across London',
     href: '/uk/london/furniture-delivery',
   },
   {
-    icon: Users,
+    iconName: 'Users',
     title: 'Office Removals London',
     price: 'From £200',
     description: 'Professional office relocation services in London',
@@ -126,25 +126,25 @@ const londonBoroughs = [
 
 const whyChooseLondon = [
   {
-    icon: MapPin,
+    iconName: 'MapPin',
     title: 'Local Knowledge',
     description:
       'Expert knowledge of London streets, parking, and access restrictions',
   },
   {
-    icon: Clock,
+    iconName: 'Clock',
     title: 'Same Day Service',
     description:
       'Available for urgent moves across London with 2-hour response time',
   },
   {
-    icon: Truck,
+    iconName: 'Truck',
     title: 'London Licensed',
     description:
       'Fully licensed for London operations with congestion charge included',
   },
   {
-    icon: Star,
+    iconName: 'Star',
     title: '500+ London Moves',
     description: 'Completed over 500 successful moves across London boroughs',
   },
@@ -158,6 +158,19 @@ const popularRoutes = [
   { from: 'London', to: 'Essex', time: '50 mins' },
   { from: 'London', to: 'Kent', time: '55 mins' },
 ];
+
+const iconMap = {
+  Truck,
+  Home,
+  Package,
+  Users,
+  MapPin,
+  Clock,
+  Star,
+  Calculator,
+  Phone,
+  MessageCircle,
+};
 
 export default function LondonPage() {
   return (
@@ -287,7 +300,7 @@ export default function LondonPage() {
                 }}
               >
                 <VStack spacing={4}>
-                  <Icon as={service.icon} boxSize={12} color="blue.500" />
+                  <Icon as={iconMap[service.iconName as keyof typeof iconMap]} boxSize={12} color="blue.500" />
                   <VStack spacing={2}>
                     <Heading
                       as="h3"
@@ -326,7 +339,7 @@ export default function LondonPage() {
                 bg="gray.50"
                 borderRadius="lg"
               >
-                <Icon as={item.icon} boxSize={12} color="blue.500" />
+                <Icon as={iconMap[item.iconName as keyof typeof iconMap]} boxSize={12} color="blue.500" />
                 <Heading as="h3" size="md" color="gray.800">
                   {item.title}
                 </Heading>

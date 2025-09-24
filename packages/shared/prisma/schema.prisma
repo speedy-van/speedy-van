@@ -91,31 +91,50 @@ model Driver {
 
 /// Driver application tracking
 model DriverApplication {
-  id              String   @id @default(cuid())
-  userId          String?  @unique // Add userId field for relation
-  fullName        String
-  email           String   @unique
-  phone           String
-  address         String
-  postcode        String
-  licenseImage    String?  // URL to uploaded license image
-  idImage         String?  // URL to uploaded ID image
-  vehicleInfo     Json?    // Vehicle details (make, model, reg, etc.)
-  bankAccount     Json?    // Bank account details
-  taxInfo         Json?    // Tax information (UTR, VAT number, etc.)
-  status          DriverApplicationStatus @default(pending)
-  rejectionReason String?
-  reviewedBy      String?  // Admin user ID who reviewed
-  reviewedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Add relation back to User
-  user            User?    @relation(fields: [userId], references: [id])
+  id                           String                  @id @default(cuid())
+  email                        String                  @unique
+  firstName                    String
+  lastName                     String
+  phone                        String
+  dateOfBirth                  DateTime
+  addressLine1                 String
+  addressLine2                 String?
+  city                         String
+  postcode                     String
+  county                       String
+  nationalInsuranceNumber      String
+  drivingLicenseNumber         String
+  drivingLicenseExpiry         DateTime
+  drivingLicenseFrontImage     String?
+  drivingLicenseBackImage      String?
+  insuranceProvider            String
+  insurancePolicyNumber        String
+  insuranceExpiry              DateTime
+  insuranceDocument            String?
+  bankName                     String
+  accountHolderName            String
+  sortCode                     String
+  accountNumber                String
+  rightToWorkShareCode         String
+  rightToWorkDocument          String?
+  emergencyContactName         String
+  emergencyContactPhone        String
+  emergencyContactRelationship String
+  agreeToTerms                 Boolean
+  agreeToDataProcessing        Boolean
+  agreeToBackgroundCheck       Boolean
+  status                       DriverApplicationStatus @default(pending)
+  applicationDate              DateTime                @default(now())
+  reviewedAt                   DateTime?
+  reviewedBy                   String?
+  reviewNotes                  String?
+  userId                       String?                 @unique
+  user                         User?                   @relation(fields: [userId], references: [id])
 
   @@index([status])
   @@index([email])
-  @@index([createdAt])
+  @@index([applicationDate])
+  @@index([nationalInsuranceNumber])
 }
 
 model DriverVehicle {

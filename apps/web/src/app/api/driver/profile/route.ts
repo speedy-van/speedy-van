@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
           lastName: true,
           phone: true,
           status: true,
-          // createdAt: true, // Field doesn't exist in select
+          applicationDate: true,
         },
       });
     } catch (error) {
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       joinedAt: user.createdAt.toISOString(),
       lastLogin: user.lastLogin?.toISOString(),
       applicationStatus: driverApplication?.status || 'unknown',
-      applicationDate: (driverApplication as any)?.createdAt?.toISOString(),
+      applicationDate: driverApplication?.applicationDate?.toISOString(),
     };
 
     console.log('✅ Driver profile data loaded (simplified):', {

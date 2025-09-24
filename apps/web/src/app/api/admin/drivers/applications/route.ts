@@ -31,9 +31,11 @@ export async function GET(request: NextRequest) {
         { lastName: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
         { phone: { contains: search, mode: 'insensitive' } },
+        { addressLine1: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } },
+        { postcode: { contains: search, mode: 'insensitive' } },
         { nationalInsuranceNumber: { contains: search, mode: 'insensitive' } },
         { drivingLicenseNumber: { contains: search, mode: 'insensitive' } },
-        { postcode: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -67,96 +69,32 @@ export async function GET(request: NextRequest) {
       // Personal information completeness (25 points)
       if (app.firstName && app.lastName) score += 10;
       if (app.phone) score += 5;
-      if (app.dateOfBirth) score += 5;
+      if (app.email) score += 5;
+      if (app.addressLine1) score += 5;
+
+      // Additional information completeness (20 points)
+      if (app.drivingLicenseNumber) score += 10;
+      if (app.bankName && app.accountNumber) score += 5;
       if (app.nationalInsuranceNumber) score += 5;
 
-      // Address completeness (20 points)
-      if (app.addressLine1 && app.city && app.postcode) score += 15;
-      if (app.addressLine2) score += 2;
-      if (app.county) score += 3;
+      // Document completeness (25 points)
+      if (app.drivingLicenseFrontImage) score += 15;
+      if (app.drivingLicenseBackImage) score += 10;
 
-      // Driving information completeness (25 points)
-      if (app.drivingLicenseNumber && app.drivingLicenseExpiry) score += 15;
-      if (app.drivingLicenseFrontImage) score += 5;
-      if (app.drivingLicenseBackImage) score += 5;
+      // Status and review information (30 points)
+      if (app.status) score += 10;
+      if (app.reviewedAt) score += 10;
+      if (app.reviewedBy) score += 10;
 
-      // Insurance information completeness (15 points)
-      if (
-        app.insuranceProvider &&
-        app.insurancePolicyNumber &&
-        app.insuranceExpiry
-      )
-        score += 10;
-      if (app.insuranceDocument) score += 5;
-
-      // Banking information completeness (10 points)
-      if (app.bankName && app.sortCode && app.accountNumber) score += 8;
-      if (app.accountHolderName) score += 2;
-
-      // Right to work completeness (10 points)
-      if (app.rightToWorkShareCode) score += 7;
-      if (app.rightToWorkDocument) score += 3;
-
-      // Emergency contact completeness (10 points)
-      if (app.emergencyContactName && app.emergencyContactPhone) score += 8;
-      if (app.emergencyContactRelationship) score += 2;
-
-      // Terms agreement completeness (5 points)
-      if (
-        app.agreeToTerms &&
-        app.agreeToDataProcessing &&
-        app.agreeToBackgroundCheck
-      )
-        score += 5;
-
-      // Document status mapping with detailed information
+      // Document status mapping
       const documentStatus = {
         license: {
-          status:
-            app.drivingLicenseFrontImage && app.drivingLicenseBackImage
-              ? 'complete'
-              : 'incomplete',
+          status: app.drivingLicenseFrontImage ? 'complete' : 'incomplete',
           url: app.drivingLicenseFrontImage,
-          backUrl: app.drivingLicenseBackImage,
-          ocrData: null,
-          details: {
-            number: app.drivingLicenseNumber,
-            expiry: app.drivingLicenseExpiry,
-            frontImage: app.drivingLicenseFrontImage,
-            backImage: app.drivingLicenseBackImage,
-          },
         },
-        insurance: {
-          status: app.insuranceDocument ? 'complete' : 'incomplete',
-          url: app.insuranceDocument,
-          ocrData: null,
-          details: {
-            provider: app.insuranceProvider,
-            policyNumber: app.insurancePolicyNumber,
-            expiry: app.insuranceExpiry,
-            document: app.insuranceDocument,
-          },
-        },
-        rightToWork: {
-          status: app.rightToWorkDocument ? 'complete' : 'incomplete',
-          url: app.rightToWorkDocument,
-          ocrData: null,
-          details: {
-            shareCode: app.rightToWorkShareCode,
-            document: app.rightToWorkDocument,
-          },
-        },
-        vehicleRegistration: {
-          status: 'not_required', // Not collected in current form
-          url: null,
-          ocrData: null,
-          details: null,
-        },
-        dbs: {
-          status: 'not_required', // Not collected in current form
-          url: null,
-          ocrData: null,
-          details: null,
+        id: {
+          status: app.drivingLicenseBackImage ? 'complete' : 'incomplete',
+          url: app.drivingLicenseBackImage,
         },
       };
 
@@ -164,27 +102,20 @@ export async function GET(request: NextRequest) {
       const complianceIssues = [];
       const complianceWarnings = [];
 
-      if (
-        app.drivingLicenseExpiry &&
-        new Date(app.drivingLicenseExpiry) < new Date()
-      ) {
-        complianceIssues.push('License expired');
-      } else if (
-        app.drivingLicenseExpiry &&
-        new Date(app.drivingLicenseExpiry) <
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      ) {
-        complianceWarnings.push('License expiring within 30 days');
+      if (!app.drivingLicenseFrontImage) {
+        complianceIssues.push('License front image missing');
       }
 
-      if (app.insuranceExpiry && new Date(app.insuranceExpiry) < new Date()) {
-        complianceIssues.push('Insurance expired');
-      } else if (
-        app.insuranceExpiry &&
-        new Date(app.insuranceExpiry) <
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      ) {
-        complianceWarnings.push('Insurance expiring within 30 days');
+      if (!app.drivingLicenseBackImage) {
+        complianceIssues.push('License back image missing');
+      }
+
+      if (!app.drivingLicenseNumber) {
+        complianceWarnings.push('Driving license number missing');
+      }
+
+      if (!app.bankName || !app.accountNumber) {
+        complianceWarnings.push('Bank account information missing');
       }
 
       // Auto-approve eligibility with stricter criteria
@@ -206,75 +137,23 @@ export async function GET(request: NextRequest) {
         name: `${app.firstName} ${app.lastName}`,
         email: app.email,
         phone: app.phone,
-        dateOfBirth: app.dateOfBirth,
-        nationalInsuranceNumber: app.nationalInsuranceNumber,
         score: Math.min(100, score),
         maxScore,
         scorePercentage: Math.round((score / maxScore) * 100),
         status: app.status,
         documents: documentStatus,
 
-        // Comprehensive address information
-        address: {
-          line1: app.addressLine1,
-          line2: app.addressLine2,
-          city: app.city,
-          postcode: app.postcode,
-          county: app.county,
-          fullAddress: [
-            app.addressLine1,
-            app.addressLine2,
-            app.city,
-            app.postcode,
-            app.county,
-          ]
-            .filter(Boolean)
-            .join(', '),
-        },
+        // Address information
+        address: `${app.addressLine1}${app.addressLine2 ? ', ' + app.addressLine2 : ''}, ${app.city}, ${app.postcode}`,
+        postcode: app.postcode,
 
-        // Comprehensive driving information
-        driving: {
-          licenseNumber: app.drivingLicenseNumber,
-          licenseExpiry: app.drivingLicenseExpiry,
-          licenseFrontImage: app.drivingLicenseFrontImage,
-          licenseBackImage: app.drivingLicenseBackImage,
-        },
-
-        // Comprehensive insurance information
-        insurance: {
-          provider: app.insuranceProvider,
-          policyNumber: app.insurancePolicyNumber,
-          expiry: app.insuranceExpiry,
-          document: app.insuranceDocument,
-        },
-
-        // Comprehensive banking information
-        banking: {
-          bankName: app.bankName,
-          accountHolderName: app.accountHolderName,
-          sortCode: app.sortCode,
-          accountNumber: app.accountNumber,
-        },
-
-        // Right to work information
-        rightToWork: {
-          shareCode: app.rightToWorkShareCode,
-          document: app.rightToWorkDocument,
-        },
-
-        // Emergency contact information
-        emergencyContact: {
-          name: app.emergencyContactName,
-          phone: app.emergencyContactPhone,
-          relationship: app.emergencyContactRelationship,
-        },
-
-        // Terms agreement status
-        terms: {
-          agreeToTerms: app.agreeToTerms,
-          agreeToDataProcessing: app.agreeToDataProcessing,
-          agreeToBackgroundCheck: app.agreeToBackgroundCheck,
-        },
+        // Additional information
+        bankName: app.bankName,
+        accountHolderName: app.accountHolderName,
+        sortCode: app.sortCode,
+        accountNumber: app.accountNumber,
+        nationalInsuranceNumber: app.nationalInsuranceNumber,
+        drivingLicenseNumber: app.drivingLicenseNumber,
 
         // Vehicle information (placeholder for future enhancement)
         vehicle: {
@@ -309,7 +188,6 @@ export async function GET(request: NextRequest) {
             : undefined,
         reviewedAt: app.reviewedAt ? app.reviewedAt.toISOString() : undefined,
         reviewedBy: app.reviewedBy,
-        reviewNotes: app.reviewNotes,
 
         // User relationship
         userId: app.userId,

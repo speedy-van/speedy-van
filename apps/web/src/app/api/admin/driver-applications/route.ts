@@ -29,14 +29,19 @@ export async function GET(request: NextRequest) {
       whereClause.status = status;
     }
     
-    if (search) {
-      whereClause.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+      if (search) {
+        whereClause.OR = [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          { addressLine1: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search, mode: 'insensitive' } },
+          { postcode: { contains: search, mode: 'insensitive' } },
+          { nationalInsuranceNumber: { contains: search, mode: 'insensitive' } },
+          { drivingLicenseNumber: { contains: search, mode: 'insensitive' } },
+        ];
+      }
 
     // Get applications with pagination
     const [applications, totalCount] = await Promise.all([
@@ -70,22 +75,14 @@ export async function GET(request: NextRequest) {
           lastName: app.lastName,
           email: app.email,
           phone: app.phone,
-          address: `${app.addressLine1}${app.addressLine2 ? ', ' + app.addressLine2 : ''}`,
-          addressLine1: app.addressLine1,
-          addressLine2: app.addressLine2,
-          city: app.city,
-          county: app.county,
+          address: `${app.addressLine1}${app.addressLine2 ? ', ' + app.addressLine2 : ''}, ${app.city}, ${app.postcode}`,
           postcode: app.postcode,
-          dateOfBirth: app.dateOfBirth,
+          bankName: app.bankName,
+          accountHolderName: app.accountHolderName,
+          sortCode: app.sortCode,
+          accountNumber: app.accountNumber,
           nationalInsuranceNumber: app.nationalInsuranceNumber,
           drivingLicenseNumber: app.drivingLicenseNumber,
-          drivingLicenseExpiry: app.drivingLicenseExpiry,
-          bankInfo: {
-            bankName: app.bankName,
-            accountHolderName: app.accountHolderName,
-            sortCode: app.sortCode,
-            accountNumber: app.accountNumber,
-          },
           status: app.status,
           reviewNotes: app.reviewNotes,
           reviewedBy: app.reviewedBy,

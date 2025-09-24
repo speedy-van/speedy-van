@@ -23,15 +23,13 @@ export async function POST(
     console.log('🔧 [APPROVE DEBUG] Application ID:', id);
     
     const body = await request.json();
-    const { reviewNotes } = body;
-    console.log('🔧 [APPROVE DEBUG] Review notes:', reviewNotes);
+    console.log('🔧 [APPROVE DEBUG] Approving application');
 
     // Update application status to approved
     const updatedApplication = await prisma.driverApplication.update({
       where: { id },
       data: {
         status: 'approved',
-        reviewNotes: reviewNotes || 'Application approved - all requirements met',
         reviewedAt: new Date(),
         reviewedBy: user.name || user.email,
       },
@@ -42,7 +40,6 @@ export async function POST(
         email: true,
         userId: true,
         status: true,
-        reviewNotes: true,
         user: {
           select: {
             id: true,

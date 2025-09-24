@@ -44,68 +44,34 @@ export async function GET(
     let score = 0;
     let maxScore = 100;
 
-    // Personal information completeness (25 points)
-    if (application.firstName && application.lastName) score += 10;
-    if (application.phone) score += 5;
-    if (application.dateOfBirth) score += 5;
+    // Personal information completeness (40 points)
+    if (application.firstName && application.lastName) score += 15;
+    if (application.phone) score += 10;
+    if (application.email) score += 10;
+    if (application.addressLine1) score += 5;
+
+    // Additional information completeness (30 points)
+    if (application.drivingLicenseNumber) score += 15;
+    if (application.bankName && application.accountNumber) score += 10;
     if (application.nationalInsuranceNumber) score += 5;
 
-    // Address completeness (20 points)
-    if (application.addressLine1 && application.city && application.postcode) score += 15;
-    if (application.addressLine2) score += 2;
-    if (application.county) score += 3;
+    // Document completeness (20 points)
+    if (application.drivingLicenseFrontImage) score += 10;
+    if (application.drivingLicenseBackImage) score += 10;
 
-    // Driving information completeness (25 points)
-    if (application.drivingLicenseNumber && application.drivingLicenseExpiry) score += 15;
-    if (application.drivingLicenseFrontImage) score += 5;
-    if (application.drivingLicenseBackImage) score += 5;
-
-    // Insurance information completeness (15 points)
-    if (
-      application.insuranceProvider &&
-      application.insurancePolicyNumber &&
-      application.insuranceExpiry
-    )
-      score += 10;
-    if (application.insuranceDocument) score += 5;
-
-    // Banking information completeness (10 points)
-    if (application.bankName && application.sortCode && application.accountNumber) score += 8;
-    if (application.accountHolderName) score += 2;
-
-    // Right to work completeness (5 points)
-    if (application.rightToWorkShareCode) score += 3;
-    if (application.rightToWorkDocument) score += 2;
-
-    // Emergency contact completeness (5 points)
-    if (application.emergencyContactName && application.emergencyContactPhone) score += 3;
-    if (application.emergencyContactRelationship) score += 2;
-
-    // Terms agreement completeness (5 points)
-    if (
-      application.agreeToTerms &&
-      application.agreeToDataProcessing &&
-      application.agreeToBackgroundCheck
-    )
-      score += 5;
+    // Status and review information (10 points)
+    if (application.status) score += 5;
+    if (application.reviewedAt) score += 5;
 
     // Document status
     const documentStatus = {
       license: {
-        status:
-          application.drivingLicenseFrontImage && application.drivingLicenseBackImage
-            ? 'complete'
-            : 'incomplete',
+        status: application.drivingLicenseFrontImage ? 'complete' : 'incomplete',
         url: application.drivingLicenseFrontImage,
-        backUrl: application.drivingLicenseBackImage,
       },
-      insurance: {
-        status: application.insuranceDocument ? 'complete' : 'incomplete',
-        url: application.insuranceDocument,
-      },
-      rightToWork: {
-        status: application.rightToWorkDocument ? 'complete' : 'incomplete',
-        url: application.rightToWorkDocument,
+      id: {
+        status: application.drivingLicenseBackImage ? 'complete' : 'incomplete',
+        url: application.drivingLicenseBackImage,
       },
     };
 
@@ -113,27 +79,21 @@ export async function GET(
     const complianceIssues = [];
     const complianceWarnings = [];
 
-    if (
-      application.drivingLicenseExpiry &&
-      new Date(application.drivingLicenseExpiry) < new Date()
-    ) {
-      complianceIssues.push('Driving license expired');
-    } else if (
-      application.drivingLicenseExpiry &&
-      new Date(application.drivingLicenseExpiry) <
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    ) {
-      complianceWarnings.push('Driving license expiring within 30 days');
+    // Basic compliance checks based on available fields
+    if (!application.drivingLicenseFrontImage) {
+      complianceIssues.push('License front image missing');
     }
 
-    if (application.insuranceExpiry && new Date(application.insuranceExpiry) < new Date()) {
-      complianceIssues.push('Insurance expired');
-    } else if (
-      application.insuranceExpiry &&
-      new Date(application.insuranceExpiry) <
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    ) {
-      complianceWarnings.push('Insurance expiring within 30 days');
+    if (!application.drivingLicenseBackImage) {
+      complianceIssues.push('License back image missing');
+    }
+
+    if (!application.drivingLicenseNumber) {
+      complianceWarnings.push('Driving license number missing');
+    }
+
+    if (!application.bankName || !application.accountNumber) {
+      complianceWarnings.push('Bank account information missing');
     }
 
     // Auto-approve eligibility
@@ -154,8 +114,6 @@ export async function GET(
       name: `${application.firstName} ${application.lastName}`,
       email: application.email,
       phone: application.phone,
-      dateOfBirth: application.dateOfBirth.toISOString(),
-      nationalInsuranceNumber: application.nationalInsuranceNumber,
       score: Math.min(100, score),
       maxScore,
       scorePercentage: Math.round((score / maxScore) * 100),
@@ -163,66 +121,16 @@ export async function GET(
       documents: documentStatus,
 
       // Address information
-      address: {
-        line1: application.addressLine1,
-        line2: application.addressLine2,
-        city: application.city,
-        postcode: application.postcode,
-        county: application.county,
-        fullAddress: [
-          application.addressLine1,
-          application.addressLine2,
-          application.city,
-          application.postcode,
-          application.county,
-        ]
-          .filter(Boolean)
-          .join(', '),
-      },
+      address: `${application.addressLine1}${application.addressLine2 ? ', ' + application.addressLine2 : ''}, ${application.city}, ${application.postcode}`,
+      postcode: application.postcode,
 
-      // Driving information
-      driving: {
-        licenseNumber: application.drivingLicenseNumber,
-        licenseExpiry: application.drivingLicenseExpiry.toISOString(),
-        licenseFrontImage: application.drivingLicenseFrontImage,
-        licenseBackImage: application.drivingLicenseBackImage,
-      },
-
-      // Insurance information
-      insurance: {
-        provider: application.insuranceProvider,
-        policyNumber: application.insurancePolicyNumber,
-        expiry: application.insuranceExpiry.toISOString(),
-        document: application.insuranceDocument,
-      },
-
-      // Banking information
-      banking: {
-        bankName: application.bankName,
-        accountHolderName: application.accountHolderName,
-        sortCode: application.sortCode,
-        accountNumber: application.accountNumber,
-      },
-
-      // Right to work information
-      rightToWork: {
-        shareCode: application.rightToWorkShareCode,
-        document: application.rightToWorkDocument,
-      },
-
-      // Emergency contact
-      emergencyContact: {
-        name: application.emergencyContactName,
-        phone: application.emergencyContactPhone,
-        relationship: application.emergencyContactRelationship,
-      },
-
-      // Terms agreement
-      terms: {
-        agreeToTerms: application.agreeToTerms,
-        agreeToDataProcessing: application.agreeToDataProcessing,
-        agreeToBackgroundCheck: application.agreeToBackgroundCheck,
-      },
+      // Additional information
+      bankName: application.bankName,
+      accountHolderName: application.accountHolderName,
+      sortCode: application.sortCode,
+      accountNumber: application.accountNumber,
+      nationalInsuranceNumber: application.nationalInsuranceNumber,
+      drivingLicenseNumber: application.drivingLicenseNumber,
 
       // Application metadata
       appliedAt: application.applicationDate.toISOString(),
@@ -232,7 +140,6 @@ export async function GET(
       autoApproveEligible,
       reviewedAt: application.reviewedAt?.toISOString(),
       reviewedBy: application.reviewedBy,
-      reviewNotes: application.reviewNotes,
 
       // User relationship
       userId: application.userId,
@@ -263,7 +170,7 @@ export async function PUT(
 
     const { id } = params;
     const body = await request.json();
-    const { status, reviewNotes } = body;
+    const { status } = body;
 
     if (!status) {
       return NextResponse.json(
@@ -277,7 +184,6 @@ export async function PUT(
       where: { id },
       data: {
         status,
-        reviewNotes,
         reviewedAt: new Date(),
         reviewedBy: user.name || user.email,
       },

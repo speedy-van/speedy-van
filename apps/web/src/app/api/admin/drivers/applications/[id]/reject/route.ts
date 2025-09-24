@@ -19,21 +19,14 @@ export async function POST(
 
     const { id } = params;
     const body = await request.json();
-    const { reviewNotes } = body;
-
-    if (!reviewNotes) {
-      return NextResponse.json(
-        { error: 'Review notes are required for rejection' },
-        { status: 400 }
-      );
-    }
+    const { rejectionReason } = body;
 
     // Update application status to rejected
     const updatedApplication = await prisma.driverApplication.update({
       where: { id },
       data: {
         status: 'rejected',
-        reviewNotes,
+        reviewNotes: rejectionReason || 'Application rejected by admin',
         reviewedAt: new Date(),
         reviewedBy: user.name || user.email,
       },
@@ -44,7 +37,6 @@ export async function POST(
         email: true,
         userId: true,
         status: true,
-        reviewNotes: true,
         user: {
           select: {
             id: true,
@@ -77,7 +69,7 @@ export async function POST(
             driverId: driverRecord.id,
             type: 'system_alert',
             title: 'Application Update',
-            message: `Your driver application has been reviewed. Reason: ${reviewNotes}`,
+            message: `Your driver application has been reviewed. Reason: ${rejectionReason || 'Application rejected by admin'}`,
             read: false,
           },
         });

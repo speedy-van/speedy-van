@@ -137,30 +137,6 @@ export default function BookingLuxuryPage() {
   };
 
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <WhereAndWhatStep
-            formData={formData}
-            updateFormData={updateFormData}
-            errors={errors}
-            onNext={() => setCurrentStep(2)}
-          />
-        );
-      case 2:
-        return (
-          <WhoAndPaymentStep
-            formData={formData}
-            updateFormData={updateFormData}
-            errors={errors}
-            paymentSuccess={false}
-          />
-        );
-      default:
-        return null;
-    }
-  };
 
   // Success page is now handled by dedicated /booking/success route
 
@@ -298,7 +274,21 @@ export default function BookingLuxuryPage() {
           {/* Enhanced Step Content */}
           <Card bg={cardBg} shadow="lg" borderRadius="2xl" overflow="hidden">
             <CardBody p={0}>
-              {renderStep()}
+              {currentStep === 1 ? (
+                <WhereAndWhatStep
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  errors={errors}
+                  onNext={() => setCurrentStep(2)}
+                />
+              ) : currentStep === 2 ? (
+                <WhoAndPaymentStep
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  errors={errors}
+                  paymentSuccess={false}
+                />
+              ) : null}
             </CardBody>
           </Card>
 

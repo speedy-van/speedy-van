@@ -27,9 +27,10 @@ model User {
   isActive                Boolean                          @default(true)
   lastLogin               DateTime?
   twoFactorEnabled        Boolean                          @default(false)
-  driverStatus            DriverStatus?
   driverApprovedAt        DateTime?
   driverApprovedBy        String?
+  driverStatus            DriverStatus?
+  accounts                Account[]
   accountDeletionRequests AccountDeletionRequest[]
   addresses               Address[]
   auditLogs               AuditLog[]
@@ -44,9 +45,8 @@ model User {
   messages                Message[]
   pricingSettingsCreated  PricingSettings[]                @relation("PricingSettingsCreatedBy")
   pricingSettingsUpdated  PricingSettings[]                @relation("PricingSettingsUpdatedBy")
-  supportTickets          SupportTicket[]
-  accounts                Account[]
   sessions                Session[]
+  supportTickets          SupportTicket[]
 
   @@index([role])
 }
@@ -766,8 +766,8 @@ model DriverApplication {
   userId                       String?                 @unique
   user                         User?                   @relation(fields: [userId], references: [id])
 
-  @@index([email])
   @@index([status])
+  @@index([email])
   @@index([applicationDate])
   @@index([nationalInsuranceNumber])
 }
@@ -804,15 +804,15 @@ model BookingItem {
 
 /// Main booking entity - UNIFIED BOOKING & TRACKING SYSTEM
 model Booking {
-  id                            String          @id @default(cuid())
+  id                            String            @id @default(cuid())
   customerId                    String?
   paidAt                        DateTime?
-  createdAt                     DateTime        @default(now())
-  updatedAt                     DateTime        @updatedAt
+  createdAt                     DateTime          @default(now())
+  updatedAt                     DateTime          @updatedAt
   driverId                      String?
   customerName                  String
   customerPhone                 String
-  reference                     String          @unique
+  reference                     String            @unique
   accessSurchargeGBP            Int
   availabilityMultiplierPercent Int
   baseDistanceMiles             Float
@@ -826,41 +826,35 @@ model Booking {
   pickupAddressId               String
   pickupPropertyId              String
   scheduledAt                   DateTime
-  pickupTimeSlot                String?
-  urgency                       String?
-  stripePaymentIntentId         String?         @unique
+  stripePaymentIntentId         String?           @unique
   totalGBP                      Int
   weatherSurchargeGBP           Int
-  status                        BookingStatus   @default(DRAFT)
-  crewSize                      CrewSize        @default(TWO)
-  
-  // New fields for unified booking system
-  currentStep                   BookingStep     @default(STEP_1_WHERE_AND_WHAT)
-  stepCompletedAt               DateTime?       // When current step was completed
-  isStepCompleted               Boolean         @default(false) // Is current step completed?
-  
-  // Relations
+  status                        BookingStatus     @default(DRAFT)
+  crewSize                      CrewSize          @default(TWO)
+  currentStep                   BookingStep       @default(STEP_1_WHERE_AND_WHAT)
+  isStepCompleted               Boolean           @default(false)
+  stepCompletedAt               DateTime?
+  pickupTimeSlot                String?
+  urgency                       String?
   Assignment                    Assignment?
-  customer                      User?           @relation(fields: [customerId], references: [id])
-  driver                        Driver?         @relation(fields: [driverId], references: [id])
-  dropoffAddress                BookingAddress  @relation("DropoffAddress", fields: [dropoffAddressId], references: [id])
-  dropoffProperty               PropertyDetails @relation("DropoffProperty", fields: [dropoffPropertyId], references: [id])
-  pickupAddress                 BookingAddress  @relation("PickupAddress", fields: [pickupAddressId], references: [id])
-  pickupProperty                PropertyDetails @relation("PickupProperty", fields: [pickupPropertyId], references: [id])
+  customer                      User?             @relation(fields: [customerId], references: [id])
+  driver                        Driver?           @relation(fields: [driverId], references: [id])
+  dropoffAddress                BookingAddress    @relation("DropoffAddress", fields: [dropoffAddressId], references: [id])
+  dropoffProperty               PropertyDetails   @relation("DropoffProperty", fields: [dropoffPropertyId], references: [id])
+  pickupAddress                 BookingAddress    @relation("PickupAddress", fields: [pickupAddressId], references: [id])
+  pickupProperty                PropertyDetails   @relation("PickupProperty", fields: [pickupPropertyId], references: [id])
   items                         BookingItem[]
+  progress                      BookingProgress[]
   chatSessions                  ChatSession[]
+  invoices                      Invoice[]
   Payment                       Payment[]
   TrackingPing                  TrackingPing[]
-  
-  // New relations for unified system
-  progress                      BookingProgress[]
-  invoices                      Invoice[]
 
   @@index([scheduledAt])
   @@index([status])
   @@index([customerEmail, scheduledAt])
   @@index([status, createdAt])
-  @@index([currentStep, status]) // New index for step-based queries
+  @@index([currentStep, status])
 }
 
 model Assignment {
@@ -887,23 +881,21 @@ model Assignment {
 
 /// Tracks customer booking progress through the 2-step process
 model BookingProgress {
-  id            String      @id @default(cuid())
-  bookingId     String
-  step          BookingStep
-  status        String      @default("pending") // pending, in_progress, completed, skipped
-  startedAt     DateTime?
-  completedAt   DateTime?
-  data          Json?       // Step-specific data (form data, validation results, etc.)
-  notes         String?     // Any notes or comments about this step
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
-  // Relations
-  booking       Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  
+  id          String      @id @default(cuid())
+  bookingId   String
+  step        BookingStep
+  status      String      @default("pending")
+  startedAt   DateTime?
+  completedAt DateTime?
+  data        Json?
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  booking     Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, step])
   @@index([bookingId, step])
   @@index([status, createdAt])
-  @@unique([bookingId, step]) // Each booking can only have one record per step
 }
 
 /// Invoice management for bookings
@@ -914,22 +906,20 @@ model Invoice {
   customerName          String
   customerEmail         String
   customerPhone         String
-  totalGBP              Int           // Amount in pence
-  vatGBP                Int           // VAT amount in pence
-  subtotalGBP           Int           // Subtotal in pence
+  totalGBP              Int
+  vatGBP                Int
+  subtotalGBP           Int
   status                InvoiceStatus @default(DRAFT)
   generatedAt           DateTime      @default(now())
   paidAt                DateTime?
   dueAt                 DateTime
-  pdfUrl                String?       // URL to generated PDF
+  pdfUrl                String?
   stripePaymentIntentId String?
-  notes                 String?       // Additional notes
+  notes                 String?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
-  
-  // Relations
   booking               Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  
+
   @@index([bookingId])
   @@index([status, dueAt])
   @@index([customerEmail])
@@ -1144,19 +1134,6 @@ model AdminNotification {
   @@index([actorId])
 }
 
-/// RAG (Retrieval-Augmented Generation) System Models
-/// Table for storing document chunks and their vector embeddings
-// model RagChunk {
-//   id        BigInt                @id @default(autoincrement())
-//   docId     String                @map("doc_id")
-//   chunk     String
-//   embedding Unsupported("vector")
-//   metadata  Json?
-//   createdAt DateTime              @default(now()) @map("created_at")
-
-//   @@index([docId])
-// }
-
 /// Table for auditing tool executions
 model AgentToolCall {
   id        BigInt   @id @default(autoincrement())
@@ -1170,6 +1147,83 @@ model AgentToolCall {
   @@index([createdAt])
 }
 
+model ProductionError {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  level         String
+  category      String
+  source        String
+  message       String
+  stackTrace    String?
+  context       Json
+  metadata      Json
+  impact        Json
+  relatedErrors String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([timestamp])
+  @@index([level])
+  @@index([category])
+  @@index([source])
+  @@index([timestamp, level])
+  @@index([timestamp, category])
+}
+
+model ErrorReport {
+  id              String   @id @default(cuid())
+  title           String
+  summary         String
+  generatedAt     DateTime @default(now())
+  periodStart     DateTime
+  periodEnd       DateTime
+  errors          Json
+  statistics      Json
+  recommendations Json
+  assignee        String?
+  status          String   @default("draft")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([generatedAt])
+  @@index([status])
+  @@index([assignee])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 /// ─────────────────────────
 /// ENUMS
 /// ─────────────────────────
@@ -1177,9 +1231,9 @@ enum BookingStatus {
   DRAFT
   PENDING_PAYMENT
   CONFIRMED
-  IN_PROGRESS
   CANCELLED
   COMPLETED
+  IN_PROGRESS
 }
 
 enum PropertyType {
@@ -1276,8 +1330,8 @@ enum InvoiceStatus {
 
 /// Customer-facing booking steps (2 streamlined phases - matches current implementation)
 enum BookingStep {
-  STEP_1_WHERE_AND_WHAT // Step 1: Addresses, items, service selection, date/time, pricing
-  STEP_2_CUSTOMER_PAYMENT // Step 2: Customer details and payment (auto-confirmation via webhook)
+  STEP_1_WHERE_AND_WHAT
+  STEP_2_CUSTOMER_PAYMENT
 }
 
 /// Driver job execution steps (detailed tracking)
@@ -1429,83 +1483,4 @@ enum ChatParticipantRole {
   admin
   guest
   support
-}
-
-model ProductionError {
-  id            String   @id @default(cuid())
-  timestamp     DateTime @default(now())
-  level         String   // error, warning, info, critical
-  category      String   // database, api, frontend, backend, external, performance, security, other
-  source        String   // service/module name
-  message       String
-  stackTrace    String?  // optional stack trace
-  context       Json     // JSON object for context data
-  metadata      Json     // JSON object for metadata
-  impact        Json     // JSON object for impact data
-  relatedErrors String[] // array of related error IDs
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([timestamp])
-  @@index([level])
-  @@index([category])
-  @@index([source])
-  @@index([timestamp, level])
-  @@index([timestamp, category])
-}
-
-model ErrorReport {
-  id            String   @id @default(cuid())
-  title         String
-  summary       String
-  generatedAt   DateTime @default(now())
-  periodStart   DateTime
-  periodEnd     DateTime
-  errors        Json     // array of error IDs or full error objects
-  statistics    Json     // JSON object for statistics
-  recommendations Json   // JSON object for recommendations
-  assignee      String?
-  status        String   @default("draft") // draft, reviewed, approved, in_progress
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([generatedAt])
-  @@index([status])
-  @@index([assignee])
-}
-
-// NextAuth.js required models
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
 }
