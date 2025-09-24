@@ -29,19 +29,19 @@ export async function GET(request: NextRequest) {
       whereClause.status = status;
     }
     
-      if (search) {
-        whereClause.OR = [
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
-          { addressLine1: { contains: search, mode: 'insensitive' } },
-          { city: { contains: search, mode: 'insensitive' } },
-          { postcode: { contains: search, mode: 'insensitive' } },
-          { nationalInsuranceNumber: { contains: search, mode: 'insensitive' } },
-          { drivingLicenseNumber: { contains: search, mode: 'insensitive' } },
-        ];
-      }
+     if (search) {
+       whereClause.OR = [
+         { firstName: { contains: search, mode: 'insensitive' } },
+         { lastName: { contains: search, mode: 'insensitive' } },
+         { email: { contains: search, mode: 'insensitive' } },
+         { phone: { contains: search, mode: 'insensitive' } },
+         { addressLine1: { contains: search, mode: 'insensitive' } },
+         { city: { contains: search, mode: 'insensitive' } },
+         { postcode: { contains: search, mode: 'insensitive' } },
+         { nationalInsuranceNumber: { contains: search, mode: 'insensitive' } },
+         { drivingLicenseNumber: { contains: search, mode: 'insensitive' } },
+       ];
+     }
 
     // Get applications with pagination
     const [applications, totalCount] = await Promise.all([

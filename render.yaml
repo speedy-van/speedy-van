@@ -5,10 +5,10 @@ services:
     plan: starter
     buildCommand: |
       corepack enable
-      pnpm install
-      pnpm run prisma:generate
-      pnpm run build
-    startCommand: pnpm start --filter=@speedy-van/app
+      pnpm install --frozen-lockfile
+      pnpm -r --filter @speedy-van/shared... build
+      pnpm -r --filter @speedy-van/app build
+    startCommand: pnpm -r --filter @speedy-van/app start
     envVars:
       - key: NODE_ENV
         value: production

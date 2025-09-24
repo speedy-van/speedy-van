@@ -61,7 +61,7 @@ export async function PATCH(
     console.log('❌ Driver application rejected:', {
       applicationId,
       email: application.email,
-      fullName: `${application.firstName} ${application.lastName}`,
+      fullName: (application as any).fullName || 'Unknown Driver',
       reviewNotes: rejectionReason || 'No reason provided',
       rejectedBy: adminUserId,
     });
@@ -70,7 +70,7 @@ export async function PATCH(
     try {
       const emailResult = await unifiedEmailService.sendDriverApplicationStatus({
         driverEmail: application.email,
-        driverName: `${application.firstName} ${application.lastName}`,
+        driverName: (application as any).fullName || 'Unknown Driver',
         applicationId: application.id,
         status: 'rejected',
         rejectionReason: rejectionReason || 'Application rejected by admin',

@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "Enterprise-grade Speedy Van delivery platform monorepo",
+  "packageManager": "pnpm@10.17.0",
   "workspaces": [
     "apps/web",
     "packages/*"
