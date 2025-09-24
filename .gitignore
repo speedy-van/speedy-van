@@ -89,7 +89,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public - commented out to allow public assets
 
 # Storybook build outputs
 .out
@@ -217,9 +217,9 @@ secrets/
 .secrets/
 
 # Application specific
-uploads/
-public/uploads/
-static/uploads/
+# uploads/ - commented out to allow uploads
+# public/uploads/ - commented out to allow uploads
+# static/uploads/ - commented out to allow uploads
 
 # Database dumps
 *.sql

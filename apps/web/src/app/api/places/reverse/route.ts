@@ -33,8 +33,7 @@ export async function GET(req: Request) {
 
   const token =
     process.env.MAPBOX_TOKEN ||
-    process.env.MAPBOX_ACCESS_TOKEN ||
-    process.env.MAPBOX_SERVER_TOKEN ||
+    process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
     process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
     '';
 

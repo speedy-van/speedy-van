@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const envVars = {
     MAPBOX_TOKEN: process.env.MAPBOX_TOKEN ? 'SET' : 'NOT SET',
-    MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN ? 'SET' : 'NOT SET',
-    MAPBOX_SERVER_TOKEN: process.env.MAPBOX_SERVER_TOKEN ? 'SET' : 'NOT SET',
+    NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? 'SET' : 'NOT SET',
     NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN
       ? 'SET'
       : 'NOT SET',

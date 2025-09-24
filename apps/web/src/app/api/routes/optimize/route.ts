@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get Mapbox API key for route optimization (server-side token)
-    const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_SERVER_TOKEN;
+    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
     if (!mapboxToken) {
       return NextResponse.json(
