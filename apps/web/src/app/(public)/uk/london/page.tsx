@@ -30,6 +30,9 @@ import {
 import Link from 'next/link';
 import LocalBusinessSchema from '@/components/Schema/LocalBusinessSchema';
 import ContactPointSchema from '@/components/Schema/ContactPointSchema';
+import FAQSchema from '@/components/Schema/FAQSchema';
+import ReviewSchema from '@/components/Schema/ReviewSchema';
+import ServiceSchema from '@/components/Schema/ServiceSchema';
 
 export const metadata: Metadata = {
   title: 'Man and Van London | House Removals London | Speedy Van',
@@ -590,44 +593,123 @@ export default function LondonPage() {
           </VStack>
         </Box>
 
-        {/* London Schema */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
-              {
-                '@context': 'https://schema.org',
-                '@type': 'WebPage',
-                name: 'Man and Van London | House Removals London',
-                description:
-                  'Professional man and van service in London covering all boroughs',
-                url: 'https://speedy-van.co.uk/uk/london',
-                mainEntity: {
-                  '@type': 'LocalBusiness',
-                  '@id': 'https://speedy-van.co.uk/#localbusiness-london',
-                  name: 'Speedy Van - London',
-                  address: {
-                    '@type': 'PostalAddress',
-                    addressLocality: 'London',
-                    addressRegion: 'England',
-                    addressCountry: 'GB',
-                  },
-                  geo: {
-                    '@type': 'GeoCoordinates',
-                    latitude: 51.5074,
-                    longitude: -0.1278,
-                  },
-                  areaServed: londonBoroughs.map(borough => ({
-                    '@type': 'Place',
-                    name: borough,
-                  })),
-                },
-              },
-              null,
-              2
-            ),
-          }}
-        />
+        {/* FAQ Section */}
+        <Box py={16}>
+          <VStack spacing={8} align="stretch">
+            <Box textAlign="center">
+              <Heading as="h2" size="xl" mb={4}>
+                Frequently Asked Questions
+              </Heading>
+              <Text fontSize="lg" color="gray.600">
+                Everything you need to know about our London moving services
+              </Text>
+            </Box>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+              <Box p={6} borderWidth={1} borderRadius="lg">
+                <Heading as="h3" size="md" mb={3} color="blue.600">
+                  How much does a man and van cost in London?
+                </Heading>
+                <Text color="gray.600">
+                  Our man and van service starts from £25/hour in London. The total cost depends on distance, 
+                  items, and time required. We provide transparent pricing with no hidden fees.
+                </Text>
+              </Box>
+
+              <Box p={6} borderWidth={1} borderRadius="lg">
+                <Heading as="h3" size="md" mb={3} color="blue.600">
+                  Do you provide same-day service?
+                </Heading>
+                <Text color="gray.600">
+                  Yes! We offer same-day man and van service across all London boroughs. 
+                  Book by 2pm for same-day service, subject to availability.
+                </Text>
+              </Box>
+
+              <Box p={6} borderWidth={1} borderRadius="lg">
+                <Heading as="h3" size="md" mb={3} color="blue.600">
+                  Are your drivers insured and experienced?
+                </Heading>
+                <Text color="gray.600">
+                  All our drivers are fully insured, experienced professionals with extensive 
+                  knowledge of London's roads and parking regulations.
+                </Text>
+              </Box>
+
+              <Box p={6} borderWidth={1} borderRadius="lg">
+                <Heading as="h3" size="md" mb={3} color="blue.600">
+                  What areas of the UK do you cover?
+                </Heading>
+                <Text color="gray.600">
+                  We cover the entire UK including England, Scotland, Wales, and Northern Ireland. 
+                  From major cities like London, Manchester, Glasgow, and Cardiff to smaller towns and villages.
+                </Text>
+              </Box>
+            </SimpleGrid>
+          </VStack>
+        </Box>
+
+        {/* Enhanced Schema Markup */}
+        <FAQSchema faqs={[
+          {
+            question: "How much does a man and van cost in London?",
+            answer: "Our man and van service starts from £25/hour in London. The total cost depends on distance, items, and time required. We provide transparent pricing with no hidden fees."
+          },
+          {
+            question: "Do you provide same-day service?",
+            answer: "Yes! We offer same-day man and van service across all London boroughs. Book by 2pm for same-day service, subject to availability."
+          },
+          {
+            question: "Are your drivers insured and experienced?",
+            answer: "All our drivers are fully insured, experienced professionals with extensive knowledge of London's roads and parking regulations."
+          },
+          {
+            question: "What areas of the UK do you cover?",
+            answer: "We cover the entire UK including England, Scotland, Wales, and Northern Ireland. From major cities like London, Manchester, Glasgow, and Cardiff to smaller towns and villages."
+          }
+        ]} />
+
+        <ReviewSchema reviews={[
+          {
+            author: "Sarah Johnson",
+            rating: 5,
+            reviewBody: "Excellent service! The driver was professional and careful with our furniture. Highly recommend Speedy Van for London moves.",
+            datePublished: "2025-01-15"
+          },
+          {
+            author: "Michael Chen",
+            rating: 5,
+            reviewBody: "Fast, reliable, and affordable. Perfect for our flat move in Camden. Will definitely use again.",
+            datePublished: "2025-01-10"
+          },
+          {
+            author: "Emma Williams",
+            rating: 5,
+            reviewBody: "Great value for money and excellent customer service. Made our house removal stress-free.",
+            datePublished: "2025-01-08"
+          }
+        ]} />
+
+        <ServiceSchema services={[
+          {
+            name: "Man and Van Service",
+            description: "Professional man and van service for small to medium moves across the UK",
+            price: "From £25/hour",
+            areaServed: ["England", "Scotland", "Wales", "Northern Ireland"]
+          },
+          {
+            name: "House Removals",
+            description: "Complete house removal service with packing and unpacking options",
+            price: "From £150",
+            areaServed: ["England", "Scotland", "Wales", "Northern Ireland"]
+          },
+          {
+            name: "Furniture Delivery",
+            description: "Safe and secure furniture delivery service for new purchases",
+            price: "From £30",
+            areaServed: ["England", "Scotland", "Wales", "Northern Ireland"]
+          }
+        ]} />
       </Container>
     </>
   );
