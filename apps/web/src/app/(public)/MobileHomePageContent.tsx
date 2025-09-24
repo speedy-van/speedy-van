@@ -334,6 +334,7 @@ viewport={{ once: true }}
             {...({ transition: { duration: 0.8, ease: "easeOut", delay: 0.3 } } as any)}
           >
             <Heading
+              as="h1"
               size={{ base: '2xl', md: '3xl' }}
               color="white"
               mb={4}
@@ -343,7 +344,7 @@ viewport={{ once: true }}
               maxW="90%"
               mx="auto"
             >
-              🚚 Move Fast, Move Smart with Speedy Van
+              Professional Man and Van Service Across the UK
             </Heading>
           </MotionBox>
 
@@ -364,8 +365,7 @@ viewport={{ once: true }}
               fontWeight="medium"
               textShadow="0 1px 5px rgba(0,0,0,0.3)"
             >
-              Professional van hire and moving services across the UK. Book in
-              minutes, track in real-time, move with confidence.
+              Expert house removals, furniture delivery, and man and van services in London, Manchester, Birmingham, Glasgow, Edinburgh, Cardiff, Belfast, and all UK cities. Same day service from £25/hour with fully insured drivers.
             </Text>
           </MotionBox>
 

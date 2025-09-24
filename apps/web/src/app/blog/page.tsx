@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { Container, Heading, Text, SimpleGrid, Box, VStack, HStack, Badge, Link } from '@chakra-ui/react';
+import { Container, Heading, Text, SimpleGrid, Box, VStack, HStack, Badge } from '@chakra-ui/react';
 import Link from 'next/link';
 
 export const metadata: Metadata = {

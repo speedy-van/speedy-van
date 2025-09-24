@@ -4,15 +4,34 @@ export async function GET() {
   const baseUrl = 'https://speedy-van.co.uk';
   const currentDate = new Date().toISOString().split('T')[0];
 
-  // UK regions for location-based SEO
+  // Complete UK cities and regions for location-based SEO
   const ukRegions = [
+    // Countries
     'england', 'scotland', 'wales', 'northern-ireland',
-    'london', 'birmingham', 'manchester', 'glasgow', 'edinburgh', 
-    'liverpool', 'leeds', 'bristol', 'cardiff', 'belfast',
-    'newcastle', 'sheffield', 'nottingham', 'leicester', 'coventry',
-    'bradford', 'hull', 'plymouth', 'stoke-on-trent', 'wolverhampton',
-    'derby', 'swansea', 'southampton', 'salford', 'aberdeen',
-    'westminster', 'portsmouth', 'york', 'peterborough', 'dundee'
+    
+    // Major Cities - England
+    'london', 'birmingham', 'manchester', 'liverpool', 'leeds', 'sheffield', 
+    'bristol', 'newcastle-upon-tyne', 'nottingham', 'leicester', 'southampton', 
+    'portsmouth', 'coventry', 'bradford', 'stoke-on-trent', 'wolverhampton', 
+    'derby', 'plymouth', 'hull', 'sunderland', 'york', 'cambridge', 'oxford', 
+    'exeter', 'canterbury', 'carlisle', 'lancaster', 'chester', 'bath', 'durham', 
+    'middlesbrough', 'brighton-hove', 'bournemouth', 'milton-keynes', 'reading', 
+    'luton', 'swindon', 'watford', 'bolton', 'stockport', 'oldham', 'rochdale', 
+    'wigan', 'warrington', 'blackpool', 'southend-on-sea', 'maidstone', 
+    'guildford', 'basingstoke', 'chelmsford', 'ipswich', 'colchester',
+    
+    // Scotland
+    'edinburgh', 'glasgow', 'aberdeen', 'dundee', 'inverness', 'stirling', 
+    'perth', 'paisley',
+    
+    // Wales  
+    'cardiff', 'swansea', 'newport', 'wrexham', 'bangor', 'st-asaph', 'st-davids',
+    
+    // Northern Ireland
+    'belfast', 'derry', 'lisburn', 'newry',
+    
+    // Notable Towns
+    'shrewsbury', 'telford', 'torquay', 'scarborough', 'hastings', 'harrogate'
   ];
 
   // Blog categories for content SEO
