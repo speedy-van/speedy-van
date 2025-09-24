@@ -65,6 +65,11 @@ model Driver {
   updatedAt               DateTime                       @updatedAt
   rating                  Float?                         @default(0)
   strikes                 Int                            @default(0)
+  bankAccountName         String?
+  bankAccountNumber       String?
+  bankSortCode            String?
+  bankName                String?
+  taxInfo                 Json?                          // UTR, VAT number, etc.
   accountDeletionRequests AccountDeletionRequest[]
   Assignment              Assignment[]
   Booking                 Booking[]
