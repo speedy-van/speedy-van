@@ -129,7 +129,7 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/login',
     error: '/auth/error',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'ZV6xh/oJhYk9wwrjX5RA5JgjC9uCSuWZHpIprjYs2LA=',
 };
 
 export async function requireAuth() {
@@ -153,14 +153,14 @@ export async function requireRole(request: any, roles: string | string[]): Promi
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
 
-  const userRole = session.user.role;
+  const userRole = (session.user as any).role;
   const requiredRoles = Array.isArray(roles) ? roles : [roles];
   
   if (!userRole || !requiredRoles.includes(userRole)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
   
-  return session.user;
+  return session.user as { id: string; email: string; name: string; role: string };
 }
 
 export async function requireDriver(request: any): Promise<NextResponse | { id: string; email: string; name: string; role: string }> {

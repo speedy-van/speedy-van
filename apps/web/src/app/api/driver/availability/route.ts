@@ -5,6 +5,19 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to check if driver has active orders
+async function hasActiveOrders(driverId: string): Promise<boolean> {
+  const activeAssignments = await prisma.assignment.findMany({
+    where: {
+      driverId: driverId,
+      status: {
+        in: ['invited', 'claimed', 'accepted']
+      }
+    }
+  });
+  return activeAssignments.length > 0;
+}
+
 // GET driver availability status
 export async function GET(request: NextRequest) {
   try {
@@ -36,10 +49,10 @@ export async function GET(request: NextRequest) {
 
     const availability = driver.availability;
 
-    // Get or create default availability settings
+    // Get or create default availability settings - Default to online
     const defaultSettings = {
-      isAvailable: availability?.status === 'online',
-      availabilityMode: (availability?.status as 'online' | 'offline' | 'break') || 'offline',
+      isAvailable: availability?.status === 'online' || !availability,
+      availabilityMode: (availability?.status as 'online' | 'offline' | 'break') || 'online',
       workingHours: {
         monday: { start: '09:00', end: '17:00', enabled: true },
         tuesday: { start: '09:00', end: '17:00', enabled: true },
@@ -55,11 +68,16 @@ export async function GET(request: NextRequest) {
       breakUntil: null,
     };
 
+    // Check for active orders
+    const driverHasActiveOrders = await hasActiveOrders(driver.id);
+    
     return NextResponse.json({
       success: true,
       data: {
         isOnline: defaultSettings.isAvailable,
         acceptingJobs: defaultSettings.isAvailable, // For now, accepting jobs when online
+        locationConsent: availability?.locationConsent ?? true, // Default to true
+        hasActiveOrders: driverHasActiveOrders,
         currentLocation: availability?.lastLat && availability?.lastLng ? {
           lat: availability.lastLat,
           lng: availability.lastLng,
@@ -115,6 +133,9 @@ async function handler(request: NextRequest) {
       );
     }
 
+    // Check if driver has active orders
+    const driverHasActiveOrders = await hasActiveOrders(driver.id);
+    
     // Update availability based on settings
     const updateData: any = {
       lastSeenAt: new Date(),
@@ -122,20 +143,52 @@ async function handler(request: NextRequest) {
 
     if (body.isAvailable !== undefined) {
       updateData.status = body.isAvailable ? 'online' : 'offline';
+      
+      // Automatically enable location sharing when going online
+      if (body.isAvailable) {
+        updateData.locationConsent = true;
+      } else if (!driverHasActiveOrders) {
+        // Only disable location sharing if no active orders
+        updateData.locationConsent = false;
+      }
     }
 
     if (body.availabilityMode) {
       updateData.status = body.availabilityMode;
+      
+      // Automatically manage location sharing based on availability
+      if (body.availabilityMode === 'online') {
+        updateData.locationConsent = true;
+      } else if (body.availabilityMode === 'offline' && !driverHasActiveOrders) {
+        updateData.locationConsent = false;
+      }
     }
 
     if (body.breakUntil) {
       updateData.breakUntil = new Date(body.breakUntil);
     }
 
+    // Handle explicit location consent updates
+    if (body.locationConsent !== undefined) {
+      // If driver has active orders, force location sharing to remain enabled
+      if (driverHasActiveOrders && !body.locationConsent) {
+        console.log('🚨 Cannot disable location sharing - driver has active orders');
+        return NextResponse.json(
+          { 
+            error: 'Cannot disable location sharing while you have active orders',
+            activeOrders: true 
+          },
+          { status: 400 }
+        );
+      }
+      updateData.locationConsent = body.locationConsent;
+    }
+
     const updatedAvailability = await prisma.driverAvailability.upsert({
       where: { driverId: driver.id },
       create: {
         driverId: driver.id,
+        status: 'online', // Default to online for new records
         ...updateData,
       },
       update: updateData,

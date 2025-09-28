@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../../../shared/dist/types/index';
+import { UserRole } from '@speedy-van/shared';
 
 /**
  * Hash a password using bcrypt

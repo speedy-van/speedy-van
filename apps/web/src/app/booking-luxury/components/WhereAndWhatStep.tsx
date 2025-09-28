@@ -23,11 +23,15 @@ import {
   Switch,
   FormLabel,
   FormControl,
+  FormErrorMessage,
   Badge,
   Flex,
   Card,
   CardBody,
   Circle,
+  Collapse,
+  useDisclosure,
+  Progress,
 } from '@chakra-ui/react';
 
 import {
@@ -81,6 +85,10 @@ export default function WhereAndWhatStep({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('popular');
   const { calculatePricing: calculateEnterprisePricing } = useEnterprisePricing();
+
+  // Accordion states for mobile-friendly property details
+  const { isOpen: isPickupDetailsOpen, onToggle: togglePickupDetails } = useDisclosure();
+  const { isOpen: isDropoffDetailsOpen, onToggle: toggleDropoffDetails } = useDisclosure();
 
   const toast = useToast();
   const { step1 } = formData;
@@ -164,8 +172,6 @@ export default function WhereAndWhatStep({
   }, [step1.items, updateFormData]);
 
   const updateItemQuantity = useCallback((itemId: string, quantity: number) => {
-    console.log('updateItemQuantity called:', { itemId, quantity, currentItems: step1.items });
-    
     if (quantity <= 0) {
       removeItem(itemId);
       return;
@@ -173,7 +179,6 @@ export default function WhereAndWhatStep({
 
     const existingItem = step1.items.find(item => item.id === itemId);
     if (!existingItem) {
-      console.log('Item not found in step1.items, cannot update quantity');
       return;
     }
 
@@ -211,13 +216,6 @@ export default function WhereAndWhatStep({
   }, [step1.items, updateFormData]);
 
   const handleAddressSelect = useCallback((address: SelectedAddress, type: 'pickup' | 'dropoff') => {
-    console.log(`🏠 ${type} address selected:`, {
-      address: address.address,
-      postcode: address.postcode,
-      coordinates: address.coordinates,
-      formatted_address: address.formatted_address
-    });
-    
     if (type === 'pickup') {
       updateFormData('step1', { pickupAddress: address });
     } else {
@@ -247,8 +245,6 @@ export default function WhereAndWhatStep({
       // Calculate estimated duration (assuming average speed of 30 mph in city)
       const estimatedDuration = Math.max(30, Math.round(distanceMiles / 30 * 60)); // Minimum 30 minutes
       
-      console.log(`📏 Distance calculated: ${distanceMiles.toFixed(2)} miles, Duration: ${estimatedDuration} minutes`);
-      
       updateFormData('step1', { 
         distance: Math.round(distanceMiles * 100) / 100, // Round to 2 decimal places
         estimatedDuration: estimatedDuration
@@ -272,8 +268,6 @@ export default function WhereAndWhatStep({
 
     const calculatePricing = async () => {
       try {
-        console.log('🚀 Starting comprehensive pricing calculation with all factors...');
-        
         const enhancedBookingData = buildEnhancedBookingData(step1);
         const pricingRequest = transformBookingToEnterprisePricingRequest(enhancedBookingData);
         
@@ -396,8 +390,89 @@ export default function WhereAndWhatStep({
   ]);
 
 
+  // Calculate form completion status
+  const formCompletionStatus = {
+    pickupAddress: !!(step1.pickupAddress?.address && step1.pickupAddress?.coordinates?.lat !== 0),
+    dropoffAddress: !!(step1.dropoffAddress?.address && step1.dropoffAddress?.coordinates?.lat !== 0),
+    items: step1.items.length > 0,
+    dateTime: !!(step1.pickupDate && step1.pickupTimeSlot),
+  };
+  
+  const completedSections = Object.values(formCompletionStatus).filter(Boolean).length;
+  const totalSections = Object.keys(formCompletionStatus).length;
+  const completionPercentage = Math.round((completedSections / totalSections) * 100);
+
   return (
     <VStack spacing={{ base: 6, md: 8 }} align="stretch" p={{ base: 4, md: 6, lg: 8 }}>
+      {/* Progress Summary Card */}
+      <Card bg="white" borderRadius="xl" p={4} shadow="md" border="1px solid" borderColor="gray.200">
+        <VStack spacing={3}>
+          <HStack justify="space-between" w="full">
+            <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+              Booking Progress
+            </Text>
+            <Text fontSize="sm" color="gray.600">
+              {completedSections}/{totalSections} completed ({completionPercentage}%)
+            </Text>
+          </HStack>
+          
+          <Progress 
+            value={completionPercentage} 
+            size="md" 
+            colorScheme="blue" 
+            borderRadius="full"
+            bg="gray.100"
+            w="full"
+          />
+          
+          <HStack spacing={4} justify="center" flexWrap="wrap">
+            <HStack spacing={1}>
+              <Icon 
+                as={FaMapMarkerAlt} 
+                color={formCompletionStatus.pickupAddress ? "green.500" : "gray.400"} 
+                boxSize={3}
+              />
+              <Text fontSize="xs" color={formCompletionStatus.pickupAddress ? "green.600" : "gray.500"}>
+                Pickup {formCompletionStatus.pickupAddress ? "✓" : "○"}
+              </Text>
+            </HStack>
+            
+            <HStack spacing={1}>
+              <Icon 
+                as={FaMapMarkerAlt} 
+                color={formCompletionStatus.dropoffAddress ? "green.500" : "gray.400"} 
+                boxSize={3}
+              />
+              <Text fontSize="xs" color={formCompletionStatus.dropoffAddress ? "green.600" : "gray.500"}>
+                Dropoff {formCompletionStatus.dropoffAddress ? "✓" : "○"}
+              </Text>
+            </HStack>
+            
+            <HStack spacing={1}>
+              <Icon 
+                as={FaBolt} 
+                color={formCompletionStatus.items ? "green.500" : "gray.400"} 
+                boxSize={3}
+              />
+              <Text fontSize="xs" color={formCompletionStatus.items ? "green.600" : "gray.500"}>
+                Items {formCompletionStatus.items ? "✓" : "○"}
+              </Text>
+            </HStack>
+            
+            <HStack spacing={1}>
+              <Icon 
+                as={FaCalendarAlt} 
+                color={formCompletionStatus.dateTime ? "green.500" : "gray.400"} 
+                boxSize={3}
+              />
+              <Text fontSize="xs" color={formCompletionStatus.dateTime ? "green.600" : "gray.500"}>
+                Date & Time {formCompletionStatus.dateTime ? "✓" : "○"}
+              </Text>
+            </HStack>
+          </HStack>
+        </VStack>
+      </Card>
+
       {/* Address Selection Header */}
       <Box textAlign="center" mb={6}>
         <Heading size={{ base: "lg", md: "xl" }} mb={3} bgGradient="linear(to-r, blue.600, green.600)" bgClip="text">
@@ -411,28 +486,52 @@ export default function WhereAndWhatStep({
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 6, md: 8, lg: 12 }} overflow="visible">
         {/* Pickup Address */}
           <Box position="relative">
-            <Card bg="blue.50" borderColor="blue.200" borderWidth="2px" borderRadius="2xl" p={{ base: 4, md: 6 }} shadow="lg" overflow="visible">
+            <Card bg="gray.50" borderColor="gray.200" borderWidth="1px" borderRadius="xl" p={{ base: 4, md: 6 }} shadow="md" overflow="visible">
               <VStack spacing={6} align="stretch">
                 <HStack spacing={3} align="center">
                   <Circle size={{ base: "40px", md: "50px" }} bg="blue.500" color="white">
                     <Icon as={FaMapMarkerAlt} boxSize={{ base: 5, md: 6 }} />
                   </Circle>
                   <VStack align="start" spacing={1}>
-                    <Text fontWeight="bold" fontSize={{ base: "lg", md: "xl" }} color="blue.700">
+                    <Text fontWeight="bold" fontSize={{ base: "lg", md: "xl" }} color="gray.800">
                       📍 Pickup Address
                     </Text>
-                    <Text fontSize={{ base: "sm", md: "md" }} color="blue.600" fontWeight="medium">
+                    <Text fontSize={{ base: "sm", md: "md" }} color="gray.600" fontWeight="medium">
                       Where should we collect your items?
                     </Text>
                   </VStack>
                 </HStack>
                 
                 <Box position="relative" zIndex={10} mb={4}>
-                  <AddressAutocomplete
-                    value={step1.pickupAddress?.address || ''}
-                    onSelect={(address) => handleAddressSelect(address, 'pickup')}
-                    placeholder="Enter pickup address... (e.g., 123 Main Street, London)"
-                  />
+                  <FormControl 
+                    isRequired 
+                    isInvalid={!!errors['step1.pickupAddress.address']}
+                  >
+                    <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700" mb={2}>
+                      <HStack spacing={2}>
+                        <Icon as={FaMapMarkerAlt} color="blue.500" />
+                        <Text>Pickup Address</Text>
+                        {step1.pickupAddress?.address && step1.pickupAddress?.coordinates?.lat !== 0 && (
+                          <Badge colorScheme="green" variant="solid" fontSize="xs">
+                            ✓ Valid
+                          </Badge>
+                        )}
+                      </HStack>
+                    </FormLabel>
+                    <AddressAutocomplete
+                      value={step1.pickupAddress?.address || ''}
+                      onSelect={(address) => handleAddressSelect(address, 'pickup')}
+                      placeholder="Enter pickup address... (e.g., 123 Main Street, London)"
+                    />
+                    {errors['step1.pickupAddress.address'] && (
+                      <FormErrorMessage fontSize="sm" mt={2}>
+                        <HStack spacing={1}>
+                          <Icon as={FaMapMarkerAlt} color="red.500" boxSize={3} />
+                          <Text>{errors['step1.pickupAddress.address']}</Text>
+                        </HStack>
+                      </FormErrorMessage>
+                    )}
+                  </FormControl>
                 </Box>
               </VStack>
             </Card>
@@ -441,15 +540,15 @@ export default function WhereAndWhatStep({
             {step1.pickupAddress?.coordinates && 
              step1.pickupAddress.coordinates.lat !== 0 && 
              step1.pickupAddress.coordinates.lng !== 0 && (
-              <Card bg="green.50" borderColor="green.200" borderWidth="2px" borderRadius="2xl" mt={6} shadow="md">
-                <CardBody p={6}>
-                  <VStack align="start" spacing={4}>
+              <Card bg="green.50" borderColor="green.200" borderWidth="1px" borderRadius="xl" mt={4} shadow="sm">
+                <CardBody p={4}>
+                  <VStack align="start" spacing={3}>
                     <HStack spacing={3} align="center">
-                      <Circle size="32px" bg="green.500" color="white">
-                        <Icon as={FaCheck} boxSize={4} />
+                      <Circle size="28px" bg="green.500" color="white">
+                        <Icon as={FaCheck} boxSize={3} />
                       </Circle>
                       <VStack align="start" spacing={0}>
-                        <Text fontSize="lg" fontWeight="bold" color="green.700">
+                        <Text fontSize="md" fontWeight="bold" color="green.700">
                           ✅ Address Confirmed
                         </Text>
                         <Text fontSize="sm" color="green.600">
@@ -479,8 +578,9 @@ export default function WhereAndWhatStep({
                             Flat/Unit:
                           </Text>
                           <Input
-                            size="sm"
+                            size={{ base: "md", md: "sm" }}
                             placeholder="e.g., Flat 5A (optional)"
+                            minH={{ base: "44px", md: "auto" }}
                             value={step1.pickupAddress.flatNumber || ''}
                             onChange={(e) => updateFormData('step1', {
                             pickupAddress: { 
@@ -508,32 +608,52 @@ export default function WhereAndWhatStep({
               </Card>
             )}
 
-          {/* Pickup Property Details */}
-            <Card bg="gray.50" borderColor="gray.200" borderWidth="1px" borderRadius="xl" mt={4}>
+          {/* Pickup Property Details - Mobile Accordion */}
+            <Card bg="white" borderColor="gray.200" borderWidth="1px" borderRadius="xl" mt={4}>
               <CardBody p={4}>
                 <VStack spacing={4} align="stretch">
-                  <HStack spacing={3} align="center">
-                    <Circle size="32px" bg="gray.500" color="white">
-                      <Icon as={FaBuilding} boxSize={4} />
-                    </Circle>
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="bold" fontSize="md" color="gray.700">
-                        Property Details
+                  {/* Accordion Header - Clickable */}
+                  <Button
+                    variant="ghost"
+                    onClick={togglePickupDetails}
+                    rightIcon={
+                      <Text fontSize="lg" transform={isPickupDetailsOpen ? 'rotate(180deg)' : 'rotate(0deg)'} transition="transform 0.2s">
+                        ▼
                       </Text>
-                      <Text fontSize="sm" color="gray.500">
-                        Optional - helps with accurate pricing
-                      </Text>
-                    </VStack>
-                  </HStack>
-                  
-                  <Card bg="blue.50" borderColor="blue.200" borderRadius="lg" p={3}>
-                    <HStack spacing={2} align="start">
-                      <Icon as={FaBolt} color="blue.500" boxSize={4} mt={0.5} />
-                      <Text fontSize="sm" color="blue.700" fontWeight="medium">
-                        💡 Floor access affects pricing: £2/floor with elevator, £5/floor without
-                      </Text>
+                    }
+                    p={0}
+                    h="auto"
+                    justifyContent="flex-start"
+                    _hover={{ bg: 'gray.50' }}
+                    borderRadius="md"
+                    w="full"
+                  >
+                    <HStack spacing={3} align="center" flex={1}>
+                      <Circle size="32px" bg="gray.600" color="white">
+                        <Icon as={FaBuilding} boxSize={4} />
+                      </Circle>
+                      <VStack align="start" spacing={0} flex={1}>
+                        <Text fontWeight="bold" fontSize="md" color="gray.800">
+                          Property Details (Pickup)
+                        </Text>
+                        <Text fontSize="sm" color="gray.600">
+                          Optional - helps with accurate pricing
+                        </Text>
+                      </VStack>
                     </HStack>
-                  </Card>
+                  </Button>
+                  
+                  {/* Collapsible Content */}
+                  <Collapse in={isPickupDetailsOpen} animateOpacity>
+                    <VStack spacing={4} align="stretch" pt={2}>
+                      <Box bg="orange.50" borderRadius="md" p={2} border="1px" borderColor="orange.200">
+                        <HStack spacing={2} align="start">
+                          <Icon as={FaBolt} color="orange.500" boxSize={3} mt={0.5} />
+                          <Text fontSize="xs" color="gray.600" fontWeight="normal">
+                            Floor access affects pricing: £2/floor with elevator, £5/floor without
+                          </Text>
+                        </HStack>
+                      </Box>
               
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {/* Building Type */}
@@ -669,49 +789,7 @@ export default function WhereAndWhatStep({
                           }}
                         />
                       </HStack>
-                      
-                      {/* Hidden NumberInput for keyboard input */}
-                      <NumberInput 
-                        value={step1.pickupProperty?.floors || 0}
-                        onChange={(_, valueAsNumber) => {
-                          const value = valueAsNumber || 0;
-                          if (value >= 0 && value <= 50) {
-                            updateFormData('step1', {
-                              pickupProperty: { 
-                                ...(step1.pickupProperty || {}), 
-                                floors: value,
-                                type: step1.pickupProperty?.type || 'house',
-                                hasLift: step1.pickupProperty?.hasLift || false,
-                                hasParking: step1.pickupProperty?.hasParking ?? true,
-                                requiresPermit: step1.pickupProperty?.requiresPermit || false
-                              }
-                            });
-                          }
-                        }}
-                        min={0}
-                        max={50}
-                        size="lg"
-                        bg="white"
-                        borderColor="gray.300"
-                        _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182CE" }}
-                        borderRadius="lg"
-                        onWheel={(e) => e.preventDefault()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        <NumberInputField 
-                          placeholder="0 = Ground floor" 
-                          fontSize="16px" // Prevent iOS zoom
-                          fontWeight="medium"
-                          textAlign="center"
-                          minH="48px"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                        />
-                      </NumberInput>
+
                     </FormControl>
 
                   {/* Has Elevator */}
@@ -743,8 +821,8 @@ export default function WhereAndWhatStep({
                             <FormLabel fontSize="md" fontWeight="bold" color="gray.800" mb={0}>
                               Has Elevator
                             </FormLabel>
-                            <Text fontSize="xs" color="gray.500">
-                              {step1.pickupProperty?.hasLift ? "✓ Elevator available" : "✗ No elevator access"}
+                            <Text fontSize="xs" color={step1.pickupProperty?.hasLift ? "green.600" : "orange.600"}>
+                              {step1.pickupProperty?.hasLift ? "✓ Elevator available" : "Stairs only"}
                             </Text>
                           </VStack>
                         </HStack>
@@ -796,8 +874,8 @@ export default function WhereAndWhatStep({
                             <FormLabel fontSize="md" fontWeight="bold" color="gray.800" mb={0}>
                               Has Parking
                             </FormLabel>
-                            <Text fontSize="xs" color="gray.500">
-                              {step1.pickupProperty?.hasParking ? "✓ Parking available" : "✗ No parking access"}
+                            <Text fontSize="xs" color={step1.pickupProperty?.hasParking ? "green.600" : "blue.600"}>
+                              {step1.pickupProperty?.hasParking ? "✓ Parking available" : "Street parking"}
                             </Text>
                           </VStack>
                         </HStack>
@@ -820,6 +898,8 @@ export default function WhereAndWhatStep({
                       </HStack>
                     </FormControl>
                   </SimpleGrid>
+                    </VStack>
+                  </Collapse>
                 </VStack>
               </CardBody>
             </Card>
@@ -827,28 +907,52 @@ export default function WhereAndWhatStep({
 
         {/* Dropoff Address - Similar structure but for dropoff */}
           <Box position="relative">
-            <Card bg="green.50" borderColor="green.200" borderWidth="2px" borderRadius="2xl" p={6} shadow="lg" overflow="visible">
+            <Card bg="gray.50" borderColor="gray.200" borderWidth="1px" borderRadius="xl" p={6} shadow="md" overflow="visible">
               <VStack spacing={6} align="stretch">
                 <HStack spacing={3} align="center">
-                  <Circle size="50px" bg="green.500" color="white">
+                  <Circle size="50px" bg="teal.500" color="white">
                     <Icon as={FaMapMarkerAlt} boxSize={6} />
                   </Circle>
                   <VStack align="start" spacing={1}>
-                    <Text fontWeight="bold" fontSize="xl" color="green.700">
+                    <Text fontWeight="bold" fontSize="xl" color="gray.800">
                       🎯 Dropoff Address
                     </Text>
-                    <Text fontSize="md" color="green.600" fontWeight="medium">
+                    <Text fontSize="md" color="gray.600" fontWeight="medium">
                       Where should we deliver your items?
                     </Text>
                   </VStack>
                 </HStack>
                 
                 <Box position="relative" zIndex={10} mb={4}>
-                  <AddressAutocomplete
-                    value={step1.dropoffAddress?.address || ''}
-                    onSelect={(address) => handleAddressSelect(address, 'dropoff')}
-                    placeholder="Enter dropoff address... (e.g., 456 Oak Avenue, Manchester)"
-                  />
+                  <FormControl 
+                    isRequired 
+                    isInvalid={!!errors['step1.dropoffAddress.address']}
+                  >
+                    <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700" mb={2}>
+                      <HStack spacing={2}>
+                        <Icon as={FaMapMarkerAlt} color="teal.500" />
+                        <Text>Dropoff Address</Text>
+                        {step1.dropoffAddress?.address && step1.dropoffAddress?.coordinates?.lat !== 0 && (
+                          <Badge colorScheme="green" variant="solid" fontSize="xs">
+                            ✓ Valid
+                          </Badge>
+                        )}
+                      </HStack>
+                    </FormLabel>
+                    <AddressAutocomplete
+                      value={step1.dropoffAddress?.address || ''}
+                      onSelect={(address) => handleAddressSelect(address, 'dropoff')}
+                      placeholder="Enter dropoff address... (e.g., 456 Oak Avenue, Manchester)"
+                    />
+                    {errors['step1.dropoffAddress.address'] && (
+                      <FormErrorMessage fontSize="sm" mt={2}>
+                        <HStack spacing={1}>
+                          <Icon as={FaMapMarkerAlt} color="red.500" boxSize={3} />
+                          <Text>{errors['step1.dropoffAddress.address']}</Text>
+                        </HStack>
+                      </FormErrorMessage>
+                    )}
+                  </FormControl>
                 </Box>
               </VStack>
             </Card>
@@ -857,15 +961,15 @@ export default function WhereAndWhatStep({
             {step1.dropoffAddress?.coordinates && 
              step1.dropoffAddress.coordinates.lat !== 0 && 
              step1.dropoffAddress.coordinates.lng !== 0 && (
-              <Card bg="green.50" borderColor="green.200" borderWidth="2px" borderRadius="2xl" mt={6} shadow="md">
-                <CardBody p={6}>
-                  <VStack align="start" spacing={4}>
+              <Card bg="green.50" borderColor="green.200" borderWidth="1px" borderRadius="xl" mt={4} shadow="sm">
+                <CardBody p={4}>
+                  <VStack align="start" spacing={3}>
                     <HStack spacing={3} align="center">
-                      <Circle size="32px" bg="green.500" color="white">
-                        <Icon as={FaCheck} boxSize={4} />
+                      <Circle size="28px" bg="green.500" color="white">
+                        <Icon as={FaCheck} boxSize={3} />
                       </Circle>
                       <VStack align="start" spacing={0}>
-                        <Text fontSize="lg" fontWeight="bold" color="green.700">
+                        <Text fontSize="md" fontWeight="bold" color="green.700">
                           ✅ Address Confirmed
                         </Text>
                         <Text fontSize="sm" color="green.600">
@@ -924,32 +1028,52 @@ export default function WhereAndWhatStep({
               </Card>
             )}
 
-          {/* Dropoff Property Details - similar to pickup */}
-            <Card bg="gray.50" borderColor="gray.200" borderWidth="1px" borderRadius="xl" mt={4}>
+          {/* Dropoff Property Details - Mobile Accordion */}
+            <Card bg="white" borderColor="gray.200" borderWidth="1px" borderRadius="xl" mt={4}>
               <CardBody p={4}>
                 <VStack spacing={4} align="stretch">
-                  <HStack spacing={3} align="center">
-                    <Circle size="32px" bg="gray.500" color="white">
-                      <Icon as={FaBuilding} boxSize={4} />
-                    </Circle>
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="bold" fontSize="md" color="gray.700">
-                        Property Details
+                  {/* Accordion Header - Clickable */}
+                  <Button
+                    variant="ghost"
+                    onClick={toggleDropoffDetails}
+                    rightIcon={
+                      <Text fontSize="lg" transform={isDropoffDetailsOpen ? 'rotate(180deg)' : 'rotate(0deg)'} transition="transform 0.2s">
+                        ▼
                       </Text>
-                      <Text fontSize="sm" color="gray.500">
-                        Optional - helps with accurate pricing
-                      </Text>
-                    </VStack>
-                  </HStack>
-                  
-                  <Card bg="green.50" borderColor="green.200" borderRadius="lg" p={3}>
-                    <HStack spacing={2} align="start">
-                      <Icon as={FaBolt} color="green.500" boxSize={4} mt={0.5} />
-                      <Text fontSize="sm" color="green.700" fontWeight="medium">
-                        💡 Floor access affects pricing: £2/floor with elevator, £5/floor without
-                      </Text>
+                    }
+                    p={0}
+                    h="auto"
+                    justifyContent="flex-start"
+                    _hover={{ bg: 'gray.50' }}
+                    borderRadius="md"
+                    w="full"
+                  >
+                    <HStack spacing={3} align="center" flex={1}>
+                      <Circle size="32px" bg="gray.600" color="white">
+                        <Icon as={FaBuilding} boxSize={4} />
+                      </Circle>
+                      <VStack align="start" spacing={0} flex={1}>
+                        <Text fontWeight="bold" fontSize="md" color="gray.800">
+                          Property Details (Dropoff)
+                        </Text>
+                        <Text fontSize="sm" color="gray.600">
+                          Optional - helps with accurate pricing
+                        </Text>
+                      </VStack>
                     </HStack>
-                  </Card>
+                  </Button>
+                  
+                  {/* Collapsible Content */}
+                  <Collapse in={isDropoffDetailsOpen} animateOpacity>
+                    <VStack spacing={4} align="stretch" pt={2}>
+                      <Box bg="orange.50" borderRadius="md" p={2} border="1px" borderColor="orange.200">
+                        <HStack spacing={2} align="start">
+                          <Icon as={FaBolt} color="orange.500" boxSize={3} mt={0.5} />
+                          <Text fontSize="xs" color="gray.600" fontWeight="normal">
+                            Floor access affects pricing: £2/floor with elevator, £5/floor without
+                          </Text>
+                        </HStack>
+                      </Box>
               
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {/* Building Type */}
@@ -1085,49 +1209,7 @@ export default function WhereAndWhatStep({
                           }}
                         />
                       </HStack>
-                      
-                      {/* Hidden NumberInput for keyboard input */}
-                      <NumberInput 
-                        value={step1.dropoffProperty?.floors || 0}
-                        onChange={(_, valueAsNumber) => {
-                          const value = valueAsNumber || 0;
-                          if (value >= 0 && value <= 50) {
-                            updateFormData('step1', {
-                              dropoffProperty: { 
-                                ...(step1.dropoffProperty || {}), 
-                                floors: value,
-                                type: step1.dropoffProperty?.type || 'house',
-                                hasLift: step1.dropoffProperty?.hasLift || false,
-                                hasParking: step1.dropoffProperty?.hasParking ?? true,
-                                requiresPermit: step1.dropoffProperty?.requiresPermit || false
-                              }
-                            });
-                          }
-                        }}
-                        min={0}
-                        max={50}
-                        size="lg"
-                        bg="white"
-                        borderColor="gray.300"
-                        _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px #38A169" }}
-                        borderRadius="lg"
-                        onWheel={(e) => e.preventDefault()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        <NumberInputField 
-                          placeholder="0 = Ground floor" 
-                          fontSize="16px" // Prevent iOS zoom
-                          fontWeight="medium"
-                          textAlign="center"
-                          minH="48px"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                        />
-                      </NumberInput>
+
                     </FormControl>
 
                   {/* Has Elevator */}
@@ -1159,8 +1241,8 @@ export default function WhereAndWhatStep({
                             <FormLabel fontSize="md" fontWeight="bold" color="gray.800" mb={0}>
                               Has Elevator
                             </FormLabel>
-                            <Text fontSize="xs" color="gray.500">
-                              {step1.dropoffProperty?.hasLift ? "✓ Elevator available" : "✗ No elevator access"}
+                            <Text fontSize="xs" color={step1.dropoffProperty?.hasLift ? "green.600" : "orange.600"}>
+                              {step1.dropoffProperty?.hasLift ? "✓ Elevator available" : "Stairs only"}
                             </Text>
                           </VStack>
                         </HStack>
@@ -1212,8 +1294,8 @@ export default function WhereAndWhatStep({
                             <FormLabel fontSize="md" fontWeight="bold" color="gray.800" mb={0}>
                               Has Parking
                             </FormLabel>
-                            <Text fontSize="xs" color="gray.500">
-                              {step1.dropoffProperty?.hasParking ? "✓ Parking available" : "✗ No parking access"}
+                            <Text fontSize="xs" color={step1.dropoffProperty?.hasParking ? "green.600" : "blue.600"}>
+                              {step1.dropoffProperty?.hasParking ? "✓ Parking available" : "Street parking"}
                             </Text>
                           </VStack>
                         </HStack>
@@ -1236,6 +1318,8 @@ export default function WhereAndWhatStep({
                       </HStack>
                     </FormControl>
                   </SimpleGrid>
+                    </VStack>
+                  </Collapse>
                 </VStack>
               </CardBody>
             </Card>
@@ -1257,8 +1341,8 @@ export default function WhereAndWhatStep({
         </Box>
         
         {/* Enhanced Smart Search with Autocomplete */}
-        <Card bg="purple.50" borderColor="purple.200" borderWidth="2px" borderRadius="2xl" p={{ base: 4, md: 6 }} mb={6} overflow="visible">
-          <VStack spacing={4}>
+        <Card bg="purple.50" borderColor="purple.200" borderWidth="1px" borderRadius="xl" p={{ base: 4, md: 6 }} mb={6} shadow="md">
+          <VStack spacing={{ base: 5, md: 6 }}>
             <HStack spacing={3} align="center" mb={2}>
               <Circle size={{ base: "32px", md: "40px" }} bg="purple.500" color="white">
                 <Icon as={FaBolt} boxSize={{ base: 4, md: 5 }} />
@@ -1306,11 +1390,12 @@ export default function WhereAndWhatStep({
                       borderColor: 'purple.300'
                     }}
                     transition="all 0.2s ease"
-                    px={{ base: 3, md: 4 }}
-                    py={{ base: 1, md: 2 }}
+                    px={{ base: 4, md: 4 }}
+                    py={{ base: 2, md: 2 }}
                     fontWeight="medium"
-                    minH={{ base: "32px", md: "36px" }}
-                    fontSize={{ base: "xs", md: "sm" }}
+                    minH={{ base: "44px", md: "36px" }}
+                    minW={{ base: "44px", md: "auto" }}
+                    fontSize={{ base: "sm", md: "sm" }}
                     flexShrink={0}
                   >
                     {category.label}
@@ -1329,13 +1414,21 @@ export default function WhereAndWhatStep({
               placeholder="Search for items or describe what you have... (e.g., 'sofa', 'I have 3 chairs + 2 tables')"
             />
 
-            {/* Quick Search Suggestions - Always Visible */}
-            <Card bg="white" borderRadius="lg" p={3} w="full">
-              <VStack spacing={3}>
+            {/* Enhanced Quick Search Suggestions */}
+            <Card 
+              bg="gradient-to-r from-purple.50 to-blue.50" 
+              borderRadius="xl" 
+              p={{ base: 4, md: 5 }} 
+              w="full"
+              border="1px solid"
+              borderColor="purple.100"
+              shadow="sm"
+            >
+              <VStack spacing={4}>
                 <HStack spacing={2} justify="center">
-                  <Icon as={FaBolt} color="purple.500" boxSize={3} />
-                  <Text fontSize="sm" color="purple.700" fontWeight="medium">
-                    Quick search suggestions:
+                  <Icon as={FaBolt} color="purple.600" boxSize={4} />
+                  <Text fontSize="md" color="purple.800" fontWeight="bold">
+                    Quick search suggestions
                   </Text>
                 </HStack>
                 
@@ -1343,18 +1436,26 @@ export default function WhereAndWhatStep({
                   {['heavy items', 'kitchen', 'bedroom', 'office', 'fragile', 'electronics', 'furniture', 'appliances'].map((suggestion) => (
                     <Button
                       key={suggestion}
-                      size={{ base: "xs", md: "sm" }}
-                      variant="outline"
+                      size={{ base: "sm", md: "md" }}
+                      variant="solid"
                       colorScheme="purple"
                       onClick={() => setSearchTerm(suggestion)}
-                      _hover={{ bg: 'purple.50', borderColor: 'purple.300' }}
+                      _hover={{ 
+                        bg: 'purple.600', 
+                        transform: 'translateY(-1px)',
+                        shadow: 'md'
+                      }}
                       borderRadius="full"
-                      px={{ base: 3, md: 4 }}
-                      py={{ base: 1, md: 2 }}
+                      px={{ base: 4, md: 6 }}
+                      py={{ base: 2, md: 3 }}
                       transition="all 0.2s"
-                      minH={{ base: "32px", md: "36px" }}
-                      fontSize={{ base: "xs", md: "sm" }}
-                      fontWeight="medium"
+                      minH={{ base: "44px", md: "48px" }}
+                      minW={{ base: "44px", md: "auto" }}
+                      fontSize={{ base: "sm", md: "md" }}
+                      fontWeight="semibold"
+                      color="white"
+                      bg="purple.500"
+                      shadow="sm"
                     >
                       {suggestion}
                     </Button>
@@ -1380,7 +1481,7 @@ export default function WhereAndWhatStep({
           
 
         {/* Enhanced Items Grid */}
-        <Card bg="white" borderRadius="2xl" p={{ base: 4, md: 6 }} shadow="lg" mb={6}>
+        <Card bg="white" borderRadius="xl" p={{ base: 4, md: 6 }} shadow="md" mb={4} border="1px" borderColor="gray.200">
           <VStack spacing={4}>
             <HStack spacing={3} align="center" mb={4}>
               <Circle size={{ base: "28px", md: "32px" }} bg="purple.500" color="white">
@@ -1709,18 +1810,28 @@ export default function WhereAndWhatStep({
             </Box>
             
             {/* Enhanced Selected Items List */}
-            <Card bg="gray.50" borderColor="gray.200" borderWidth="2px" borderRadius="2xl" mb={6} p={6}>
+            <Card bg="white" borderColor="gray.200" borderWidth="1px" borderRadius="xl" mb={4} p={6} shadow="md">
               <VStack spacing={4} align="stretch">
                 <HStack spacing={3} align="center" mb={4}>
                   <Circle size="40px" bg="green.500" color="white">
                     <Icon as={FaBolt} boxSize={5} />
                   </Circle>
                   <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" color="gray.700" fontSize="lg">
-                      Selected Items
-                    </Text>
+                    <HStack spacing={2}>
+                      <Text fontWeight="bold" color="gray.700" fontSize="lg">
+                        Selected Items
+                      </Text>
+                      {step1.items.length > 0 && (
+                        <Badge colorScheme="green" variant="solid" fontSize="xs">
+                          ✓ {step1.items.length} items
+                        </Badge>
+                      )}
+                    </HStack>
                     <Text fontSize="sm" color="gray.500">
-                      {step1.items.length} items added to your move
+                      {step1.items.length > 0 
+                        ? `${step1.items.length} items added to your move (Total: ${step1.items.reduce((sum, item) => sum + item.quantity, 0)} pieces)`
+                        : 'No items selected yet'
+                      }
                     </Text>
                   </VStack>
                 </HStack>
@@ -1757,7 +1868,9 @@ export default function WhereAndWhatStep({
                       {/* Quantity Controls */}
                       <HStack spacing={3}>
                         <IconButton
-                          size="sm"
+                          size={{ base: "md", md: "sm" }}
+                          minH={{ base: "44px", md: "auto" }}
+                          minW={{ base: "44px", md: "auto" }}
                           colorScheme="red"
                           variant="outline"
                           aria-label="Decrease quantity"
@@ -1783,7 +1896,9 @@ export default function WhereAndWhatStep({
                           </Text>
                         </Box>
                         <IconButton
-                          size="sm"
+                          size={{ base: "md", md: "sm" }}
+                          minH={{ base: "44px", md: "auto" }}
+                          minW={{ base: "44px", md: "auto" }}
                           colorScheme="green"
                           variant="outline"
                           aria-label="Increase quantity"
@@ -1794,7 +1909,9 @@ export default function WhereAndWhatStep({
                           transition="all 0.2s"
                         />
                         <IconButton
-                          size="sm"
+                          size={{ base: "md", md: "sm" }}
+                          minH={{ base: "44px", md: "auto" }}
+                          minW={{ base: "44px", md: "auto" }}
                           aria-label="Remove item"
                           icon={<Icon as={FaTrash} />}
                           colorScheme="red"
@@ -1814,7 +1931,7 @@ export default function WhereAndWhatStep({
 
             {/* Enhanced Pricing Breakdown */}
             {step1.pricing && (
-              <Card bg="green.50" borderColor="green.200" borderWidth="2px" borderRadius="2xl" p={6}>
+              <Card bg="green.50" borderColor="green.200" borderWidth="1px" borderRadius="xl" p={4} shadow="sm">
                 <VStack spacing={4} align="stretch">
                   <HStack spacing={3} align="center" mb={4}>
                     <Circle size="40px" bg="green.500" color="white">
@@ -1957,7 +2074,7 @@ export default function WhereAndWhatStep({
       </Box>
 
       {/* Enhanced Date and Time Selection */}
-      <Card bg="white" borderRadius="2xl" p={8} shadow="lg" border="2px solid" borderColor="gray.200">
+      <Card bg="white" borderRadius="xl" p={6} shadow="md" border="1px solid" borderColor="gray.200">
         <VStack spacing={6} align="stretch">
           <Box textAlign="center" mb={4}>
             <HStack spacing={3} justify="center" mb={3}>
@@ -1965,9 +2082,16 @@ export default function WhereAndWhatStep({
                 <Icon as={FaCalendarAlt} boxSize={6} />
               </Circle>
               <VStack align="start" spacing={0}>
-                <Heading as="h3" size="xl" color="gray.700" bgGradient="linear(to-r, blue.600, purple.600)" bgClip="text">
-                  📅 When are we moving?
-                </Heading>
+                <HStack spacing={2}>
+                  <Heading as="h3" size="xl" color="gray.700" bgGradient="linear(to-r, blue.600, purple.600)" bgClip="text">
+                    📅 When are we moving?
+                  </Heading>
+                  {step1.pickupDate && step1.pickupTimeSlot && (
+                    <Badge colorScheme="blue" variant="solid" fontSize="xs">
+                      ✓ Scheduled
+                    </Badge>
+                  )}
+                </HStack>
                 <Text fontSize="sm" color="gray.500">
                   Select your preferred date and time
                 </Text>
@@ -1989,7 +2113,7 @@ export default function WhereAndWhatStep({
                   <Text fontSize="sm" fontWeight="semibold" color="gray.700" mb={2}>
                     Quick Date Selection
                   </Text>
-                  <SimpleGrid columns={{ base: 2, sm: 3, md: 5 }} spacing={3} w="full">
+                  <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 5 }} spacing={3} w="full">
                 {(() => {
                   const today = new Date();
                   const dates = [];
@@ -2105,7 +2229,7 @@ export default function WhereAndWhatStep({
               Choose Time Slot
             </FormLabel>
             
-            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: 3, md: 4 }}>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={{ base: 3, md: 4 }}>
               {[
                 { value: 'morning', label: 'Morning', time: '8:00 - 12:00', emoji: '🌅', color: 'yellow' },
                 { value: 'afternoon', label: 'Afternoon', time: '12:00 - 17:00', emoji: '☀️', color: 'orange' },

@@ -32,6 +32,50 @@ export interface DriverStatus {
   lastSeen: Date;
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  postcode: string;
+  coordinates: [number, number];
+}
+
+export interface BookingProperties {
+  items: Array<{
+    name: string;
+    quantity: number;
+    category: string;
+  }>;
+  serviceType: string;
+  estimatedDuration: number;
+}
+
+export interface DriverInfo {
+  id: string;
+  name: string;
+  phone: string;
+  vehicleType: string;
+  rating: number;
+}
+
+export interface TrackingData {
+  id: string;
+  reference: string;
+  status: 'pending' | 'confirmed' | 'assigned' | 'picked_up' | 'in_transit' | 'delivered' | 'cancelled';
+  unifiedBookingId: string;
+  pickupAddress: Address;
+  dropoffAddress: Address;
+  properties: BookingProperties;
+  driver: DriverInfo;
+  estimatedArrival?: Date;
+  actualArrival?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  lastUpdated?: Date;
+  currentLocation?: TrackingLocation;
+  routeProgress?: number;
+  eta?: number;
+}
+
 export async function sendTrackingUpdate(update: TrackingUpdate): Promise<void> {
   try {
     await pusher.trigger(
@@ -137,7 +181,7 @@ export function calculateETA(
 }
 
 // Additional interfaces and types for realtime tracking hook
-export interface TrackingData {
+export interface RealTimeTrackingData {
   id: string;
   reference: string;
   status: string;
@@ -176,7 +220,7 @@ function getPusherClient() {
 }
 
 export const trackingService = {
-  async lookupBooking(bookingCode: string, enableRealtime: boolean = false): Promise<TrackingData | null> {
+  async lookupBooking(bookingCode: string, enableRealtime: boolean = false): Promise<RealTimeTrackingData | null> {
     try {
       const response = await fetch(`/api/track/${bookingCode}?tracking=true&realtime=${enableRealtime}`);
       if (!response.ok) {
@@ -325,8 +369,47 @@ export const trackingService = {
     const channel = pusher.subscribe(channelName);
     channels.set(channelName, channel);
 
-    // Bind to admin tracking events
+    console.log('✅ Subscribing to admin tracking channel:', channelName);
+
+    // Bind to location update events (CRITICAL - this was missing!)
+    channel.bind('location-update', (data: any) => {
+      console.log('📍 Admin tracking received location update:', data);
+      if (options.onUpdate) {
+        const update: TrackingUpdate = {
+          bookingId: data.bookingId,
+          driverId: data.driverId,
+          location: {
+            lat: data.lat,
+            lng: data.lng,
+            timestamp: new Date(data.timestamp),
+            accuracy: data.accuracy,
+          },
+          status: 'en_route',
+          type: 'location',
+          data: {
+            lat: data.lat,
+            lng: data.lng,
+            accuracy: data.accuracy,
+            bookingReference: data.bookingReference,
+            customerName: data.customerName,
+          },
+          timestamp: new Date(data.timestamp),
+        };
+        options.onUpdate(update);
+      }
+      if (options.onLocationUpdate) {
+        options.onLocationUpdate({
+          lat: data.lat,
+          lng: data.lng,
+          timestamp: new Date(data.timestamp),
+          accuracy: data.accuracy,
+        });
+      }
+    });
+
+    // Bind to progress update events
     channel.bind('progress-update', (data: any) => {
+      console.log('📈 Admin tracking received progress update:', data);
       if (options.onUpdate) {
         const update: TrackingUpdate = {
           bookingId: data.bookingId,
@@ -348,9 +431,22 @@ export const trackingService = {
         };
         options.onUpdate(update);
       }
+      if (options.onProgressUpdate) {
+        options.onProgressUpdate(data.progress);
+      }
     });
 
-    console.log('✅ Subscribed to admin tracking');
+    // Bind to diagnostic test events
+    channel.bind('diagnostic-test', (data: any) => {
+      console.log('🔍 Admin tracking received diagnostic test:', data);
+    });
+
+    // Bind to test update events
+    channel.bind('test-update', (data: any) => {
+      console.log('🧪 Admin tracking received test update:', data);
+    });
+
+    console.log('✅ Successfully subscribed to admin tracking with all event handlers');
     return channel;
   },
 

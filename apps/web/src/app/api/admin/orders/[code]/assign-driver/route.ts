@@ -32,7 +32,8 @@ export async function POST(
 
     console.log('🚗 Admin assigning driver to order:', { code, driverId, reason });
 
-    // Get the booking
+    // Get the booking with detailed logging
+    console.log('📋 Looking for booking with reference:', code);
     const booking = await prisma.booking.findFirst({
       where: { reference: code },
       include: {
@@ -57,6 +58,14 @@ export async function POST(
       }
     });
 
+    console.log('📋 Booking found:', booking ? {
+      id: booking.id,
+      reference: booking.reference,
+      status: booking.status,
+      hasAssignment: !!booking.Assignment,
+      currentDriver: booking.driver?.user?.name || 'None'
+    } : 'Not found');
+
     if (!booking) {
       return NextResponse.json(
         { error: 'Booking not found' },
@@ -72,7 +81,8 @@ export async function POST(
       );
     }
 
-    // Get the driver
+    // Get the driver with detailed logging
+    console.log('👤 Looking for driver with ID:', driverId);
     const driver = await prisma.driver.findUnique({
       where: { id: driverId },
       include: {
@@ -83,6 +93,13 @@ export async function POST(
       }
     });
 
+    console.log('👤 Driver found:', driver ? {
+      id: driver.id,
+      name: driver.user.name,
+      hasAvailability: !!driver.availability,
+      availabilityStatus: driver.availability?.status || 'No availability record'
+    } : 'Not found');
+
     if (!driver) {
       return NextResponse.json(
         { error: 'Driver not found' },
@@ -91,29 +108,44 @@ export async function POST(
     }
 
     // Check if driver is available
-    if (!driver.availability || driver.availability.status !== 'online') {
+    if (!driver.availability) {
       return NextResponse.json(
-        { error: 'Driver is not online and cannot accept assignments' },
+        { error: 'Driver availability not found' },
+        { status: 400 }
+      );
+    }
+
+    // Check driver status (allow AVAILABLE and online status)
+    const validStatuses = ['AVAILABLE', 'online', 'available'];
+    if (!validStatuses.includes(driver.availability.status)) {
+      return NextResponse.json(
+        { error: `Driver is not available for assignments (status: ${driver.availability.status})` },
         { status: 400 }
       );
     }
 
     // Use transaction to ensure data consistency
+    console.log('🔄 Starting database transaction...');
     const result = await prisma.$transaction(async (tx) => {
+      console.log('💾 Transaction started successfully');
       // If there's an existing assignment, remove it
       if (booking.Assignment) {
         const existingAssignment = booking.Assignment;
         
         // Create job event for removal
+        const removalEventId = `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_removed`;
+        console.log('📝 Creating removal job event with ID:', removalEventId);
+        
         await tx.jobEvent.create({
           data: {
-            id: `event_${Date.now()}_removed`,
+            id: removalEventId,
             assignmentId: existingAssignment.id,
-            step: 'job_removed' as any,
+            step: 'job_completed', // Use valid enum value
             payload: {
               removedBy: 'admin',
               reason: reason || 'Reassigned to different driver',
               removedAt: new Date().toISOString(),
+              action: 'job_removed', // Store actual action in payload
             },
             notes: `Job removed from driver ${existingAssignment.Driver.user.name} by admin`,
             createdBy: (session.user as any).id,
@@ -132,10 +164,13 @@ export async function POST(
         console.log('✅ Removed existing assignment from driver:', existingAssignment.Driver.user.name);
       }
 
-      // Create new assignment
+      // Create new assignment with unique ID
+      const assignmentId = `assignment_${Date.now()}_${booking.id}_${driverId}`;
+      console.log('📝 Creating new assignment with ID:', assignmentId);
+      
       const newAssignment = await tx.assignment.create({
         data: {
-          id: `assignment_${booking.id}_${driverId}`,
+          id: assignmentId,
           bookingId: booking.id,
           driverId: driverId,
           status: 'accepted',
@@ -155,22 +190,33 @@ export async function POST(
       });
 
       // Create job event for new assignment
+      const assignmentEventId = `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_assigned`;
+      console.log('📝 Creating assignment job event with ID:', assignmentEventId);
+      
       await tx.jobEvent.create({
         data: {
-          id: `event_${Date.now()}_assigned`,
+          id: assignmentEventId,
           assignmentId: newAssignment.id,
-          step: 'accepted' as any,
+          step: 'navigate_to_pickup', // Use valid enum value for new assignment
           payload: {
             assignedBy: 'admin',
             reason: reason || 'Assigned by admin',
             assignedAt: new Date().toISOString(),
+            action: 'job_assigned', // Store actual action in payload
           },
           notes: `Job assigned to driver ${driver.user.name} by admin`,
           createdBy: (session.user as any).id,
         }
       });
 
+      console.log('✅ Transaction completed successfully');
       return { updatedBooking, newAssignment };
+    });
+
+    console.log('🎉 Assignment operation completed:', {
+      bookingId: result.updatedBooking.id,
+      assignmentId: result.newAssignment.id,
+      driverAssigned: driver.user.name
     });
 
     // Send real-time notifications

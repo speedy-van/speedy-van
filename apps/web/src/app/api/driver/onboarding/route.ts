@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
         },
         include: { vehicles: true, checks: true },
       });
+
+      // Create driver availability record - Default to online
+      await prisma.driverAvailability.create({
+        data: {
+          driverId: driver.id,
+          status: 'online',
+          locationConsent: false,
+        },
+      });
     }
 
     // Update user information

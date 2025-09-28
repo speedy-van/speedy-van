@@ -138,13 +138,11 @@ export default function WhoAndPaymentStep({
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCardNumber(e.target.value);
     // Store card details in local state or remove this functionality
-    console.log('Card number updated:', formatted);
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatExpiry(e.target.value);
     // Store expiry in local state or remove this functionality
-    console.log('Expiry updated:', formatted);
   };
 
   const handlePaymentMethodSelect = (methodId: PaymentMethod['type']) => {
@@ -159,38 +157,46 @@ export default function WhoAndPaymentStep({
   };
 
   return (
-    <VStack spacing={8} align="stretch">
-      {/* Clean Step Header */}
+    <VStack spacing={{ base: 6, md: 8 }} align="stretch" p={{ base: 4, md: 6, lg: 8 }}>
+      {/* Enhanced Step Header */}
       <Box textAlign="center" mb={6}>
-        <Heading size="xl" mb={3} bgGradient="linear(to-r, green.600, blue.600)" bgClip="text">
-          Enter Your Details & Pay Securely
+        <Heading size={{ base: "lg", md: "xl" }} mb={3} bgGradient="linear(to-r, purple.600, blue.600)" bgClip="text">
+          💳 Complete Your Booking
         </Heading>
-        <Text color="gray.600" fontSize="lg">
-          Complete your booking with secure payment
+        <Text color="gray.600" fontSize={{ base: "md", md: "lg" }}>
+          Enter your details and pay securely to confirm your move
         </Text>
       </Box>
 
-      {/* 1. Customer Information - Simplified */}
-      <Card bg="blue.50" borderColor="blue.200" borderWidth="2px" borderRadius="2xl" p={6} shadow="lg">
+      {/* 1. Customer Information - Enhanced */}
+      <Card 
+        p={{ base: 4, md: 6 }} 
+        shadow="xl" 
+        borderWidth="1px" 
+        borderColor="purple.200"
+        bg="white"
+        _hover={{ shadow: "2xl", transform: "translateY(-2px)" }}
+        transition="all 0.3s ease"
+        borderRadius="xl"
+      >
         <VStack spacing={6} align="stretch">
-          <HStack spacing={3} align="center">
-            <Circle size="50px" bg="blue.500" color="white">
-              <Icon as={FaUser} boxSize={6} />
+          <HStack spacing={3} align="center" mb={2}>
+            <Circle size="40px" bg="purple.100" color="purple.600">
+              <Icon as={FaUser} fontSize="20px" />
             </Circle>
-            <VStack align="start" spacing={1}>
-              <Text fontWeight="bold" fontSize="xl" color="blue.700">
-                Customer Information
+            <Box>
+              <Heading size={{ base: "sm", md: "md" }} color="purple.800" mb={1}>
+                👤 Your Information
+              </Heading>
+              <Text fontSize="sm" color="gray.600">
+                We'll use this to keep you updated on your move
               </Text>
-              <Text fontSize="md" color="blue.600" fontWeight="medium">
-                Your contact details
-              </Text>
-            </VStack>
+            </Box>
           </HStack>
 
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
             <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold" color="gray.700">
-                <Icon as={FaUser} mr={2} />
+              <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
                 First Name
               </FormLabel>
               <Input
@@ -200,17 +206,16 @@ export default function WhoAndPaymentStep({
                 isInvalid={!!errors['customerDetails.firstName']}
                 bg="white"
                 borderColor="gray.300"
-                _hover={{ borderColor: "blue.400" }}
-                _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                _hover={{ borderColor: "purple.400" }}
+                _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px #9F7AEA" }}
                 size="md"
-                borderRadius="lg"
+                borderRadius="md"
                 fontWeight="medium"
               />
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold" color="gray.700">
-                <Icon as={FaUser} mr={2} />
+              <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
                 Last Name
               </FormLabel>
               <Input
@@ -220,17 +225,16 @@ export default function WhoAndPaymentStep({
                 isInvalid={!!errors['customerDetails.lastName']}
                 bg="white"
                 borderColor="gray.300"
-                _hover={{ borderColor: "blue.400" }}
-                _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                _hover={{ borderColor: "purple.400" }}
+                _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px #9F7AEA" }}
                 size="md"
-                borderRadius="lg"
+                borderRadius="md"
                 fontWeight="medium"
               />
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold" color="gray.700">
-                <Icon as={FaEnvelope} mr={2} />
+              <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
                 Email Address
               </FormLabel>
               <Input
@@ -241,17 +245,16 @@ export default function WhoAndPaymentStep({
                 isInvalid={!!errors['customerDetails.email']}
                 bg="white"
                 borderColor="gray.300"
-                _hover={{ borderColor: "blue.400" }}
-                _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                _hover={{ borderColor: "purple.400" }}
+                _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px #9F7AEA" }}
                 size="md"
-                borderRadius="lg"
+                borderRadius="md"
                 fontWeight="medium"
               />
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold" color="gray.700">
-                <Icon as={FaPhone} mr={2} />
+              <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
                 Phone Number
               </FormLabel>
               <Input
@@ -262,18 +265,17 @@ export default function WhoAndPaymentStep({
                 isInvalid={!!errors['customerDetails.phone']}
                 bg="white"
                 borderColor="gray.300"
-                _hover={{ borderColor: "blue.400" }}
-                _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                _hover={{ borderColor: "purple.400" }}
+                _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px #9F7AEA" }}
                 size="md"
-                borderRadius="lg"
+                borderRadius="md"
                 fontWeight="medium"
               />
             </FormControl>
           </SimpleGrid>
 
           <FormControl>
-            <FormLabel fontSize="sm" fontWeight="bold" color="gray.700">
-              <Icon as={FaBuilding} mr={2} />
+            <FormLabel fontSize="sm" fontWeight="600" color="gray.700">
               Company Name (Optional)
             </FormLabel>
             <Input
@@ -282,60 +284,73 @@ export default function WhoAndPaymentStep({
               onChange={(e) => updateCustomerDetails('company', e.target.value)}
               bg="white"
               borderColor="gray.300"
-              _hover={{ borderColor: "blue.400" }}
-              _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+              _hover={{ borderColor: "purple.400" }}
+              _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px #9F7AEA" }}
               size="md"
-              borderRadius="lg"
+              borderRadius="md"
               fontWeight="medium"
             />
           </FormControl>
         </VStack>
       </Card>
 
-      {/* 2. Payment Method - Simplified */}
-      <Card bg="green.50" borderColor="green.200" borderWidth="2px" borderRadius="2xl" p={6} shadow="lg">
+      {/* 2. Payment Method - Enhanced */}
+      <Card 
+        p={{ base: 4, md: 6 }} 
+        shadow="xl" 
+        borderWidth="1px" 
+        borderColor="green.200"
+        bg="white"
+        _hover={{ shadow: "2xl", transform: "translateY(-2px)" }}
+        transition="all 0.3s ease"
+        borderRadius="xl"
+      >
         <VStack spacing={6} align="stretch">
-          <HStack spacing={3} align="center">
-            <Circle size="50px" bg="green.500" color="white">
-              <Icon as={FaCreditCard} boxSize={6} />
+          <HStack spacing={3} align="center" mb={2}>
+            <Circle size="40px" bg="green.100" color="green.600">
+              <Icon as={FaCreditCard} fontSize="20px" />
             </Circle>
-            <VStack align="start" spacing={1}>
-              <Text fontWeight="bold" fontSize="xl" color="green.700">
-                Payment Method
+            <Box>
+              <Heading size={{ base: "sm", md: "md" }} color="green.800" mb={1}>
+                💳 Payment Method
+              </Heading>
+              <Text fontSize="sm" color="gray.600">
+                Secure payment processed by Stripe
               </Text>
-              <Text fontSize="md" color="green.600" fontWeight="medium">
-                Secure payment via Stripe
-              </Text>
-            </VStack>
+            </Box>
           </HStack>
 
           {/* Stripe Payment Card */}
-          <Card bg="white" borderRadius="xl" p={4} border="2px solid" borderColor="green.200">
-            <VStack spacing={4} align="stretch">
-              <HStack spacing={3} align="center" justify="center">
-                <Circle size="40px" bg="green.500" color="white">
-                  <Icon as={FaShieldAlt} boxSize={5} />
-                </Circle>
-                <VStack align="start" spacing={0}>
-                  <Text fontWeight="bold" color="green.700" fontSize="lg">
-                    Credit/Debit Card
-                  </Text>
-                  <Text fontSize="sm" color="green.600">
-                    Visa, Mastercard, American Express, Apple Pay, Google Pay
-                  </Text>
-                </VStack>
-                <Badge colorScheme="green" size="lg" px={3} py={1}>
-                  <Icon as={FaShieldAlt} mr={1} /> Secure
-                </Badge>
-              </HStack>
-            </VStack>
-          </Card>
+          <Box 
+            p={4} 
+            bg="green.50" 
+            borderRadius="lg" 
+            borderWidth="1px" 
+            borderColor="green.200"
+          >
+            <HStack spacing={3} align="center">
+              <Circle size="32px" bg="green.100" color="green.600">
+                <Icon as={FaShieldAlt} fontSize="16px" />
+              </Circle>
+              <Box flex="1">
+                <Text fontWeight="600" color="green.700" fontSize="md">
+                  Credit/Debit Card
+                </Text>
+                <Text fontSize="sm" color="green.600">
+                  Visa, Mastercard, American Express
+                </Text>
+              </Box>
+              <Badge colorScheme="green" size="sm">
+                Secure
+              </Badge>
+            </HStack>
+          </Box>
 
-          {/* Terms & Payment Button - Combined */}
-          <Card bg="white" borderRadius="xl" p={4} border="2px solid" borderColor="gray.200">
-            <VStack spacing={4} align="stretch">
-              {/* Terms & Conditions */}
-              <VStack spacing={3} align="stretch">
+          {/* Terms & Payment Section */}
+          <VStack spacing={4} align="stretch">
+            {/* Terms & Conditions - Enhanced */}
+            <VStack spacing={4} align="stretch" p={4} bg="gray.50" borderRadius="lg" borderWidth="1px" borderColor="gray.200">
+              <HStack spacing={3} align="start">
                 <Checkbox
                   isChecked={step2.termsAccepted}
                   onChange={(e) => {
@@ -346,140 +361,169 @@ export default function WhoAndPaymentStep({
                   isInvalid={!!errors['termsAccepted']}
                   size="lg"
                   colorScheme="green"
-                >
-                  <Text fontSize="sm" fontWeight="medium">
+                  mt={1}
+                />
+                <Box>
+                  <Text fontSize="sm" fontWeight="600" color="gray.800" lineHeight="1.5">
                     I accept the{' '}
-                    <Button variant="link" colorScheme="blue" size="sm" p={0} h="auto" fontWeight="bold">
+                    <Button 
+                      variant="link" 
+                      colorScheme="green" 
+                      size="sm" 
+                      p={0} 
+                      h="auto" 
+                      fontWeight="700"
+                      textDecoration="underline"
+                      _hover={{ color: "green.600" }}
+                    >
                       Terms and Conditions
                     </Button>
                     {' '}and{' '}
-                    <Button variant="link" colorScheme="blue" size="sm" p={0} h="auto" fontWeight="bold">
+                    <Button 
+                      variant="link" 
+                      colorScheme="green" 
+                      size="sm" 
+                      p={0} 
+                      h="auto" 
+                      fontWeight="700"
+                      textDecoration="underline"
+                      _hover={{ color: "green.600" }}
+                    >
                       Privacy Policy
                     </Button>
                   </Text>
-                </Checkbox>
+                </Box>
+              </HStack>
 
+              <HStack spacing={3} align="start">
                 <Checkbox
                   isChecked={step2.marketingOptIn || false}
                   onChange={(e) => updateFormData('step2', { marketingOptIn: e.target.checked })}
-                  size="lg"
+                  size="md"
                   colorScheme="blue"
-                >
-                  <Text fontSize="sm" fontWeight="medium">
-                    I would like to receive special offers and updates via email (optional)
-                  </Text>
-                </Checkbox>
-              </VStack>
-
-              {/* Stripe Payment Button */}
-              {!paymentSuccess ? (
-                <StripePaymentButton
-                  amount={formData.step1.pricing.total}
-                  bookingData={{
-                    customer: {
-                      name: `${step2.customerDetails.firstName || ''} ${step2.customerDetails.lastName || ''}`.trim(),
-                      email: step2.customerDetails.email || '',
-                      phone: step2.customerDetails.phone || '',
-                    },
-                    pickupAddress: formData.step1.pickupAddress,
-                    dropoffAddress: formData.step1.dropoffAddress,
-                    items: formData.step1.items,
-                    pricing: formData.step1.pricing,
-                    serviceType: formData.step1.serviceType,
-                    scheduledDate: formData.step1.pickupDate,
-                    scheduledTime: formData.step1.pickupTimeSlot,
-                    pickupDetails: formData.step1.pickupProperty,
-                    dropoffDetails: formData.step1.dropoffProperty,
-                    bookingId: step2.bookingId, // Pass the booking ID
-                  }}
-                  onSuccess={(sessionId, paymentIntentId) => {
-                    console.log('✅ Payment successful:', { sessionId, paymentIntentId });
-                    updatePaymentStatus('success');
-                    updateFormData('step2', {
-                      paymentMethod: {
-                        type: 'stripe',
-                        stripeDetails: {
-                          sessionId,
-                          paymentIntentId,
-                        },
-                      },
-                    });
-                  }}
-                  onError={(error) => {
-                    console.error('❌ Payment failed:', error);
-                    updatePaymentStatus('failed');
-                  }}
-                  disabled={
-                    !step2.termsAccepted || 
-                    !step2.privacyAccepted || 
-                    !step2.customerDetails.firstName ||
-                    !step2.customerDetails.lastName ||
-                    !step2.customerDetails.email ||
-                    !formData.step1.pricing.total ||
-                    formData.step1.pricing.total <= 0
-                  }
+                  mt={1}
                 />
-              ) : (
-                <Alert status="success" borderRadius="xl" p={4}>
-                  <AlertIcon />
-                  <Box>
-                    <AlertTitle fontSize="lg">🎉 Payment Successful!</AlertTitle>
-                    <AlertDescription fontSize="md">
-                      Your payment has been processed successfully. You will be redirected to the confirmation page.
-                    </AlertDescription>
-                  </Box>
-                </Alert>
-              )}
+                <Text fontSize="sm" fontWeight="500" color="gray.700" lineHeight="1.5">
+                  I would like to receive special offers and updates via email (optional)
+                </Text>
+              </HStack>
             </VStack>
-          </Card>
 
+            {/* Stripe Payment Button */}
+            {!paymentSuccess ? (
+              <StripePaymentButton
+                amount={formData.step1.pricing.total}
+                bookingData={{
+                  customer: {
+                    name: `${step2.customerDetails.firstName || ''} ${step2.customerDetails.lastName || ''}`.trim(),
+                    email: step2.customerDetails.email || '',
+                    phone: step2.customerDetails.phone || '',
+                  },
+                  pickupAddress: formData.step1.pickupAddress,
+                  dropoffAddress: formData.step1.dropoffAddress,
+                  items: formData.step1.items,
+                  pricing: formData.step1.pricing,
+                  serviceType: formData.step1.serviceType,
+                  scheduledDate: formData.step1.pickupDate,
+                  scheduledTime: formData.step1.pickupTimeSlot,
+                  pickupDetails: formData.step1.pickupProperty,
+                  dropoffDetails: formData.step1.dropoffProperty,
+                  bookingId: step2.bookingId, // Pass the booking ID
+                }}
+                onSuccess={(sessionId, paymentIntentId) => {
+                  updatePaymentStatus('success');
+                  updateFormData('step2', {
+                    paymentMethod: {
+                      type: 'stripe',
+                      stripeDetails: {
+                        sessionId,
+                        paymentIntentId,
+                      },
+                    },
+                  });
+                }}
+                onError={(error) => {
+                  console.error('❌ Payment failed:', error);
+                  updatePaymentStatus('failed');
+                }}
+                disabled={
+                  !step2.termsAccepted || 
+                  !step2.privacyAccepted || 
+                  !step2.customerDetails.firstName ||
+                  !step2.customerDetails.lastName ||
+                  !step2.customerDetails.email ||
+                  !formData.step1.pricing.total ||
+                  formData.step1.pricing.total <= 0
+                }
+              />
+            ) : (
+              <Alert status="success" borderRadius="xl" p={4}>
+                <AlertIcon />
+                <Box>
+                  <AlertTitle fontSize="lg">🎉 Payment Successful!</AlertTitle>
+                  <AlertDescription fontSize="md">
+                    Your payment has been processed successfully. You will be redirected to the confirmation page.
+                  </AlertDescription>
+                </Box>
+              </Alert>
+            )}
+          </VStack>
         </VStack>
       </Card>
 
-      {/* 3. Booking Summary - Final */}
-      <Card bg="gray.50" borderColor="gray.200" borderWidth="2px" borderRadius="2xl" p={6} shadow="lg">
+      {/* 3. Booking Summary - Enhanced */}
+      <Card 
+        p={{ base: 4, md: 6 }} 
+        shadow="xl" 
+        borderWidth="1px" 
+        borderColor="blue.200"
+        bg="white"
+        _hover={{ shadow: "2xl", transform: "translateY(-2px)" }}
+        transition="all 0.3s ease"
+        borderRadius="xl"
+      >
         <VStack spacing={6} align="stretch">
-          <HStack spacing={3} align="center">
-            <Circle size="50px" bg="gray.500" color="white">
-              <Icon as={FaBolt} boxSize={6} />
+          <HStack spacing={3} align="center" mb={2}>
+            <Circle size="40px" bg="blue.100" color="blue.600">
+              <Icon as={FaBolt} fontSize="20px" />
             </Circle>
-            <VStack align="start" spacing={1}>
-              <Text fontWeight="bold" fontSize="xl" color="gray.700">
-                Booking Summary
+            <Box>
+              <Heading size={{ base: "sm", md: "md" }} color="blue.800" mb={1}>
+                📋 Booking Summary
+              </Heading>
+              <Text fontSize="sm" color="gray.600">
+                Review your order details before payment
               </Text>
-              <Text fontSize="md" color="gray.600" fontWeight="medium">
-                Review your order details
-              </Text>
-            </VStack>
+            </Box>
           </HStack>
 
           {formData.step1.pricing.total > 0 ? (
             <VStack spacing={4} align="stretch">
               {/* Order Details */}
-              <Card bg="white" borderRadius="xl" p={4} border="1px solid" borderColor="gray.200">
+              <Box p={4} bg="blue.50" borderRadius="lg" borderWidth="1px" borderColor="blue.200">
                 <VStack spacing={3} align="stretch">
-                  <Text fontSize="sm" fontWeight="bold" color="gray.700">
+                  <Text fontSize="sm" fontWeight="600" color="blue.800">
                     Order Details
                   </Text>
                   <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                     <VStack spacing={1} align="start">
                       <Text fontSize="xs" color="gray.600">Items:</Text>
-                      <Text fontSize="sm" fontWeight="medium">{formData.step1.items.length} items</Text>
+                      <Text fontSize="sm" fontWeight="600">{formData.step1.items.length} items</Text>
                     </VStack>
                     <VStack spacing={1} align="start">
                       <Text fontSize="xs" color="gray.600">Distance:</Text>
-                      <Text fontSize="sm" fontWeight="medium">{formData.step1.distance} miles</Text>
+                      <Text fontSize="sm" fontWeight="600">{formData.step1.distance} miles</Text>
                     </VStack>
                     <VStack spacing={1} align="start">
                       <Text fontSize="xs" color="gray.600">Service:</Text>
-                      <Text fontSize="sm" fontWeight="medium" textTransform="capitalize">{formData.step1.serviceType}</Text>
+                      <Text fontSize="sm" fontWeight="600" textTransform="capitalize">{formData.step1.serviceType}</Text>
                     </VStack>
                   </SimpleGrid>
                 </VStack>
-              </Card>
+              </Box>
               
               {/* Total Amount */}
-              <Card bg="green.100" borderRadius="xl" p={4} border="2px solid" borderColor="green.300">
+              <Box p={4} bg="green.50" borderRadius="lg" borderWidth="1px" borderColor="green.200">
                 <HStack justify="space-between" fontWeight="bold" fontSize="lg">
                   <Text color="green.800">Total Amount:</Text>
                   <Text color="green.600" fontSize="2xl">£{formData.step1.pricing.total.toFixed(2)}</Text>
@@ -487,16 +531,16 @@ export default function WhoAndPaymentStep({
                 <Text fontSize="sm" color="green.700" textAlign="center" mt={2}>
                   Including VAT (£{formData.step1.pricing.vat.toFixed(2)})
                 </Text>
-              </Card>
+              </Box>
             </VStack>
           ) : (
-            <Card bg="orange.50" borderRadius="xl" p={6} border="2px solid" borderColor="orange.200">
+            <Box p={6} bg="orange.50" borderRadius="lg" borderWidth="1px" borderColor="orange.200">
               <VStack spacing={4} align="center">
-                <Circle size="60px" bg="orange.500" color="white">
-                  <Icon as={FaBolt} boxSize={8} />
+                <Circle size="48px" bg="orange.100" color="orange.600">
+                  <Icon as={FaBolt} fontSize="24px" />
                 </Circle>
                 <VStack spacing={2} align="center">
-                  <Text color="orange.600" fontWeight="bold" fontSize="lg">
+                  <Text color="orange.700" fontWeight="600" fontSize="lg">
                     ⚠️ Pricing not calculated yet
                   </Text>
                   <Text fontSize="sm" color="orange.600" textAlign="center">
@@ -513,7 +557,7 @@ export default function WhoAndPaymentStep({
                   Go Back to Step 1
                 </Button>
               </VStack>
-            </Card>
+            </Box>
           )}
         </VStack>
       </Card>

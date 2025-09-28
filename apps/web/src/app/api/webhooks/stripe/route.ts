@@ -8,7 +8,6 @@ import { theSMSWorksService } from '@/lib/sms/TheSMSWorksService';
 // import { generateUniqueBookingId } from '@/lib/booking-id';
 // Invoice service removed
 // BookingService removed - using direct Prisma operations
-import { BookingStep } from '@speedy-van/shared';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -292,7 +291,7 @@ async function handleCheckoutSessionCompleted(session: any) {
         title: 'Booking Completed',
         message: `Booking ${completeBooking.reference} has been completed successfully`,
         priority: 'medium',
-        data: { bookingId: completeBooking.id, bookingCode: completeBooking.reference },
+        data: { bookingId: completeBooking.id, bookingReference: completeBooking.reference },
         actionUrl: `/admin/orders/${completeBooking.reference}`,
       });
 
@@ -305,7 +304,7 @@ async function handleCheckoutSessionCompleted(session: any) {
           message: `Your job for booking ${completeBooking.reference} has been completed successfully`,
           data: { 
             bookingId: completeBooking.id, 
-            bookingCode: completeBooking.reference,
+            bookingReference: completeBooking.reference,
             jobId: completeBooking.Assignment.id 
           },
         });

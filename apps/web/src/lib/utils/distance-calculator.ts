@@ -29,6 +29,14 @@ export function calculateDistance(
   return R * c;
 }
 
+export function isValidCoordinates(coords: [number, number]): boolean {
+  const [lat, lng] = coords;
+  return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+export const DISTANCE_CALCULATOR_DISABLED = false;
+export const MIGRATION_MESSAGE = "Distance calculator migrated to new version";
+
 export function calculateDuration(
   distance: number,
   averageSpeed: number = 50 // km/h

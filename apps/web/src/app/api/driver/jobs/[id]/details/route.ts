@@ -225,7 +225,10 @@ export async function GET(
           completedAt: event.createdAt,
           notes: event.notes,
           payload: event.payload
-        })) : []
+        })) : [],
+        currentStep: booking.Assignment.JobEvent && booking.Assignment.JobEvent.length > 0 
+          ? booking.Assignment.JobEvent[booking.Assignment.JobEvent.length - 1].step 
+          : 'navigate_to_pickup'
       } : null,
       
       // Customer information

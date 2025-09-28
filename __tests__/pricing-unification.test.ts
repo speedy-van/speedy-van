@@ -81,21 +81,21 @@ describe('Pricing System Unification', () => {
         await import('../apps/web/src/lib/pricing/unified-pricing-facade');
 
       const validRequest = {
-        pickupLocation: { latitude: 51.5074, longitude: -0.1278, address: 'London' },
-        deliveryLocation: { latitude: 52.4862, longitude: -1.8904, address: 'Birmingham' },
+        pickupCoordinates: { lat: 51.5074, lng: -0.1278 },
+        dropoffCoordinates: { lat: 52.4862, lng: -1.8904 },
+        distanceKm: 120.5,
+        durationMinutes: 90,
+        vehicleType: 'van',
+        serviceType: 'standard',
+        scheduledTime: new Date().toISOString(),
         items: [
           {
-            id: '1',
             name: 'Test Item',
-            category: 'BOXES' as const,
             quantity: 1,
-            volume: 1,
+            weight: 10,
+            fragile: false,
           }
         ],
-        serviceType: 'standard' as const,
-        scheduledAt: new Date(),
-        isFirstTimeCustomer: false,
-        customerTier: 'standard' as const,
       };
 
       const result = await unifiedPricingFacade.calculatePricing(validRequest);
@@ -111,26 +111,21 @@ describe('Pricing System Unification', () => {
         await import('../apps/web/src/lib/pricing/unified-pricing-facade');
 
       const request = {
-        pickupLocation: { latitude: 51.5074, longitude: -0.1278 },
-        deliveryLocation: { latitude: 52.4862, longitude: -1.8904 },
+        pickupCoordinates: { lat: 51.5074, lng: -0.1278 },
+        dropoffCoordinates: { lat: 52.4862, lng: -1.8904 },
+        distanceKm: 120.5,
+        durationMinutes: 90,
+        vehicleType: 'van',
+        serviceType: 'express',
+        scheduledTime: new Date().toISOString(),
         items: [
           {
             name: 'Test Furniture',
-            category: 'FURNITURE' as const,
             quantity: 2,
-            isFragile: true,
+            weight: 50,
+            fragile: true,
           }
         ],
-        serviceType: 'express' as const,
-        scheduledAt: new Date(),
-        pickupProperty: {
-          floor: 3,
-          hasElevator: false,
-          hasParking: true,
-          narrowAccess: true,
-          longCarry: false,
-          accessType: 'difficult' as const,
-        },
       };
 
       const result = await unifiedPricingFacade.calculatePricing(request);

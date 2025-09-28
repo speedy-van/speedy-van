@@ -24,7 +24,7 @@
     "@speedy-van/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "date-fns": "^3.6.0",
-    "zod": "^4.1.5"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

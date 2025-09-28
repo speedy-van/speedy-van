@@ -67,8 +67,6 @@ export default function BookingSuccessPage() {
       }
 
       try {
-        console.log(`🔄 Fetching booking details (attempt ${retryCount + 1})`);
-        
         // Fetch session details from Stripe
         const response = await fetch(`/api/stripe/session/${sessionId}`);
         const data = await response.json();
@@ -104,7 +102,6 @@ export default function BookingSuccessPage() {
           // Send SMS confirmation automatically when success page loads
           if (data.customer_details?.phone) {
             try {
-              console.log('📱 Sending SMS confirmation from success page...');
               const smsResult = await theSMSWorksService.sendBookingConfirmation({
                 phoneNumber: data.customer_details.phone,
                 customerName: data.metadata?.customerName || data.customer_details?.name || 'Customer',
@@ -117,7 +114,7 @@ export default function BookingSuccessPage() {
               });
               
               if (smsResult.success) {
-                console.log('✅ SMS confirmation sent successfully from success page');
+                // SMS sent successfully
               } else {
                 console.warn('⚠️ SMS confirmation failed from success page:', smsResult.error);
               }
@@ -125,22 +122,15 @@ export default function BookingSuccessPage() {
               console.error('❌ Error sending SMS from success page:', smsError);
             }
           } else {
-            console.log('ℹ️ No phone number available for SMS confirmation');
+            // No phone number available for SMS
           }
           
           // Stop loading on success
           clearTimeout(safetyTimeout);
           setIsLoading(false);
         } else {
-          console.log('❌ Payment not completed:', {
-            payment_status: data?.payment_status,
-            status: data?.status,
-            session_data: data
-          });
-          
           // Handle different payment statuses with retry logic
           if (data?.payment_status === 'unpaid' && retryCount < 3) {
-            console.log(`⏳ Payment still pending, retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
             setLoadingMessage(`Payment processing... Checking status (${retryCount + 1}/3)`);
             setTimeout(() => fetchBookingDetails(retryCount + 1), 2000);
             return; // Don't set loading to false here
@@ -160,7 +150,6 @@ export default function BookingSuccessPage() {
         
         // Retry on network errors (but not on payment status errors)
         if (retryCount < 2 && err instanceof Error && !err.message.includes('Payment')) {
-          console.log(`🔄 Network error, retrying in 3 seconds... (attempt ${retryCount + 1}/2)`);
           setLoadingMessage(`Connection error... Retrying (${retryCount + 1}/2)`);
           setTimeout(() => fetchBookingDetails(retryCount + 1), 3000);
           return; // Don't set loading to false here
@@ -376,7 +365,7 @@ export default function BookingSuccessPage() {
           </Button>
           <Button 
             as="a"
-            href={`/api/booking-luxury/invoice/${bookingDetails.id}`}
+            href={`/api/booking-luxury/invoice/${bookingDetails.reference}`}
             target="_blank"
             size={{ base: "md", md: "lg" }} 
             colorScheme="purple"

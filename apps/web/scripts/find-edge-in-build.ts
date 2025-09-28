@@ -46,7 +46,8 @@ async function checkMiddlewareManifest() {
       }
     }
   } catch (error) {
-    console.log('⚠️  Could not read middleware-manifest.json:', error instanceof Error ? error.message : String(error));
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('⚠️  Could not read middleware-manifest.json:', errorMessage);
   }
 }
 
@@ -105,7 +106,8 @@ async function scanCompiledFiles() {
       console.log('✅ No edge runtime indicators found in compiled files');
     }
   } catch (error) {
-    console.log('⚠️  Error scanning compiled files:', error instanceof Error ? error.message : String(error));
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('⚠️  Error scanning compiled files:', errorMessage);
   }
 }
 

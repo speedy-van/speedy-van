@@ -1,132 +1,138 @@
 ﻿'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  VStack,
-  Heading,
-  Text,
-  Card,
-  CardBody,
-  Spinner,
-  Box,
-  Button,
-  Badge,
-  HStack,
-  Divider,
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Container, 
+  Heading, 
+  Text, 
+  Box, 
+  VStack, 
+  HStack, 
+  Button, 
   useToast,
+  Spinner,
   Alert,
   AlertIcon,
-  AlertTitle,
   AlertDescription,
+  useBreakpointValue,
+  Stack,
+  Flex,
   SimpleGrid,
-  Icon,
-  Flex
+  Badge,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Select,
 } from '@chakra-ui/react';
-import { FaMapMarkerAlt, FaClock, FaPoundSign, FaBox, FaUser, FaPhone } from 'react-icons/fa';
+import { FaSearch, FaFilter } from 'react-icons/fa';
+import { EnhancedJobCard } from '@/components/driver/EnhancedJobCard';
+import { NoJobsMessage } from '@/components/driver/NoJobsMessage';
+import { useOptimizedDataLoader } from '@/hooks/useOptimizedDataLoader';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Job {
   id: string;
-  bookingReference: string;
-  customerName: string;
+  reference: string;
+  customer: string;
   customerPhone: string;
-  pickupAddress: {
-    label: string;
-    postcode: string;
-    lat: number;
-    lng: number;
-  };
-  dropoffAddress: {
-    label: string;
-    postcode: string;
-    lat: number;
-    lng: number;
-  };
-  scheduledDate: string;
-  timeSlot: string;
-  estimatedDuration: number;
-  distance: number;
-  driverPayout: number;
-  items: Array<{
-    name: string;
-    quantity: number;
-    size: string;
-  }>;
-  specialInstructions: string;
-  priority: 'normal' | 'high' | 'urgent';
-  requiredWorkers: number;
-  crewSize: string;
+  date: string;
+  time: string;
+  from: string;
+  to: string;
+  distance: string;
+  vehicleType: string;
+  items: string;
+  estimatedEarnings: number;
   status: string;
-  expiresAt: string;
-  createdAt: string;
+  priority?: string;
+  duration?: string;
+  crew?: string;
 }
 
-export default function DriverJobs() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [acceptingJob, setAcceptingJob] = useState<string | null>(null);
+interface JobsData {
+  jobs: Job[];
+  total: number;
+  available: number;
+  assigned: number;
+}
+
+export default function DriverJobsPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const toast = useToast();
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('/api/driver/jobs/available');
-      const data = await response.json();
-      
-      if (data.success) {
-        setJobs(data.data || []);
-        console.log('✅ Jobs loaded:', data.data?.length || 0);
-      } else {
-        setError(data.error || 'Failed to load jobs');
-      }
-    } catch (err) {
-      console.error('❌ Error fetching jobs:', err);
-      setError('Failed to load jobs. Please try again.');
-    } finally {
-      setLoading(false);
+  // Debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Use optimized data loader
+  const { data: jobsData, loading: isLoading, error, refetch } = useOptimizedDataLoader<JobsData>({
+    endpoint: '/api/driver/jobs',
+    debounceMs: 300,
+    cacheKey: 'driver-jobs',
+    enabled: true
+  });
+
+  // Optimized filtering with useMemo
+  const filteredJobs = useMemo(() => {
+    if (!jobsData?.jobs || !Array.isArray(jobsData.jobs)) return [];
+
+    let filtered = jobsData.jobs;
+
+    // Filter by search term
+    if (debouncedSearchTerm) {
+      filtered = filtered.filter(job => 
+        job.customer.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        job.reference.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        job.from.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        job.to.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
     }
-  };
 
-  const acceptJob = async (jobId: string) => {
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(job => job.status === statusFilter);
+    }
+
+    return filtered;
+  }, [jobsData?.jobs, debouncedSearchTerm, statusFilter]);
+
+  // Show toast for errors
+  useEffect(() => {
+    if (error) {
+      console.error('Driver Jobs Error:', error);
+      toast({
+        title: 'Error Loading Jobs',
+        description: 'Failed to load jobs data. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [error, toast]);
+
+  const handleAcceptJob = async (jobId: string) => {
     try {
-      setAcceptingJob(jobId);
-      
       const response = await fetch(`/api/driver/jobs/${jobId}/accept`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' }
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
+
+      if (response.ok) {
         toast({
           title: 'Job Accepted!',
-          description: 'You have successfully accepted this job. Redirecting to job details...',
+          description: 'You have successfully accepted this job.',
           status: 'success',
           duration: 3000,
           isClosable: true,
         });
         
-        // Redirect to job details page after a short delay
-        setTimeout(() => {
-          window.location.href = `/driver/jobs/${jobId}`;
-        }, 1500);
+        // Refresh jobs data
+        refetch();
       } else {
-        toast({
-          title: 'Failed to Accept Job',
-          description: data.error || 'Please try again.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+        throw new Error('Failed to accept job');
       }
-    } catch (err) {
-      console.error('❌ Error accepting job:', err);
+    } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to accept job. Please try again.',
@@ -134,246 +140,245 @@ export default function DriverJobs() {
         duration: 5000,
         isClosable: true,
       });
-    } finally {
-      setAcceptingJob(null);
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'red';
-      case 'high': return 'orange';
-      default: return 'green';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatCurrency = (pence: number) => {
-    return `£${(pence / 100).toFixed(2)}`;
-  };
-
-  useEffect(() => {
-    fetchJobs();
-    
-    // Refresh jobs every 30 seconds
-    const interval = setInterval(fetchJobs, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <VStack spacing={6} align="stretch">
-          <Heading size="lg">Available Jobs</Heading>
-          <Card>
-            <CardBody>
-              <VStack spacing={4}>
-                <Spinner size="xl" color="blue.500" />
-                <Text>Loading available jobs...</Text>
-              </VStack>
-            </CardBody>
-          </Card>
-        </VStack>
-      </Container>
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+          <VStack spacing={{ base: 6, md: 8 }} align="center">
+            <Spinner size="xl" color="blue.500" />
+            <Text fontSize={{ base: "md", md: "lg" }}>Loading jobs...</Text>
+          </VStack>
+        </Container>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <VStack spacing={6} align="stretch">
-          <Heading size="lg">Available Jobs</Heading>
-          <Alert status="error">
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+          <Alert status="error" borderRadius="lg">
             <AlertIcon />
             <Box>
-              <AlertTitle>Error Loading Jobs!</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription fontSize={{ base: "sm", md: "md" }}>{error}</AlertDescription>
+              <Button mt={3} size={{ base: "sm", md: "md" }} onClick={refetch}>
+                Try Again
+              </Button>
             </Box>
           </Alert>
-          <Button onClick={fetchJobs} colorScheme="blue">
-            Try Again
-          </Button>
-        </VStack>
-      </Container>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (!jobsData) {
+    return (
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+          <Alert status="warning" borderRadius="lg">
+            <AlertIcon />
+            <AlertDescription fontSize={{ base: "sm", md: "md" }}>No jobs data available.</AlertDescription>
+          </Alert>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={6} align="stretch">
-        <Flex justify="space-between" align="center">
-          <Heading size="lg">Available Jobs</Heading>
-          <Button onClick={fetchJobs} size="sm" colorScheme="blue">
-            Refresh
-          </Button>
-        </Flex>
+    <Box minH="100vh" bg="gray.50">
 
-        {jobs.length === 0 ? (
-          <Card>
-            <CardBody>
-              <VStack spacing={4}>
-                <Text fontSize="lg" color="gray.500">
-                  No available jobs at the moment
-                </Text>
-                <Text color="gray.400">
-                  New jobs will appear here when customers place orders
-                </Text>
+      <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+        <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+          {/* Page Header */}
+          <Box>
+            <Heading size={{ base: "lg", md: "xl" }} mb={2} color="gray.800">
+              All Jobs
+            </Heading>
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
+              Manage and track all your jobs in one place
+            </Text>
+            
+            {/* Enhanced Stats */}
+            <HStack spacing={4} mt={4}>
+              <Badge 
+                bg="blue.100" 
+                color="blue.800" 
+                size="lg" 
+                px={4} 
+                py={2}
+                fontWeight="600"
+                borderRadius="lg"
+              >
+                Total: {jobsData.total}
+              </Badge>
+              <Badge 
+                bg="green.100" 
+                color="green.800" 
+                size="lg" 
+                px={4} 
+                py={2}
+                fontWeight="600"
+                borderRadius="lg"
+              >
+                Available: {jobsData.available}
+              </Badge>
+              <Badge 
+                bg="orange.100" 
+                color="orange.800" 
+                size="lg" 
+                px={4} 
+                py={2}
+                fontWeight="600"
+                borderRadius="lg"
+              >
+                Assigned: {jobsData.assigned}
+              </Badge>
+            </HStack>
+          </Box>
+
+          {/* Enhanced Search and Filter - Separated Design */}
+          <VStack spacing={4} align="stretch">
+            {/* Search Box - Standalone */}
+            <Box 
+              bg="white" 
+              p={4} 
+              borderRadius="xl" 
+              boxShadow="sm"
+              position="sticky"
+              top={{ base: "76px", md: "80px" }}
+              zIndex={10}
+            >
+              <InputGroup>
+                <InputLeftElement 
+                  pointerEvents="none"
+                  pl={4}
+                >
+                  <FaSearch color="gray.400" size="16px" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search by customer, reference, location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  borderRadius="lg"
+                  bg="gray.50"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  pl={12}
+                  fontSize="16px"
+                  h="52px"
+                  _focus={{
+                    borderColor: "blue.400",
+                    boxShadow: "0 0 0 2px rgba(66, 153, 225, 0.2)",
+                    bg: "white"
+                  }}
+                />
+              </InputGroup>
+            </Box>
+
+            {/* Filter Badges - Separate Row */}
+            <HStack spacing={3} flexWrap="wrap">
+              <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                Filter:
+              </Text>
+              <HStack spacing={2} flexWrap="wrap">
+                <Badge
+                  colorScheme={statusFilter === 'all' ? 'blue' : 'gray'}
+                  size="lg"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  cursor="pointer"
+                  onClick={() => setStatusFilter('all')}
+                  _hover={{ transform: 'scale(1.05)' }}
+                  transition="all 0.2s"
+                >
+                  All Status
+                </Badge>
+                <Badge
+                  colorScheme={statusFilter === 'available' ? 'green' : 'gray'}
+                  size="lg"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  cursor="pointer"
+                  onClick={() => setStatusFilter('available')}
+                  _hover={{ transform: 'scale(1.05)' }}
+                  transition="all 0.2s"
+                >
+                  Available
+                </Badge>
+                <Badge
+                  colorScheme={statusFilter === 'assigned' ? 'orange' : 'gray'}
+                  size="lg"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  cursor="pointer"
+                  onClick={() => setStatusFilter('assigned')}
+                  _hover={{ transform: 'scale(1.05)' }}
+                  transition="all 0.2s"
+                >
+                  Assigned
+                </Badge>
+                <Badge
+                  colorScheme={statusFilter === 'accepted' ? 'blue' : 'gray'}
+                  size="lg"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  cursor="pointer"
+                  onClick={() => setStatusFilter('accepted')}
+                  _hover={{ transform: 'scale(1.05)' }}
+                  transition="all 0.2s"
+                >
+                  Accepted
+                </Badge>
+                <Badge
+                  colorScheme={statusFilter === 'completed' ? 'purple' : 'gray'}
+                  size="lg"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  cursor="pointer"
+                  onClick={() => setStatusFilter('completed')}
+                  _hover={{ transform: 'scale(1.05)' }}
+                  transition="all 0.2s"
+                >
+                  Completed
+                </Badge>
+              </HStack>
+            </HStack>
+          </VStack>
+
+          {/* Jobs List */}
+          {filteredJobs.length > 0 ? (
+            <Box mt={6}>
+              <VStack spacing={6} align="stretch">
+                {filteredJobs.map((job) => (
+                  <EnhancedJobCard
+                    key={job.id}
+                    job={job}
+                    variant={job.status === 'assigned' ? 'assigned' : 'available'}
+                    onAccept={job.status === 'available' ? handleAcceptJob : undefined}
+                    onViewDetails={(jobId) => window.location.href = `/driver/jobs/${jobId}`}
+                    isAccepting={isLoading}
+                  />
+                ))}
               </VStack>
-            </CardBody>
-          </Card>
-        ) : (
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-            {jobs.map((job) => (
-              <Card key={job.id} borderWidth="1px" borderColor="gray.200">
-                <CardBody>
-                  <VStack spacing={4} align="stretch">
-                    {/* Header */}
-                    <Flex justify="space-between" align="start">
-                      <VStack align="start" spacing={1}>
-                        <Text fontWeight="bold" fontSize="lg">
-                          {job.bookingReference}
-                        </Text>
-                        <Badge colorScheme={getPriorityColor(job.priority)}>
-                          {job.priority.toUpperCase()}
-                        </Badge>
-                      </VStack>
-                      <Text fontSize="2xl" fontWeight="bold" color="green.500">
-                        {formatCurrency(job.driverPayout)}
-                      </Text>
-                    </Flex>
-
-                    <Divider />
-
-                    {/* Customer Info */}
-                    <VStack spacing={2} align="stretch">
-                      <HStack>
-                        <Icon as={FaUser} color="blue.500" />
-                        <Text fontWeight="medium">{job.customerName}</Text>
-                      </HStack>
-                      <HStack>
-                        <Icon as={FaPhone} color="blue.500" />
-                        <Text>{job.customerPhone || 'No phone provided'}</Text>
-                      </HStack>
-                    </VStack>
-
-                    <Divider />
-
-                    {/* Addresses */}
-                    <VStack spacing={3} align="stretch">
-                      <Box>
-                        <HStack mb={1}>
-                          <Icon as={FaMapMarkerAlt} color="green.500" />
-                          <Text fontWeight="medium" color="green.600">Pickup</Text>
-                        </HStack>
-                        <Text fontSize="sm" pl={6}>
-                          {job.pickupAddress.label}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500" pl={6}>
-                          {job.pickupAddress.postcode}
-                        </Text>
-                      </Box>
-
-                      <Box>
-                        <HStack mb={1}>
-                          <Icon as={FaMapMarkerAlt} color="red.500" />
-                          <Text fontWeight="medium" color="red.600">Dropoff</Text>
-                        </HStack>
-                        <Text fontSize="sm" pl={6}>
-                          {job.dropoffAddress.label}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500" pl={6}>
-                          {job.dropoffAddress.postcode}
-                        </Text>
-                      </Box>
-                    </VStack>
-
-                    <Divider />
-
-                    {/* Job Details */}
-                    <VStack spacing={2} align="stretch">
-                      <HStack>
-                        <Icon as={FaClock} color="blue.500" />
-                        <Text fontSize="sm">
-                          {formatDate(job.scheduledDate)}
-                        </Text>
-                      </HStack>
-                      <HStack>
-                        <Text fontSize="sm" color="gray.600">
-                          Duration: ~{job.estimatedDuration} mins
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                          Distance: {job.distance} miles
-                        </Text>
-                      </HStack>
-                      <HStack>
-                        <Text fontSize="sm" color="gray.600">
-                          Workers: {job.requiredWorkers || 1}
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                          Crew: {job.crewSize || 'TWO'}
-                        </Text>
-                      </HStack>
-                    </VStack>
-
-                    {/* Items */}
-                    {job.items && job.items.length > 0 && (
-                      <>
-                        <Divider />
-                        <Box>
-                          <HStack mb={2}>
-                            <Icon as={FaBox} color="purple.500" />
-                            <Text fontWeight="medium">Items</Text>
-                          </HStack>
-                          <VStack spacing={1} align="stretch">
-                            {job.items.map((item, index) => (
-                              <Text key={index} fontSize="sm" pl={6}>
-                                {item.quantity}x {item.name}
-                              </Text>
-                            ))}
-                          </VStack>
-                        </Box>
-                      </>
-                    )}
-
-                    {/* Action Buttons */}
-                    <VStack spacing={2} w="full">
-                      <Button
-                        colorScheme="green"
-                        size="lg"
-                        onClick={() => acceptJob(job.id)}
-                        isLoading={acceptingJob === job.id}
-                        loadingText="Accepting..."
-                        w="full"
-                      >
-                        Accept Job
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/driver/jobs/${job.id}`, '_blank')}
-                        w="full"
-                      >
-                        View Details
-                      </Button>
-                    </VStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-            ))}
-          </SimpleGrid>
-        )}
-      </VStack>
-    </Container>
+            </Box>
+          ) : (
+            <NoJobsMessage
+              onRefresh={refetch}
+              isRefreshing={isLoading}
+              message={searchTerm || statusFilter !== 'all' ? "No jobs match your filters" : "No jobs available"}
+              subMessage={searchTerm || statusFilter !== 'all' ? "Try adjusting your search or filter criteria" : "New jobs will appear here when customers place orders"}
+            />
+          )}
+        </VStack>
+      </Container>
+    </Box>
   );
 }

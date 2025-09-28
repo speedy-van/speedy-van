@@ -41,6 +41,15 @@ async function createTestDriver() {
         },
       });
 
+      // Create driver availability record - Default to online
+      await prisma.driverAvailability.create({
+        data: {
+          driverId: driver.id,
+          status: 'online',
+          locationConsent: false,
+        },
+      });
+
       console.log('✅ Test driver record created:', driver.id);
     } else {
       console.log('✅ Test driver record already exists:', user.driver.id);

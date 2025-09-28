@@ -70,16 +70,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Only update location if driver is online and has given consent
-    if (
-      !driver.availability ||
-      driver.availability.status !== 'online' ||
-      !driver.availability.locationConsent
-    ) {
-      return NextResponse.json(
-        { error: 'Location updates only allowed when online with consent' },
-        { status: 403 }
-      );
+    // Check or create driver availability
+    let driverAvailability = driver.availability;
+    
+    if (!driverAvailability) {
+      // Create availability record if it doesn't exist
+      driverAvailability = await prisma.driverAvailability.create({
+        data: {
+          driverId: driver.id,
+          status: 'online',
+          locationConsent: true, // Default to true for job tracking
+          lastSeenAt: new Date(),
+        },
+      });
+    }
+
+    // Update availability to online if driver is tracking a job
+    if (driverAvailability.status !== 'online' || !driverAvailability.locationConsent) {
+      driverAvailability = await prisma.driverAvailability.update({
+        where: { driverId: driver.id },
+        data: {
+          status: 'online',
+          locationConsent: true, // Enable consent when tracking jobs
+          lastSeenAt: new Date(),
+        },
+      });
     }
 
     // Create tracking ping

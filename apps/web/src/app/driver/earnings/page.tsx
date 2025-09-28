@@ -120,11 +120,12 @@ export default function DriverEarningsPage() {
       const data = await response.json();
       setEarningsData(data.data);
     } catch (err) {
-      console.error('Error fetching earnings:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('Driver Earnings Error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
       toast({
-        title: 'Error',
-        description: 'Failed to load your earnings',
+        title: 'Error Loading Earnings',
+        description: 'Failed to load your earnings data. Please try again.',
         status: 'error',
         duration: 5000,
         isClosable: true,

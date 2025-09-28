@@ -205,7 +205,7 @@ export function createSuccessResponse<T>(
 // ================================
 
 export function formatZodErrors(zodError: z.ZodError): ValidationError[] {
-  return zodError.errors.map(error => ({
+  return zodError.issues.map((error: z.ZodIssue) => ({
     field: error.path.join('.'),
     message: error.message,
     code: error.code,

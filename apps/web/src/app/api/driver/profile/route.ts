@@ -5,6 +5,19 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to check if driver has active orders
+async function hasActiveOrders(driverId: string): Promise<boolean> {
+  const activeAssignments = await prisma.assignment.findMany({
+    where: {
+      driverId: driverId,
+      status: {
+        in: ['invited', 'claimed', 'accepted']
+      }
+    }
+  });
+  return activeAssignments.length > 0;
+}
+
 // GET /api/driver/profile - Get driver profile (simplified version)
 export async function GET(request: NextRequest) {
   try {
@@ -46,7 +59,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Simple driver lookup
+    // Simple driver lookup with availability
     const driver = await prisma.driver.findUnique({
       where: { userId: userId },
       select: {
@@ -57,6 +70,13 @@ export async function GET(request: NextRequest) {
         rating: true,
         strikes: true,
         status: true,
+        availability: {
+          select: {
+            status: true,
+            locationConsent: true,
+            lastSeenAt: true,
+          },
+        },
       },
     });
 
@@ -114,10 +134,11 @@ export async function GET(request: NextRequest) {
       completionRate: 0,
       onTimeRate: 0,
       
-      // Simple availability
-      isOnline: false,
-      lastSeenAt: null,
-      locationConsent: false,
+      // Driver availability - Default to online if no availability record exists
+      isOnline: driver.availability?.status === 'online' || !driver.availability,
+      lastSeenAt: driver.availability?.lastSeenAt?.toISOString() || null,
+      locationConsent: driver.availability?.locationConsent || false,
+      hasActiveOrders: await hasActiveOrders(driver.id),
       
       // Empty arrays for now
       recentRatings: [],
@@ -168,7 +189,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
 
     // Simple updates only
-    const { firstName, lastName, phone, email, basePostcode, vehicleType } = body;
+    const { firstName, lastName, phone, email, basePostcode, vehicleType, locationConsent } = body;
 
     // Update user email if provided
     if (email) {
@@ -188,6 +209,44 @@ export async function PUT(request: NextRequest) {
         where: { userId: userId },
         data: driverUpdateData,
       });
+    }
+
+    // Handle location consent updates
+    if (locationConsent !== undefined) {
+      // Get driver to check for active orders
+      const driver = await prisma.driver.findUnique({
+        where: { userId: userId },
+        select: { id: true },
+      });
+
+      if (driver) {
+        // Check if driver has active orders
+        const driverHasActiveOrders = await hasActiveOrders(driver.id);
+        
+        // If trying to disable location sharing while having active orders, prevent it
+        if (driverHasActiveOrders && !locationConsent) {
+          return NextResponse.json(
+            { 
+              error: 'Cannot disable location sharing while you have active orders',
+              activeOrders: true 
+            },
+            { status: 400 }
+          );
+        }
+
+        // Update location consent in driver availability
+        await prisma.driverAvailability.upsert({
+          where: { driverId: driver.id },
+          create: {
+            driverId: driver.id,
+            status: 'online',
+            locationConsent: locationConsent,
+          },
+          update: {
+            locationConsent: locationConsent,
+          },
+        });
+      }
     }
 
     // Update driver application data if provided

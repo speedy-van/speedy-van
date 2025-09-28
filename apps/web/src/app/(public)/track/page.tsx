@@ -148,6 +148,18 @@ export default function TrackPage() {
     });
   };
 
+  const formatETA = (etaData: any) => {
+    if (!etaData || typeof etaData.minutesRemaining !== 'number') {
+      return undefined;
+    }
+    const minutes = Math.round(etaData.minutesRemaining);
+    if (minutes <= 0) return 'Arriving now';
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}h ${remainingMinutes}m`;
+  };
+
   return (
     <Container maxW="container.lg" py={8}>
       <VStack spacing={6} align="stretch">
@@ -321,7 +333,7 @@ export default function TrackPage() {
 
 
                   {/* ETA Information */}
-                  {trackingData.eta && (
+                  {trackingData.eta && trackingData.eta !== null && (
                     <>
                       <Divider />
                       <HStack justify="space-between">
@@ -335,16 +347,61 @@ export default function TrackPage() {
                             fontWeight="bold"
                             color="blue.600"
                           >
-                            {Math.round(trackingData.eta / (1000 * 60))} minutes
+                            {(() => {
+                              try {
+                                const eta = trackingData.eta as any;
+                                if (!eta) return 'Calculating...';
+                                
+                                // Handle object format (new API response)
+                                if (eta.minutesRemaining !== undefined) {
+                                  const minutes = Number(eta.minutesRemaining);
+                                  return isNaN(minutes) || minutes < 0 ? 'Calculating...' : `${minutes} minutes`;
+                                } 
+                                // Handle number format (legacy)
+                                else if (typeof eta === 'number') {
+                                  const minutes = Math.round(eta / (1000 * 60));
+                                  return isNaN(minutes) || minutes < 0 ? 'Calculating...' : `${minutes} minutes`;
+                                }
+                                return 'Calculating...';
+                              } catch {
+                                return 'Calculating...';
+                              }
+                            })()}
                           </Text>
                           <Text fontSize="sm" color="gray.600">
-                            Estimated arrival time
+                            {(() => {
+                              try {
+                                const eta = trackingData.eta as any;
+                                if (!eta?.estimatedArrival) return 'Estimated arrival time';
+                                
+                                const arrivalTime = new Date(eta.estimatedArrival);
+                                return isNaN(arrivalTime.getTime()) ? 
+                                  'Estimated arrival time' : 
+                                  `Arrives at ${arrivalTime.toLocaleTimeString()}`;
+                              } catch {
+                                return 'Estimated arrival time';
+                              }
+                            })()}
                           </Text>
                           <Badge
-                            colorScheme="blue"
+                            colorScheme={(() => {
+                              try {
+                                const eta = trackingData.eta as any;
+                                return eta?.isOnTime ? 'green' : 'orange';
+                              } catch {
+                                return 'blue';
+                              }
+                            })()}
                             size="sm"
                           >
-                            In Transit
+                            {(() => {
+                              try {
+                                const eta = trackingData.eta as any;
+                                return eta?.isOnTime ? 'On Time' : 'Delayed';
+                              } catch {
+                                return 'In Transit';
+                              }
+                            })()}
                           </Badge>
                         </VStack>
                       </HStack>
@@ -353,6 +410,61 @@ export default function TrackPage() {
                 </VStack>
               </CardBody>
             </Card>
+
+            {/* Live Map */}
+            {trackingData && (trackingData as any).pickupAddress && (trackingData as any).dropoffAddress && (
+              <Card bg={bgColor} border={`1px solid ${borderColor}`}>
+                <CardBody p={0}>
+                  <Box height={400} position="relative" borderRadius="lg" overflow="hidden">
+                    <LiveMap
+                      pickupLocation={{
+                        lat: (trackingData as any).pickupAddress.coordinates.lat,
+                        lng: (trackingData as any).pickupAddress.coordinates.lng,
+                        label: (trackingData as any).pickupAddress.label || 'Pickup Location'
+                      }}
+                      dropoffLocation={{
+                        lat: (trackingData as any).dropoffAddress.coordinates.lat,
+                        lng: (trackingData as any).dropoffAddress.coordinates.lng,
+                        label: (trackingData as any).dropoffAddress.label || 'Delivery Location'
+                      }}
+                      driverLocation={trackingData.currentLocation ? {
+                        lat: trackingData.currentLocation.lat,
+                        lng: trackingData.currentLocation.lng,
+                        label: 'Driver Location'
+                      } : undefined}
+                      height={400}
+                      showRoute={true}
+                      showETA={true}
+                      eta={formatETA((trackingData as any).eta)}
+                    />
+                  </Box>
+                  <Box p={4} bg={bgColor}>
+                    <HStack justify="space-between" align="center">
+                      <Text fontSize="sm" color="gray.600">
+                        🚚 Live driver location • 📍 Pickup • 🏁 Delivery
+                      </Text>
+                      <HStack spacing={2}>
+                        <Badge 
+                          colorScheme={isConnected ? 'green' : 'gray'}
+                          variant="subtle"
+                          size="sm"
+                        >
+                          <HStack spacing={1}>
+                            {isConnected ? <FiWifi /> : <FiWifiOff />}
+                            <Text>{isConnected ? 'Live' : 'Offline'}</Text>
+                          </HStack>
+                        </Badge>
+                        {trackingData.lastUpdated && (
+                          <Text fontSize="xs" color="gray.500">
+                            Updated: {new Date(trackingData.lastUpdated).toLocaleTimeString()}
+                          </Text>
+                        )}
+                      </HStack>
+                    </HStack>
+                  </Box>
+                </CardBody>
+              </Card>
+            )}
 
           </>
         )}

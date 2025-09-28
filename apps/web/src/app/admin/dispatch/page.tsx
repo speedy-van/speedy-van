@@ -115,10 +115,10 @@ async function getDispatchData() {
     } : null,
     customer: job.customer ? {
       ...job.customer,
-      createdAt: job.customer.createdAt.toISOString(),
-      lastLogin: job.customer.lastLogin?.toISOString(),
-      resetTokenExpiry: job.customer.resetTokenExpiry?.toISOString(),
-      emailVerificationExpiry: job.customer.emailVerificationExpiry?.toISOString(),
+      createdAt: job.customer!.createdAt.toISOString(),
+      lastLogin: job.customer!.lastLogin?.toISOString(),
+      resetTokenExpiry: job.customer!.resetTokenExpiry?.toISOString(),
+      emailVerificationExpiry: job.customer!.emailVerificationExpiry?.toISOString(),
     } : null,
   }));
 

@@ -224,10 +224,11 @@ export default function DriverApplicationPage() {
       setUploadedImages({});
 
     } catch (error) {
-      console.error('Error submitting application:', error);
+      console.error('Driver Application Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
-        title: 'Error',
-        description: 'Failed to submit application. Please try again.',
+        title: 'Application Submission Failed',
+        description: `Failed to submit application: ${errorMessage}`,
         status: 'error',
         duration: 5000,
         isClosable: true,

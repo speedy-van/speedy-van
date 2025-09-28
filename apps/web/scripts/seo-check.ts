@@ -70,6 +70,7 @@ try {
 
   process.exit(0);
 } catch (error) {
-  console.error('❌ SEO check failed:', error instanceof Error ? error.message : String(error));
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('❌ SEO check failed:', errorMessage);
   process.exit(1);
 }

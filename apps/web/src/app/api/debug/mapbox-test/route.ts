@@ -4,7 +4,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const query = url.searchParams.get('q') || 'London';
 
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiYWhtYWRhbHdha2FpIiwiYSI6ImNtZGNsZ3RsZDEzdGsya3F0ODFxeGRzbXoifQ.jfgGW0KNFTwATOShRDtQsg';
 
   if (!token) {
     return NextResponse.json({

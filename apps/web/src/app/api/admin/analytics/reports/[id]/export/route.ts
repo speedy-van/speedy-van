@@ -36,7 +36,7 @@ export async function GET(
       filename = `report-${params.id}.xlsx`;
     }
 
-    await logAudit(session.user.id, 'export_report', params.id, { targetType: 'analytics_report', before: null, after: { reportId: params.id, format, filename } });
+    await logAudit((session.user as any).id, 'export_report', params.id, { targetType: 'analytics_report', before: null, after: { reportId: params.id, format, filename } });
 
     return new Response(content, {
       headers: {

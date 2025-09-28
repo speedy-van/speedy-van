@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   trackingService,
   TrackingData,
+  RealTimeTrackingData,
   TrackingUpdate,
   RealTimeTrackingOptions,
 } from '@/lib/tracking-service';
@@ -17,13 +18,13 @@ export interface UseRealTimeTrackingOptions extends RealTimeTrackingOptions {
 
 export interface UseRealTimeTrackingReturn {
   // Data
-  trackingData: TrackingData | null;
+  trackingData: RealTimeTrackingData | null;
   isConnected: boolean;
   isLoading: boolean;
   error: string | null;
 
   // Actions
-  lookupBooking: (bookingCode: string) => Promise<TrackingData | null>;
+  lookupBooking: (bookingCode: string) => Promise<RealTimeTrackingData | null>;
   subscribeToBooking: (bookingId: string) => void;
   unsubscribeFromBooking: (bookingId: string) => void;
   refreshData: () => Promise<void>;
@@ -40,7 +41,7 @@ export interface UseRealTimeTrackingReturn {
 export function useRealTimeTracking(
   options: UseRealTimeTrackingOptions = {}
 ): UseRealTimeTrackingReturn {
-  const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
+  const [trackingData, setTrackingData] = useState<RealTimeTrackingData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export function useRealTimeTracking(
   }, []);
 
   const lookupBooking = useCallback(
-    async (bookingCode: string): Promise<TrackingData | null> => {
+    async (bookingCode: string): Promise<RealTimeTrackingData | null> => {
       if (!bookingCode.trim()) {
         setError('Please enter a booking code');
         return null;

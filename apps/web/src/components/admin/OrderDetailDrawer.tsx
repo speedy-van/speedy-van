@@ -54,6 +54,7 @@ import {
   FiSave,
   FiTrash2,
 } from 'react-icons/fi';
+import PaymentConfirmationButton from './PaymentConfirmationButton';
 
 interface OrderDetail {
   id: string;
@@ -144,6 +145,30 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
     onOpen: onAssignModalOpen, 
     onClose: onAssignModalClose 
   } = useDisclosure();
+
+  // Auto-load drivers when assign modal opens
+  useEffect(() => {
+    if (isAssignModalOpen && availableDrivers.length === 0) {
+      loadAvailableDrivers();
+    }
+  }, [isAssignModalOpen]);
+
+  // Auto-select driver if only one is available
+  useEffect(() => {
+    if (availableDrivers.length === 1 && !selectedDriverId && isAssignModalOpen) {
+      const singleDriver = availableDrivers[0];
+      if (singleDriver.isAvailable) {
+        setSelectedDriverId(singleDriver.id);
+        toast({
+          title: 'Driver Auto-Selected',
+          description: `Automatically selected ${singleDriver.name} as the only available driver`,
+          status: 'info',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    }
+  }, [availableDrivers, selectedDriverId, isAssignModalOpen]);
   const { 
     isOpen: isRemoveModalOpen, 
     onOpen: onRemoveModalOpen, 
@@ -498,20 +523,46 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
   const loadAvailableDrivers = async () => {
     setIsLoadingDrivers(true);
     try {
+      console.log('🚗 Loading available drivers...');
       const response = await fetch('/api/admin/drivers/available');
+      
       if (!response.ok) {
-        throw new Error('Failed to load drivers');
+        const errorData = await response.text();
+        console.error('❌ Driver loading failed:', response.status, errorData);
+        throw new Error(`Failed to load drivers: ${response.status}`);
       }
+      
       const data = await response.json();
-      setAvailableDrivers(data.data.drivers);
+      console.log('✅ Drivers loaded:', data);
+      
+      if (data.success && data.data && data.data.drivers) {
+        setAvailableDrivers(data.data.drivers);
+        console.log(`📋 Set ${data.data.drivers.length} drivers in state`);
+        
+        if (data.data.drivers.length === 0) {
+          toast({
+            title: 'No Drivers Available',
+            description: `No active drivers found. Total in system: ${data.data.total || 0}`,
+            status: 'warning',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      } else {
+        console.error('❌ Invalid response structure:', data);
+        throw new Error('Invalid response from server');
+      }
+      
     } catch (error) {
+      console.error('❌ Error loading drivers:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load available drivers',
+        title: 'Error Loading Drivers',
+        description: error instanceof Error ? error.message : 'Failed to load available drivers',
         status: 'error',
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
+      setAvailableDrivers([]); // Clear the list on error
     } finally {
       setIsLoadingDrivers(false);
     }
@@ -711,12 +762,32 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
               <Divider />
 
               {/* Order Status */}
-              <HStack justify="space-between">
-                <Text fontWeight="bold">Status</Text>
-                <Badge colorScheme={getStatusColor(order.status)} size="lg">
-                  {order.status.replace('_', ' ')}
-                </Badge>
-              </HStack>
+              <VStack align="stretch" spacing={3}>
+                <HStack justify="space-between">
+                  <Text fontWeight="bold">Status</Text>
+                  <Badge colorScheme={getStatusColor(order.status)} size="lg">
+                    {order.status.replace('_', ' ')}
+                  </Badge>
+                </HStack>
+
+                {/* Payment Confirmation Button - Show if payment is pending */}
+                {order.status === 'PENDING_PAYMENT' && (
+                  <PaymentConfirmationButton
+                    booking={{
+                      id: order.id,
+                      reference: order.reference,
+                      status: order.status,
+                      totalGBP: order.totalGBP,
+                      customerName: order.customerName,
+                      paidAt: order.paidAt
+                    }}
+                    onSuccess={() => {
+                      // Refresh order details after successful confirmation
+                      fetchOrderDetails();
+                    }}
+                  />
+                )}
+              </VStack>
 
               <Divider />
 
@@ -1289,9 +1360,9 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
       </Modal>
 
       {/* Assign Driver Modal */}
-      <Modal isOpen={isAssignModalOpen} onClose={onAssignModalClose} size="lg">
+      <Modal isOpen={isAssignModalOpen} onClose={onAssignModalClose} size="xl" scrollBehavior="inside">
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent maxH="90vh">
           <ModalHeader>
             <HStack spacing={2}>
               <FiTruck />
@@ -1299,7 +1370,7 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
             </HStack>
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
+          <ModalBody overflowY="auto" maxH="60vh">
             <VStack spacing={4} align="stretch">
               <Alert status="info">
                 <AlertIcon />
@@ -1318,18 +1389,127 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                     <Spinner size="sm" />
                     <Text>Loading drivers...</Text>
                   </HStack>
+                ) : availableDrivers.length === 0 ? (
+                  <VStack spacing={3} align="stretch">
+                    <Alert status="warning">
+                      <AlertIcon />
+                      <VStack align="start" spacing={1}>
+                        <Text fontSize="sm" fontWeight="bold">No drivers found</Text>
+                        <Text fontSize="xs">
+                          This could happen if no drivers are approved and active, or if all drivers are currently busy.
+                        </Text>
+                      </VStack>
+                    </Alert>
+                    <HStack spacing={2}>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={loadAvailableDrivers}
+                        isLoading={isLoadingDrivers}
+                      >
+                        Refresh Driver List
+                      </Button>
+                      <Button
+                        size="sm"
+                        colorScheme="orange"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/admin/drivers/fix-availability', {
+                              method: 'POST'
+                            });
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                              toast({
+                                title: 'Availability Fixed',
+                                description: `Created availability records for ${result.driversFixed} drivers`,
+                                status: 'success',
+                                duration: 3000,
+                              });
+                              // Reload drivers after fix
+                              loadAvailableDrivers();
+                            } else {
+                              throw new Error(result.error || 'Fix failed');
+                            }
+                          } catch (error) {
+                            toast({
+                              title: 'Fix Failed',
+                              description: error instanceof Error ? error.message : 'Failed to fix availability',
+                              status: 'error',
+                              duration: 5000,
+                            });
+                          }
+                        }}
+                      >
+                        Fix Missing Records
+                      </Button>
+                    </HStack>
+                  </VStack>
                 ) : (
-                  <Select
-                    placeholder="Select a driver"
-                    value={selectedDriverId}
-                    onChange={(e) => setSelectedDriverId(e.target.value)}
-                  >
-                    {availableDrivers.map((driver) => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.name} - {driver.isAvailable ? 'Available' : `${driver.totalActiveJobs} active jobs`}
-                      </option>
-                    ))}
-                  </Select>
+                  <VStack spacing={2} align="stretch">
+                    <Select
+                      placeholder="👤 Click here to select a driver"
+                      value={selectedDriverId}
+                      onChange={(e) => setSelectedDriverId(e.target.value)}
+                      bg={selectedDriverId ? 'green.50' : 'white'}
+                      borderColor={selectedDriverId ? 'green.300' : 'gray.200'}
+                      focusBorderColor="blue.500"
+                      size="lg"
+                    >
+                      {availableDrivers.map((driver) => (
+                        <option key={driver.id} value={driver.id}>
+                          {driver.name} - {driver.availabilityReason || 'Available'} 
+                          {driver.availability?.status && ` (${driver.availability.status})`}
+                        </option>
+                      ))}
+                    </Select>
+                    
+                    {!selectedDriverId && (
+                      <Alert status="warning" size="sm">
+                        <AlertIcon />
+                        <Text fontSize="sm">
+                          Please select a driver from the dropdown above to enable assignment
+                        </Text>
+                      </Alert>
+                    )}
+                    
+                    {selectedDriverId && (
+                      <Alert status="success" size="sm">
+                        <AlertIcon />
+                        <Text fontSize="sm">
+                          Driver selected! Click "Assign Driver" to proceed
+                        </Text>
+                      </Alert>
+                    )}
+                    
+                    {availableDrivers.length === 1 && !selectedDriverId && (
+                      <HStack spacing={2}>
+                        <Button
+                          size="sm"
+                          colorScheme="green"
+                          variant="solid"
+                          onClick={() => {
+                            const driver = availableDrivers[0];
+                            if (driver.isAvailable) {
+                              setSelectedDriverId(driver.id);
+                            }
+                          }}
+                          leftIcon={<FiTruck />}
+                        >
+                          Quick Select: {availableDrivers[0].name}
+                        </Button>
+                      </HStack>
+                    )}
+                    
+                    <Text fontSize="xs" color="gray.600">
+                      Found {availableDrivers.length} driver{availableDrivers.length !== 1 ? 's' : ''}
+                      {availableDrivers.filter(d => d.isAvailable).length > 0 && 
+                        ` (${availableDrivers.filter(d => d.isAvailable).length} available)`
+                      }
+                    </Text>
+                  </VStack>
                 )}
                 <Button
                   size="xs"
@@ -1361,26 +1541,39 @@ const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                   <Text fontSize="sm">Dropoff: {order.dropoffAddress?.label}</Text>
                 </Box>
               )}
+
+              {/* Spacer to ensure footer is visible */}
+              <Box h={4}></Box>
             </VStack>
           </ModalBody>
 
-          <ModalFooter>
-            <HStack spacing={3}>
+          <ModalFooter bg="white" borderTop="1px solid" borderColor="gray.200" position="sticky" bottom={0}>
+            <HStack spacing={3} w="full" justify="space-between">
               <Button 
                 variant="outline" 
                 onClick={onAssignModalClose}
                 isDisabled={isAssigningDriver}
+                size="lg"
               >
                 Cancel
               </Button>
               <Button 
-                colorScheme="blue" 
+                colorScheme={selectedDriverId ? "blue" : "gray"} 
                 onClick={handleAssignDriver}
                 isLoading={isAssigningDriver}
                 loadingText="Assigning..."
                 isDisabled={!selectedDriverId}
+                size="lg"
+                rightIcon={selectedDriverId ? <FiTruck /> : undefined}
+                flex={1}
+                maxW="300px"
               >
-                {order?.driver ? 'Change Driver' : 'Assign Driver'}
+                {!selectedDriverId 
+                  ? 'Select Driver First' 
+                  : order?.driver 
+                    ? 'Change Driver' 
+                    : 'Assign Driver'
+                }
               </Button>
             </HStack>
           </ModalFooter>

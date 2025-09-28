@@ -94,13 +94,26 @@ export function UnifiedNavigation({
       bg={bg}
       borderBottom="1px"
       borderColor={borderColor}
-      px={{ base: 3, md: 4 }}
-      py={2}
+      boxShadow="sm"
+      pl={{ base: 3, md: 4 }}
+      pr={{ base: 1, md: 4 }}
+      py={{ base: 4, md: 3 }}
     >
-      <Flex justify="space-between" align="center">
-        <Link href={ROUTES.HOME} _hover={{ textDecoration: 'none' }}>
-          <Text fontSize={{ base: "lg", md: "xl" }} fontWeight="bold" color="primary.500">
-            Speedy Van
+      <Flex 
+        justify="space-between"
+        align="center" 
+        minH={{ base: "48px", md: "auto" }}
+        w="100%"
+      >
+        {/* Logo/Brand - Left Side */}
+        <Link href={effectiveUserRole === 'driver' ? ROUTES.DRIVER_DASHBOARD : ROUTES.HOME} _hover={{ textDecoration: 'none' }}>
+          <Text 
+            fontSize={{ base: "md", md: "xl" }} 
+            fontWeight="bold" 
+            color="primary.500"
+            noOfLines={1}
+          >
+            {effectiveUserRole === 'driver' ? 'Speedy Van Driver' : 'Speedy Van'}
           </Text>
         </Link>
         
@@ -121,16 +134,23 @@ export function UnifiedNavigation({
           </HStack>
         )}
         
-        {/* Mobile Navigation Button */}
+        {/* Mobile Navigation Button - Far Right Edge */}
         {isMobile && (
-          <IconButton
-            ref={btnRef}
-            aria-label="Open menu"
-            icon={<FiMenu />}
-            variant="ghost"
-            onClick={onOpen}
-            size="sm"
-          />
+          <Box ml="auto">
+            <IconButton
+              ref={btnRef}
+              aria-label="Open navigation menu"
+              icon={<FiMenu />}
+              variant="ghost"
+              onClick={onOpen}
+              minW="48px"
+              h="48px"
+              px="14px"
+              borderRadius="lg"
+              _hover={{ bg: "rgba(0,194,255,0.1)" }}
+              _active={{ bg: "rgba(0,194,255,0.15)" }}
+            />
+          </Box>
         )}
       </Flex>
       
@@ -141,16 +161,30 @@ export function UnifiedNavigation({
         onClose={onClose}
         finalFocusRef={btnRef}
       >
-        <DrawerOverlay />
+        <DrawerOverlay bg="rgba(0,0,0,0.4)" backdropFilter="blur(4px)" />
         <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>
-            <Text fontSize="lg" fontWeight="bold" color="primary.500">
-              Speedy Van
-            </Text>
-          </DrawerHeader>
-          <DrawerBody>
-            <VStack spacing={4} align="stretch">
+          <DrawerCloseButton
+            size="lg"
+            top={4}
+            right={4}
+            bg="rgba(0,0,0,0.1)"
+            borderRadius="full"
+            _hover={{ bg: "rgba(0,194,255,0.1)" }}
+          />
+          <DrawerBody pt={12} px={0}>
+            {/* Role-specific header section */}
+            {effectiveUserRole === 'driver' && (
+              <Box px={6} py={4} bg="gray.50" borderBottom="1px solid" borderColor="gray.200">
+                <Text fontSize="sm" fontWeight="semibold" color="gray.600">
+                  Driver Navigation
+                </Text>
+                <Text fontSize="xs" color="gray.500">
+                  Manage your jobs and schedule
+                </Text>
+              </Box>
+            )}
+            
+            <VStack spacing={1} align="stretch" pt={2}>
               {navigationItems.map((item) => (
                 <Button
                   key={item.href}
@@ -159,6 +193,18 @@ export function UnifiedNavigation({
                   variant="ghost"
                   justifyContent="flex-start"
                   size="lg"
+                  minH="52px"
+                  px={6}
+                  borderRadius="none"
+                  fontWeight="medium"
+                  color="gray.700"
+                  _hover={{ 
+                    bg: "rgba(0,194,255,0.08)",
+                    color: "primary.600"
+                  }}
+                  _active={{
+                    bg: "rgba(0,194,255,0.12)"
+                  }}
                   onClick={onClose}
                 >
                   {item.label}

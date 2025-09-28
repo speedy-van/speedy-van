@@ -107,8 +107,6 @@ export default function StripePaymentButton({
     setPaymentStatus('processing');
 
     try {
-      console.log('🔄 Creating booking and Stripe checkout session...');
-      
       // Validate required data
       if (!bookingData.customer.email || !bookingData.customer.name) {
         throw new Error('Customer email and name are required');
@@ -133,8 +131,6 @@ export default function StripePaymentButton({
 
       // Create booking if it doesn't exist yet
       if (!bookingId) {
-        console.log('📝 Creating booking before payment...');
-        
         // Transform the data to match the API schema
         const bookingRequest = {
           customer: {
@@ -192,8 +188,6 @@ export default function StripePaymentButton({
           },
         };
 
-        console.log('📤 Sending booking request:', bookingRequest);
-
         const bookingResponse = await fetch('/api/booking-luxury', {
           method: 'POST',
           headers: {
@@ -209,7 +203,6 @@ export default function StripePaymentButton({
 
         const bookingResponseData = await bookingResponse.json();
         bookingId = bookingResponseData.booking.id;
-        console.log('✅ Booking created:', bookingId);
       }
 
       const requestData = {
@@ -224,11 +217,6 @@ export default function StripePaymentButton({
         successUrl: `${window.location.origin}/booking-luxury/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/booking-luxury?step=2&payment=cancelled`,
       };
-      
-      console.log('📤 Request data:', {
-        ...requestData,
-        bookingData: '...(truncated for logging)',
-      });
       
       // Create Stripe checkout session
       const response = await fetch('/api/payment/create-checkout-session', {
@@ -246,8 +234,6 @@ export default function StripePaymentButton({
       }
 
       const { sessionUrl, sessionId } = await response.json();
-      
-      console.log('✅ Stripe session created:', sessionId);
       
       // Redirect to Stripe Checkout
       window.location.href = sessionUrl;
@@ -272,15 +258,56 @@ export default function StripePaymentButton({
 
   return (
     <VStack spacing={4} align="stretch" w="full">
-      <Button
-        size="lg"
-        colorScheme="blue"
-        onClick={handlePayment}
-        isDisabled={disabled || isProcessing}
-        leftIcon={isProcessing ? <Spinner size="sm" /> : <FaCreditCard />}
-      >
-        {isProcessing ? 'Processing...' : 'Pay Securely with Stripe'}
-      </Button>
+      <Box position="relative" w="full">
+        <Button
+          size="xl"
+          h={{ base: "60px", md: "70px" }}
+          fontSize={{ base: "lg", md: "xl" }}
+          fontWeight="bold"
+          w="full"
+          bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          color="white"
+          onClick={handlePayment}
+          isDisabled={disabled || isProcessing}
+          leftIcon={isProcessing ? <Spinner size="md" color="white" /> : <FaCreditCard size="20px" />}
+          _hover={{
+            transform: "translateY(-2px)",
+            shadow: "2xl",
+            bg: "linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)",
+          }}
+          _active={{
+            transform: "translateY(0px)",
+          }}
+          _disabled={{
+            opacity: 0.6,
+            cursor: "not-allowed",
+            transform: "none",
+          }}
+          transition="all 0.3s ease"
+          position="relative"
+          overflow="hidden"
+          _before={{
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: "-100%",
+            width: "100%",
+            height: "100%",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+            animation: !disabled && !isProcessing ? "waveAnimation 2s infinite" : "none",
+            pointerEvents: "none",
+          }}
+          sx={{
+            "@keyframes waveAnimation": {
+              "0%": { left: "-100%" },
+              "50%": { left: "100%" },
+              "100%": { left: "100%" },
+            }
+          }}
+        >
+          {isProcessing ? 'Processing Payment...' : '🚀 Pay Securely with Stripe'}
+        </Button>
+      </Box>
 
       {paymentStatus === 'error' && (
         <Alert status="error">
@@ -294,20 +321,31 @@ export default function StripePaymentButton({
         </Alert>
       )}
 
-      <HStack justify="center" spacing={4} fontSize="sm" color="gray.600">
-        <HStack>
-          <FaLock />
-          <Text>Secure Payment</Text>
+      <VStack spacing={3} align="center">
+        <HStack justify="center" spacing={6} fontSize="sm" color="gray.600">
+          <HStack spacing={2}>
+            <FaLock color="#48BB78" />
+            <Text fontWeight="600">Secure Payment</Text>
+          </HStack>
+          <HStack spacing={2}>
+            <FaShieldAlt color="#48BB78" />
+            <Text fontWeight="600">Protected by Stripe</Text>
+          </HStack>
         </HStack>
-        <HStack>
-          <FaShieldAlt />
-          <Text>Protected by Stripe</Text>
-        </HStack>
-      </HStack>
 
-      <Badge colorScheme="green" alignSelf="center">
-        🔒 Bank-level Security
-      </Badge>
+        <HStack spacing={4} align="center">
+          <Badge colorScheme="green" px={3} py={1} borderRadius="full" fontSize="xs">
+            🔒 Bank-level Security
+          </Badge>
+          <Badge colorScheme="blue" px={3} py={1} borderRadius="full" fontSize="xs">
+            ⚡ Instant Processing
+          </Badge>
+        </HStack>
+
+        <Text fontSize="xs" color="gray.500" textAlign="center" maxW="300px">
+          Your payment information is encrypted and secure. We never store your card details.
+        </Text>
+      </VStack>
     </VStack>
   );
 }

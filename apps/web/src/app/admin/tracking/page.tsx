@@ -40,8 +40,11 @@ import {
   FiFilter,
   FiEye,
   FiNavigation,
+  FiWifi,
+  FiWifiOff,
 } from 'react-icons/fi';
 import dynamic from 'next/dynamic';
+import { useAdminRealTimeTracking } from '@/hooks/useRealTimeTracking';
 
 const LiveMap = dynamic(() => import('@/components/Map/LiveMap'), {
   ssr: false,
@@ -136,6 +139,47 @@ export default function TrackingHub() {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Real-time tracking hook
+  const { isConnected } = useAdminRealTimeTracking({
+    onUpdate: update => {
+      console.log('🔄 Admin tracking received real-time update:', update);
+      
+      if (update.type === 'location') {
+        // Update driver locations in real-time
+        setDriverLocations(prevLocations => 
+          prevLocations.map(loc => {
+            if (loc.driverId === update.driverId) {
+              return {
+                ...loc,
+                lat: update.location.lat,
+                lng: update.location.lng,
+                lastUpdate: update.timestamp.toISOString(),
+              };
+            }
+            return loc;
+          })
+        );
+
+        // Update booking locations
+        setBookings(prevBookings => 
+          prevBookings.map(booking => {
+            if (booking.id === update.bookingId) {
+              return {
+                ...booking,
+                currentLocation: {
+                  lat: update.location.lat,
+                  lng: update.location.lng,
+                  timestamp: update.timestamp.toISOString(),
+                },
+              };
+            }
+            return booking;
+          })
+        );
+      }
+    },
+  });
 
   useEffect(() => {
     loadTrackingData();
@@ -303,6 +347,16 @@ export default function TrackingHub() {
             </Text>
           </VStack>
           <HStack spacing={4}>
+            <HStack spacing={2}>
+              {isConnected ? (
+                <FiWifi color="green" />
+              ) : (
+                <FiWifiOff color="red" />
+              )}
+              <Text fontSize="sm">
+                {isConnected ? 'Real-time connected' : 'Real-time disconnected'}
+              </Text>
+            </HStack>
             <Text fontSize="sm" color="gray.500">
               <span suppressHydrationWarning>
                 Last updated: {lastUpdate?.toLocaleTimeString()}

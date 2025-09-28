@@ -149,7 +149,7 @@ async function globalSetup(config: FullConfig) {
         },
         availability: {
           create: {
-            status: 'offline',
+            status: 'online',
             lastSeenAt: new Date(),
             lastLat: 51.5074,
             lastLng: -0.1278,

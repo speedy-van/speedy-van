@@ -6,32 +6,27 @@ import {
   Heading, 
   Text, 
   Box, 
-  SimpleGrid, 
-  Stat, 
-  StatLabel, 
-  StatNumber, 
-  StatHelpText, 
-  StatArrow, 
   VStack, 
   HStack, 
   Button, 
-  Badge, 
-  Card, 
-  CardBody, 
-  CardHeader,
   useToast,
   Spinner,
   Alert,
   AlertIcon,
   AlertDescription,
-  Divider,
   useBreakpointValue,
   Stack,
-  IconButton,
-  Flex
+  Flex,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/routing';
+
+import { EnhancedJobCard } from '@/components/driver/EnhancedJobCard';
+import { NoJobsMessage } from '@/components/driver/NoJobsMessage';
+import { DriverStatsCard } from '@/components/driver/DriverStatsCard';
+import { useOptimizedDataLoader } from '@/hooks/useOptimizedDataLoader';
+import { useRouter } from 'next/navigation';
 
 interface DashboardData {
   driver: {
@@ -55,38 +50,27 @@ interface DashboardData {
 }
 
 export default function DriverDashboard() {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const toast = useToast();
+  const router = useRouter();
   const isMobile = useBreakpointValue({ base: true, md: false });
 
-  // Load dashboard data
+  // Logout handler
+  const handleLogout = () => {
+    router.push('/driver/logout');
+  };
+
+  // Use optimized data loader
+  const { data: dashboardData, loading: isLoading, error, refetch } = useOptimizedDataLoader<DashboardData>({
+    endpoint: '/api/driver/dashboard',
+    debounceMs: 300,
+    cacheKey: 'driver-dashboard',
+    enabled: true
+  });
+
+  // Show toast for errors
   useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/driver/dashboard');
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load dashboard data');
-      }
-
-      const data = await response.json();
-      setDashboardData(data.data);
-      
-      console.log('✅ Driver dashboard data loaded:', data.data.statistics);
-
-    } catch (error) {
-      console.error('❌ Error loading dashboard data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load data');
-      
+    if (error) {
+      console.error('Driver Dashboard Error:', error);
       toast({
         title: 'Error Loading Dashboard',
         description: 'Failed to load your dashboard data. Please try again.',
@@ -94,10 +78,8 @@ export default function DriverDashboard() {
         duration: 5000,
         isClosable: true,
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [error, toast]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -161,7 +143,7 @@ export default function DriverDashboard() {
           <AlertIcon />
           <Box>
             <AlertDescription fontSize={{ base: "sm", md: "md" }}>{error}</AlertDescription>
-            <Button mt={3} size={{ base: "sm", md: "md" }} onClick={loadDashboardData}>
+            <Button mt={3} size={{ base: "sm", md: "md" }} onClick={refetch}>
               Try Again
             </Button>
           </Box>
@@ -184,248 +166,168 @@ export default function DriverDashboard() {
   const { driver, jobs, statistics } = dashboardData;
 
   return (
-    <Container maxW="7xl" py={{ base: 4, md: 8 }}>
-      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
-        {/* Header */}
-        <Box>
-          <Heading size={{ base: "md", md: "lg" }} mb={2}>
-            Driver Dashboard
-          </Heading>
-          <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
-            Welcome back! Here's your latest activity and earnings.
-          </Text>
-          <Badge 
-            colorScheme={driver.status === 'active' ? 'green' : 'red'} 
-            size={{ base: "md", md: "lg" }} 
-            mt={2}
-          >
-            Status: {driver.status}
-          </Badge>
-        </Box>
+    <Box minH="100vh" bg="gray.50">
 
-        {/* Stats Grid */}
-        <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} spacing={{ base: 4, md: 6 }}>
-          <Card>
-            <CardBody p={{ base: 4, md: 6 }}>
-              <Stat>
-                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Assigned Jobs</StatLabel>
-                <StatNumber fontSize={{ base: "xl", md: "2xl" }}>{statistics.assignedJobs}</StatNumber>
-                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
-                  Current assignments
-                </StatHelpText>
-              </Stat>
-            </CardBody>
-          </Card>
+      <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+        <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+          {/* Enhanced Stats Card */}
+          <DriverStatsCard
+            stats={statistics}
+            title="Your Performance Dashboard"
+            description="Track your jobs, earnings, and performance metrics"
+          />
 
-          <Card>
-            <CardBody p={{ base: 4, md: 6 }}>
-              <Stat>
-                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Available Jobs</StatLabel>
-                <StatNumber fontSize={{ base: "xl", md: "2xl" }}>{statistics.availableJobs}</StatNumber>
-                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
-                  Jobs you can accept
-                </StatHelpText>
-              </Stat>
-            </CardBody>
-          </Card>
+          {/* Assigned Jobs */}
+          {jobs.assigned.length > 0 && (
+            <Box>
+              <Heading size={{ base: "lg", md: "xl" }} mb={{ base: 4, md: 6 }} color="gray.800">
+                Your Assigned Jobs
+              </Heading>
+              <VStack spacing={{ base: 4, md: 6 }} align="stretch">
+                {jobs.assigned.map((job) => (
+                  <EnhancedJobCard
+                    key={job.id}
+                    job={{
+                      id: job.id,
+                      reference: job.reference,
+                      customer: job.customer,
+                      customerPhone: job.customerPhone || "07901846297",
+                      date: job.date,
+                      time: job.time,
+                      from: job.from,
+                      to: job.to,
+                      distance: job.distance,
+                      vehicleType: job.vehicleType,
+                      items: job.items,
+                      estimatedEarnings: job.estimatedEarnings,
+                      status: job.assignmentStatus,
+                      duration: job.duration,
+                      crew: job.crew,
+                    }}
+                    variant="assigned"
+                    onAccept={job.assignmentStatus === 'invited' ? handleAcceptJob : undefined}
+                    onViewDetails={(jobId) => window.location.href = `/driver/jobs/${jobId}`}
+                    isAccepting={isLoading}
+                  />
+                ))}
+              </VStack>
+            </Box>
+          )}
 
-          <Card>
-            <CardBody p={{ base: 4, md: 6 }}>
-              <Stat>
-                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Completed Today</StatLabel>
-                <StatNumber fontSize={{ base: "xl", md: "2xl" }}>{statistics.completedToday}</StatNumber>
-                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
-                  <StatArrow type="increase" />
-                  Today's work
-                </StatHelpText>
-              </Stat>
-            </CardBody>
-          </Card>
+          {/* Available Jobs */}
+          {jobs.available.length > 0 && (
+            <Box>
+              <Heading size={{ base: "lg", md: "xl" }} mb={{ base: 4, md: 6 }} color="gray.800">
+                Available Jobs
+              </Heading>
+              <VStack spacing={{ base: 4, md: 6 }} align="stretch">
+                {jobs.available.map((job) => (
+                  <EnhancedJobCard
+                    key={job.id}
+                    job={{
+                      id: job.id,
+                      reference: job.reference,
+                      customer: job.customer,
+                      customerPhone: job.customerPhone || "07901846297",
+                      date: job.date,
+                      time: job.time,
+                      from: job.from,
+                      to: job.to,
+                      distance: job.distance,
+                      vehicleType: job.vehicleType,
+                      items: job.items,
+                      estimatedEarnings: job.estimatedEarnings,
+                      status: "available",
+                      duration: job.duration,
+                      crew: job.crew,
+                    }}
+                    variant="available"
+                    onAccept={handleAcceptJob}
+                    onViewDetails={(jobId) => window.location.href = `/driver/jobs/${jobId}`}
+                    isAccepting={isLoading}
+                  />
+                ))}
+              </VStack>
+            </Box>
+          )}
 
-          <Card>
-            <CardBody p={{ base: 4, md: 6 }}>
-              <Stat>
-                <StatLabel fontSize={{ base: "xs", md: "sm" }}>Total Earnings</StatLabel>
-                <StatNumber fontSize={{ base: "xl", md: "2xl" }}>£{statistics.totalEarnings.toFixed(2)}</StatNumber>
-                <StatHelpText fontSize={{ base: "xs", md: "sm" }}>
-                  Average: {statistics.averageRating.toFixed(1)} ⭐
-                </StatHelpText>
-              </Stat>
-            </CardBody>
-          </Card>
-        </SimpleGrid>
+          {/* No Jobs Message */}
+          {jobs.assigned.length === 0 && jobs.available.length === 0 && (
+            <NoJobsMessage
+              onRefresh={refetch}
+              isRefreshing={isLoading}
+              message="No available jobs at the moment"
+              subMessage="New jobs will appear here when customers place orders"
+            />
+          )}
 
-        {/* Assigned Jobs */}
-        {jobs.assigned.length > 0 && (
+          {/* Quick Actions */}
           <Box>
-            <Heading size={{ base: "sm", md: "md" }} mb={{ base: 4, md: 6 }}>Your Assigned Jobs</Heading>
-            <VStack spacing={{ base: 3, md: 4 }} align="stretch">
-              {jobs.assigned.map((job) => (
-                <Card key={job.id} borderLeft="4px" borderLeftColor="blue.400">
-                  <CardBody p={{ base: 4, md: 6 }}>
-                    <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
-                      <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} gap={{ base: 2, md: 0 }}>
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>
-                            {job.customer}
-                          </Text>
-                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                            Ref: {job.reference}
-                          </Text>
-                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                            {job.date} at {job.time}
-                          </Text>
-                        </VStack>
-                        <VStack align={{ base: "start", md: "end" }} spacing={1}>
-                          <Badge colorScheme={getStatusColor(job.assignmentStatus)} size={{ base: "sm", md: "lg" }}>
-                            {job.assignmentStatus}
-                          </Badge>
-                          <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} color="blue.600">
-                            £{job.estimatedEarnings.toFixed(2)}
-                          </Text>
-                        </VStack>
-                      </Flex>
-
-                      <Box>
-                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600" mb={2}>
-                          Route: {job.from} → {job.to}
-                        </Text>
-                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                          Distance: {job.distance} • Vehicle: {job.vehicleType}
-                        </Text>
-                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                          Items: {job.items}
-                        </Text>
-                      </Box>
-
-                      <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 4 }}>
-                        {job.assignmentStatus === 'invited' && (
-                          <Button 
-                            colorScheme="green" 
-                            size={{ base: "sm", md: "md" }}
-                            onClick={() => handleAcceptJob(job.id)}
-                            width={{ base: "full", md: "auto" }}
-                          >
-                            Accept Job
-                          </Button>
-                        )}
-                        <Link href={`/driver/jobs/${job.id}`}>
-                          <Button variant="outline" size={{ base: "sm", md: "md" }} width={{ base: "full", md: "auto" }}>
-                            View Details
-                          </Button>
-                        </Link>
-                        <Button variant="ghost" size={{ base: "sm", md: "md" }} width={{ base: "full", md: "auto" }}>
-                          Contact Customer
-                        </Button>
-                      </Stack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </VStack>
-          </Box>
-        )}
-
-        {/* Available Jobs */}
-        {jobs.available.length > 0 && (
-          <Box>
-            <Heading size={{ base: "sm", md: "md" }} mb={{ base: 4, md: 6 }}>Available Jobs</Heading>
-            <VStack spacing={{ base: 3, md: 4 }} align="stretch">
-              {jobs.available.map((job) => (
-                <Card key={job.id} borderLeft="4px" borderLeftColor="green.400">
-                  <CardBody p={{ base: 4, md: 6 }}>
-                    <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
-                      <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} gap={{ base: 2, md: 0 }}>
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>
-                            {job.customer}
-                          </Text>
-                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                            Ref: {job.reference}
-                          </Text>
-                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                            {job.date} at {job.time}
-                          </Text>
-                        </VStack>
-                        <VStack align={{ base: "start", md: "end" }} spacing={1}>
-                          <Badge colorScheme="green" size={{ base: "sm", md: "lg" }}>
-                            Available
-                          </Badge>
-                          <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} color="green.600">
-                            £{job.estimatedEarnings.toFixed(2)}
-                          </Text>
-                        </VStack>
-                      </Flex>
-
-                      <Box>
-                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600" mb={2}>
-                          Route: {job.from} → {job.to}
-                        </Text>
-                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                          Distance: {job.distance} • Vehicle: {job.vehicleType}
-                        </Text>
-                        <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                          Items: {job.items}
-                        </Text>
-                      </Box>
-
-                      <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 4 }}>
-                        <Button 
-                          colorScheme="green" 
-                          size={{ base: "sm", md: "md" }}
-                          onClick={() => handleAcceptJob(job.id)}
-                          width={{ base: "full", md: "auto" }}
-                        >
-                          Accept Job
-                        </Button>
-                        <Link href={`/driver/jobs/${job.id}`}>
-                          <Button variant="outline" size={{ base: "sm", md: "md" }} width={{ base: "full", md: "auto" }}>
-                            View Details
-                          </Button>
-                        </Link>
-                      </Stack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </VStack>
-          </Box>
-        )}
-
-        {/* No Jobs Message */}
-        {jobs.assigned.length === 0 && jobs.available.length === 0 && (
-          <Alert status="info" borderRadius="lg">
-            <AlertIcon />
-            <AlertDescription fontSize={{ base: "sm", md: "md" }}>
-              No jobs available at the moment. Check back later or contact support if you expect to see jobs here.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Quick Actions */}
-        <Box>
-          <Heading size={{ base: "sm", md: "md" }} mb={{ base: 3, md: 4 }}>Quick Actions</Heading>
-          <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 3, md: 4 }}>
-            <Button 
-              colorScheme="blue"
-              onClick={loadDashboardData}
-              isLoading={isLoading}
-              size={{ base: "md", md: "lg" }}
-              width={{ base: "full", md: "auto" }}
-            >
-              Refresh Dashboard
-            </Button>
-            <Link href={ROUTES.DRIVER.JOBS}>
-              <Button variant="outline" size={{ base: "md", md: "lg" }} width={{ base: "full", md: "auto" }}>
-                View All Jobs
+            <Heading size={{ base: "lg", md: "xl" }} mb={{ base: 4, md: 6 }} color="gray.800">
+              Quick Actions
+            </Heading>
+            <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 3, md: 4 }}>
+              <Button 
+                colorScheme="blue"
+                onClick={refetch}
+                isLoading={isLoading}
+                size={{ base: "lg", md: "xl" }}
+                width={{ base: "full", md: "auto" }}
+                borderRadius="xl"
+                fontWeight="semibold"
+                px={8}
+                py={6}
+                _hover={{
+                  transform: 'translateY(-1px)',
+                  boxShadow: 'lg',
+                }}
+              >
+                Refresh Dashboard
               </Button>
-            </Link>
-            <Button variant="outline" size={{ base: "md", md: "lg" }} width={{ base: "full", md: "auto" }}>
-              Update Availability
-            </Button>
-          </Stack>
-        </Box>
-      </VStack>
-    </Container>
+              <Link href={ROUTES.DRIVER.JOBS}>
+                <Button 
+                  variant="outline" 
+                  size={{ base: "lg", md: "xl" }} 
+                  width={{ base: "full", md: "auto" }}
+                  borderRadius="xl"
+                  fontWeight="semibold"
+                  px={8}
+                  py={6}
+                  borderColor="blue.300"
+                  color="blue.600"
+                  _hover={{
+                    bg: "blue.50",
+                    borderColor: "blue.400",
+                    transform: 'translateY(-1px)',
+                    boxShadow: 'lg',
+                  }}
+                >
+                  View All Jobs
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size={{ base: "lg", md: "xl" }} 
+                width={{ base: "full", md: "auto" }}
+                borderRadius="xl"
+                fontWeight="semibold"
+                px={8}
+                py={6}
+                borderColor="green.300"
+                color="green.600"
+                _hover={{
+                  bg: "green.50",
+                  borderColor: "green.400",
+                  transform: 'translateY(-1px)',
+                  boxShadow: 'lg',
+                }}
+              >
+                Update Availability
+              </Button>
+            </Stack>
+          </Box>
+        </VStack>
+      </Container>
+    </Box>
   );
 }

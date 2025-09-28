@@ -7,12 +7,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get the booking by ID (no authentication required for success page)
-    const booking = await prisma.booking.findUnique({
-      where: {
-        id: params.id,
-      },
-      select: {
+    console.log('📄 Invoice API called with ID/Reference:', params.id);
+    
+    // Try to find booking by ID first (UUID format), then by reference (SV format)
+    let booking;
+    
+    // Check if it's a UUID (booking ID) or reference (SV12345)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+    const isReference = /^SV\d+$/i.test(params.id);
+    
+    if (isUUID) {
+      console.log('🔍 Searching by booking ID (UUID)');
+      booking = await prisma.booking.findUnique({
+        where: {
+          id: params.id,
+        },
+        select: {
         id: true,
         reference: true,
         createdAt: true,
@@ -40,10 +50,62 @@ export async function GET(
         },
       },
     });
+    } else if (isReference) {
+      console.log('🔍 Searching by booking reference (SV format)');
+      booking = await prisma.booking.findFirst({
+        where: {
+          reference: params.id,
+        },
+        select: {
+          id: true,
+          reference: true,
+          createdAt: true,
+          totalGBP: true,
+          paidAt: true,
+          crewSize: true,
+          customerName: true,
+          customerEmail: true,
+          customerPhone: true,
+          pickupAddress: {
+            select: {
+              label: true,
+            },
+          },
+          dropoffAddress: {
+            select: {
+              label: true,
+            },
+          },
+          customer: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } else {
+      console.log('❌ Invalid ID/Reference format:', params.id);
+      return NextResponse.json({ error: 'Invalid booking ID or reference format' }, { status: 400 });
+    }
 
     if (!booking) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+      console.log('❌ Booking not found for:', params.id);
+      return NextResponse.json({ 
+        error: 'Invoice not found', 
+        debug: { 
+          searchTerm: params.id, 
+          searchType: isUUID ? 'UUID' : isReference ? 'Reference' : 'Invalid',
+          timestamp: new Date().toISOString()
+        }
+      }, { status: 404 });
     }
+
+    console.log('✅ Booking found:', { 
+      id: booking.id, 
+      reference: booking.reference,
+      customerName: booking.customerName || booking.customer?.name
+    });
 
     // Generate PDF using the invoice function
     const pdfBuffer = await buildInvoicePDF({

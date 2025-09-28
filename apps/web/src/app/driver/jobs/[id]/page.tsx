@@ -1,783 +1,762 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Card,
-  CardBody,
-  Button,
-  Badge,
-  Box,
-  Divider,
+import { 
+  Container, 
+  Heading, 
+  Text, 
+  Box, 
+  VStack, 
+  HStack, 
+  Button, 
   useToast,
+  Spinner,
   Alert,
   AlertIcon,
-  AlertTitle,
   AlertDescription,
-  Icon,
+  useBreakpointValue,
+  Stack,
   Flex,
   SimpleGrid,
-  Progress,
-  Spinner,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
-  Textarea,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
-  Image,
-  List,
-  ListItem,
-  ListIcon
+  Badge,
+  Divider,
+  Icon,
+  Card,
+  CardBody,
+  CardHeader,
+  Tooltip,
+  Link as ChakraLink,
+  IconButton,
 } from '@chakra-ui/react';
-import { 
-  FaMapMarkerAlt, 
-  FaClock, 
-  FaPoundSign, 
-  FaBox, 
-  FaUser, 
-  FaPhone, 
-  FaBuilding,
-  FaCar,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaCamera,
-  FaSignature,
-  FaRoute,
+import {
+  FaMapMarkerAlt,
+  FaUser,
+  FaPhone,
+  FaClock,
+  FaBox,
   FaTruck,
-  FaHome,
-  FaFlag,
-  FaInfoCircle
+  FaMap,
+  FaPhoneAlt,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaArrowLeft,
+  FaDirections,
+  FaCalendar,
+  FaMoneyBillWave,
 } from 'react-icons/fa';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import JobProgressTracker from '@/components/driver/JobProgressTracker';
+import MediaUploader from '@/components/driver/MediaUploader';
+import MobileJobActions from '@/components/driver/MobileJobActions';
+import MobileJobProgress from '@/components/driver/MobileJobProgress';
+import SmartNotifications, { createProximityAlert, createStatusUpdateAlert } from '@/components/driver/SmartNotifications';
+import useAutoStatusUpdates from '@/hooks/useAutoStatusUpdates';
 
 interface JobDetails {
   id: string;
   reference: string;
+  customer: string;
+  customerPhone: string;
+  customerEmail: string;
+  date: string;
+  time: string;
+  from: string;
+  to: string;
+  distance: string;
+  vehicleType: string;
+  items: string;
+  estimatedEarnings?: number;
   status: string;
-  assignment: {
-    id: string;
-    status: string;
-    acceptedAt: string;
-    events: Array<{
-      step: string;
-      completedAt: string;
-      notes?: string;
-      payload?: any;
-    }>;
-  } | null;
-  customer: {
-    name: string;
-    email: string;
-    phone: string;
-    canContact: boolean;
-  };
-  pickup: {
-    address: string;
-    postcode: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-    property: {
-      type: string;
-      accessType: string;
-      floors: number;
-      hasElevator: boolean;
-      hasParking: boolean;
-      buildingTypeDisplay: string;
-      flatNumber: string | null;
-      parkingDetails: string;
-      accessNotes: string;
-    };
-    zones: {
-      isULEZ: boolean;
-      isLEZ: boolean;
-      hasCongestionCharge: boolean;
-    };
-  };
-  dropoff: {
-    address: string;
-    postcode: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-    property: {
-      type: string;
-      accessType: string;
-      floors: number;
-      hasElevator: boolean;
-      hasParking: boolean;
-      buildingTypeDisplay: string;
-      flatNumber: string | null;
-      parkingDetails: string;
-      accessNotes: string;
-    };
-    zones: {
-      isULEZ: boolean;
-      isLEZ: boolean;
-      hasCongestionCharge: boolean;
-    };
-  };
-  items: Array<{
-    name: string;
-    quantity: number;
-    volumeM3: number;
-  }>;
-  scheduledAt: string;
-  estimatedDuration: number;
-  distance: number;
-  driverPayout: number;
-  crewSize: string;
-  requiredWorkers: number;
-  smartSuggestions: Array<{
-    type: string;
-    title: string;
-    description: string;
-    priority: string;
-  }>;
+  priority?: string;
+  duration?: string;
+  crew?: string;
+  notes?: string;
+  specialInstructions?: string;
 }
 
-const JOB_STEPS = [
-  { id: 'navigate_to_pickup', label: 'Navigate to Pickup', icon: FaRoute, color: 'blue' },
-  { id: 'arrived_at_pickup', label: 'Arrived at Pickup', icon: FaMapMarkerAlt, color: 'green' },
-  { id: 'loading_started', label: 'Loading Started', icon: FaBox, color: 'orange' },
-  { id: 'loading_completed', label: 'Loading Completed', icon: FaCheckCircle, color: 'green' },
-  { id: 'en_route_to_dropoff', label: 'En Route to Dropoff', icon: FaTruck, color: 'blue' },
-  { id: 'arrived_at_dropoff', label: 'Arrived at Dropoff', icon: FaMapMarkerAlt, color: 'green' },
-  { id: 'unloading_started', label: 'Unloading Started', icon: FaBox, color: 'orange' },
-  { id: 'unloading_completed', label: 'Unloading Completed', icon: FaCheckCircle, color: 'green' },
-  { id: 'job_completed', label: 'Job Completed', icon: FaCheckCircle, color: 'purple' }
-];
-
-export default function DriverJobDetails({ params }: { params: { id: string } }) {
+export default function JobDetailsPage({ params }: { params: { id: string } }) {
   const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingStep, setUpdatingStep] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<string | null>(null);
-  const [stepNotes, setStepNotes] = useState('');
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<string>('navigate_to_pickup');
+  const [smartAlerts, setSmartAlerts] = useState<any[]>([]);
   const toast = useToast();
-  const router = useRouter();
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
-  const fetchJobDetails = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`/api/driver/jobs/${params.id}/details`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setJobDetails(data.data);
-        // Find the latest completed step
-        const events = data.data.assignment?.events || [];
-        if (events.length > 0) {
-          // Get the latest event (assuming events are sorted by date desc)
-          const latestEvent = events[0];
-          setCurrentStep(latestEvent.step);
-        } else {
-          setCurrentStep(null);
-        }
-      } else {
-        console.error('❌ Job details API error:', data);
-        setError(data.error || 'Failed to load job details');
-      }
-    } catch (err) {
-      console.error('❌ Error fetching job details:', err);
-      if (err instanceof Error && err.message.includes('403')) {
-        setError('You do not have access to this job. Please check your assigned jobs.');
-      } else {
-        setError('Failed to load job details. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+  // Always call the hook with default values to maintain hooks order
+  // This prevents "Hooks called in wrong order" error
+  const autoStatusHook = useAutoStatusUpdates({
+    jobId: params.id,
+    currentStep: currentStep,
+    driverId: jobDetails?.id || 'pending', // Safe fallback
+    enableGeoTracking: !!jobDetails, // Only enable if job details are loaded
+    enableProximityDetection: !!jobDetails,
+    proximityRadius: 100, // 100 meters
+    autoAdvanceSteps: false, // Manual control for now
+    notificationEnabled: !!jobDetails,
+  });
+
+  // Load job details
+  useEffect(() => {
+    if (params.id) {
+      loadJobDetails();
     }
-  };
+  }, [params.id]);
 
-  const updateJobStep = async (step: string) => {
+  // Reload job details when page regains focus to ensure latest status
+  useEffect(() => {
+    const handleFocus = () => {
+      if (params.id && jobDetails) {
+        console.log('📍 Page refocused, reloading job details...');
+        loadJobDetails();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [params.id, jobDetails]);
+
+  const loadJobDetails = async () => {
     try {
-      setUpdatingStep(step);
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/driver/jobs/${params.id}/details`);
       
-      const formData = new FormData();
-      formData.append('step', step);
-      formData.append('notes', stepNotes);
-      
-      // Add media files if any
-      mediaFiles.forEach((file, index) => {
-        formData.append(`media_${index}`, file);
-      });
-      
-      const response = await fetch(`/api/driver/jobs/${params.id}/update-step`, {
-        method: 'POST',
-        body: formData,
-      });
-      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load job details');
+      }
+
       const data = await response.json();
       
-      if (data.success) {
-        toast({
-          title: 'Step Updated!',
-          description: `Successfully completed: ${JOB_STEPS.find(s => s.id === step)?.label}`,
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-        
-        setStepNotes('');
-        setMediaFiles([]);
-        onClose();
-        await fetchJobDetails();
+      // Map the API response to the component's expected format
+      const mappedJobDetails = {
+        id: data.data.id,
+        reference: data.data.reference,
+        customer: data.data.customer?.name || 'Customer name not available',
+        customerPhone: data.data.customer?.phone || 'Phone not available',
+        customerEmail: data.data.customer?.email || 'Email not available',
+        date: data.data.schedule?.scheduledAt ? new Date(data.data.schedule.scheduledAt).toLocaleDateString() : 'Date not available',
+        time: data.data.schedule?.pickupTimeSlot || 'Time not available',
+        from: data.data.addresses?.pickup?.line1 || 'Address not available',
+        to: data.data.addresses?.dropoff?.line1 || 'Address not available',
+        distance: data.data.logistics?.distance ? `${data.data.logistics.distance} miles` : 'Distance not available',
+        vehicleType: data.data.logistics?.crewSize || 'Vehicle type not specified',
+        items: data.data.items?.map(item => `${item.name} (${item.quantity})`).join(', ') || 'Items not specified',
+        estimatedEarnings: (() => {
+          // Try multiple sources for earnings
+          if (data.data.pricing?.estimatedEarnings && !isNaN(Number(data.data.pricing.estimatedEarnings))) {
+            return Number(data.data.pricing.estimatedEarnings);
+          }
+          if (data.data.pricing?.total && !isNaN(Number(data.data.pricing.total))) {
+            return Number(data.data.pricing.total) / 100; // Convert from pence to pounds
+          }
+          if (data.data.totalGBP && !isNaN(Number(data.data.totalGBP))) {
+            return Number(data.data.totalGBP) / 100; // Convert from pence to pounds
+          }
+          return 0; // Fallback
+        })(),
+        status: data.data.status || 'UNKNOWN',
+        priority: data.data.schedule?.urgency || 'normal',
+        duration: data.data.schedule?.estimatedDuration ? `${data.data.schedule.estimatedDuration} minutes` : 'Duration not specified',
+        crew: data.data.logistics?.crewSize || 'Crew not specified',
+        notes: data.data.metadata?.notes || '',
+        specialInstructions: data.data.metadata?.specialInstructions || ''
+      };
+      
+      setJobDetails(mappedJobDetails);
+      
+      // Set current step from assignment or default
+      if (data.data.assignment && data.data.assignment.currentStep) {
+        setCurrentStep(data.data.assignment.currentStep);
+        console.log('✅ Current step set from assignment:', data.data.assignment.currentStep);
+      } else if (data.data.assignment && data.data.assignment.events && data.data.assignment.events.length > 0) {
+        const latestEvent = data.data.assignment.events[data.data.assignment.events.length - 1];
+        setCurrentStep(latestEvent.step || 'navigate_to_pickup');
+        console.log('✅ Current step set from latest event:', latestEvent.step);
       } else {
-        toast({
-          title: 'Failed to Update Step',
-          description: data.error || 'Please try again.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+        setCurrentStep('navigate_to_pickup');
+        console.log('✅ Current step set to default: navigate_to_pickup');
       }
-    } catch (err) {
-      console.error('❌ Error updating job step:', err);
+      
+      console.log('✅ Job details loaded:', data.data);
+
+    } catch (error) {
+      console.error('Driver Job Details Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load job details';
+      setError(errorMessage);
+      
       toast({
-        title: 'Error',
-        description: 'Failed to update job step. Please try again.',
+        title: 'Error Loading Job',
+        description: `Failed to load job details: ${errorMessage}`,
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
     } finally {
-      setUpdatingStep(null);
+      setIsLoading(false);
     }
   };
 
-  const getNextStep = () => {
-    if (!jobDetails?.assignment?.events || jobDetails.assignment.events.length === 0) {
-      return JOB_STEPS[0];
+  const handleAcceptJob = async () => {
+    try {
+      setIsAccepting(true);
+      const response = await fetch(`/api/driver/jobs/${params.id}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Job Accepted!',
+          description: 'You have successfully accepted this job.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = '/driver';
+        }, 1500);
+      } else {
+        throw new Error('Failed to accept job');
+      }
+    } catch (error) {
+      console.error('Driver Accept Job Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to accept job';
+      toast({
+        title: 'Job Acceptance Failed',
+        description: `Failed to accept job: ${errorMessage}`,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsAccepting(false);
     }
+  };
+
+  const handleCallCustomer = () => {
+    try {
+      if (jobDetails?.customerPhone) {
+        window.open(`tel:${jobDetails.customerPhone}`, '_self');
+      } else {
+        toast({
+          title: 'No Phone Number',
+          description: 'Customer phone number is not available.',
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Driver Call Customer Error:', error);
+      toast({
+        title: 'Call Failed',
+        description: 'Failed to initiate call. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleOpenMap = (address: string) => {
+    try {
+      if (!address || address.trim() === '') {
+        toast({
+          title: 'No Address',
+          description: 'Address is not available.',
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      const encodedAddress = encodeURIComponent(address);
+      window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
+    } catch (error) {
+      console.error('Driver Open Map Error:', error);
+      toast({
+        title: 'Map Failed',
+        description: 'Failed to open map. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleGetDirections = (from: string, to: string) => {
+    try {
+      if (!from || from.trim() === '' || !to || to.trim() === '') {
+        toast({
+          title: 'Missing Addresses',
+          description: 'Pickup or dropoff address is not available.',
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      const encodedFrom = encodeURIComponent(from);
+      const encodedTo = encodeURIComponent(to);
+      window.open(`https://maps.google.com/maps/dir/${encodedFrom}/${encodedTo}`, '_blank');
+    } catch (error) {
+      console.error('Driver Get Directions Error:', error);
+      toast({
+        title: 'Directions Failed',
+        description: 'Failed to get directions. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleStepUpdate = async (step: string, notes?: string) => {
+    try {
+      console.log('🔄 Updating job step:', { jobId: params.id, step, notes });
+      
+      const response = await fetch(`/api/driver/jobs/${params.id}/update-step`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ step, notes }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Step update failed:', errorData);
+        throw new Error(errorData.error || 'Failed to update step');
+      }
+
+      const result = await response.json();
+      console.log('✅ Step update successful:', { step, result });
+      
+      // Update local state immediately
+      setCurrentStep(step);
+      
+      // Reload job details to ensure we have the latest data
+      await loadJobDetails();
+      
+      // Add smart notification
+      const alert = createStatusUpdateAlert(step, false);
+      setSmartAlerts(prev => [alert, ...prev.slice(0, 4)]); // Keep last 5 alerts
+
+      // Show success toast
+      toast({
+        title: 'Step Updated',
+        description: `Successfully updated to: ${step.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+        status: 'success',
+        duration: 3000,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('❌ Step update error:', error);
+      toast({
+        title: 'Update Failed',
+        description: 'Failed to update job step. Please try again.',
+        status: 'error',
+        duration: 5000,
+      });
+      throw error;
+    }
+  };
+
+  const handleNotificationAction = (alertId: string, action: string) => {
+    console.log('Notification action:', { alertId, action });
     
-    // Find the last completed step
-    const completedSteps = jobDetails.assignment.events.map(event => event.step);
-    const lastCompletedStep = completedSteps[completedSteps.length - 1];
-    
-    // Find the next step after the last completed one
-    const lastCompletedIndex = JOB_STEPS.findIndex(step => step.id === lastCompletedStep);
-    const nextStepIndex = lastCompletedIndex + 1;
-    
-    return JOB_STEPS[nextStepIndex] || null;
+    // Remove the alert after action
+    setSmartAlerts(prev => prev.filter(alert => alert.id !== alertId));
   };
 
-  const isStepCompleted = (stepId: string) => {
-    return jobDetails?.assignment?.events?.some(event => event.step === stepId) || false;
+  const handleDismissNotification = (alertId: string) => {
+    setSmartAlerts(prev => prev.filter(alert => alert.id !== alertId));
   };
 
-  const getStepStatus = (stepId: string) => {
-    if (isStepCompleted(stepId)) return 'completed';
-    
-    // Check if this is the next step to be completed
-    const nextStep = getNextStep();
-    if (nextStep && nextStep.id === stepId) return 'current';
-    
-    return 'pending';
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatCurrency = (pence: number | undefined | null) => {
-    if (!pence || isNaN(pence)) return '£0.00';
-    return `£${(pence / 100).toFixed(2)}`;
-  };
-
-  const getZoneInfo = (zones: any) => {
-    if (!zones) return 'No zone information available';
-    const zoneTypes = [];
-    if (zones.isULEZ) zoneTypes.push('ULEZ');
-    if (zones.isLEZ) zoneTypes.push('LEZ');
-    if (zones.hasCongestionCharge) zoneTypes.push('Congestion Charge');
-    return zoneTypes.length > 0 ? zoneTypes.join(', ') : 'No charges';
-  };
-
-  const getFloorInfo = (property: any) => {
-    if (!property) return 'Property details not available';
-    if (property.floors === 0) return 'Ground floor';
-    if (property.floors > 0) return `Floor ${property.floors}`;
-    return 'Customer didn\'t specify';
-  };
-
-  const calculateRequiredWorkers = (items: any[], crewSize: string) => {
-    const totalVolume = items.reduce((sum, item) => sum + (item.volumeM3 * item.quantity), 0);
-    const heavyItems = items.filter(item => item.volumeM3 > 0.5).length;
-    
-    if (crewSize === 'ONE') return 1;
-    if (totalVolume > 10 || heavyItems > 3) return 2;
-    return 1;
-  };
-
-  useEffect(() => {
-    fetchJobDetails();
-  }, [params.id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <VStack spacing={6} align="stretch">
-          <HStack>
-            <Button onClick={() => router.back()} variant="ghost">
-              ← Back to Jobs
-            </Button>
-          </HStack>
-          <Card>
-            <CardBody>
-              <VStack spacing={4}>
-                <Spinner size="xl" color="blue.500" />
-                <Text>Loading job details...</Text>
-              </VStack>
-            </CardBody>
-          </Card>
-        </VStack>
-      </Container>
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+          <VStack spacing={{ base: 6, md: 8 }} align="center">
+            <Spinner size="xl" color="blue.500" />
+            <Text fontSize={{ base: "md", md: "lg" }}>Loading job details...</Text>
+          </VStack>
+        </Container>
+      </Box>
     );
   }
 
-  if (error || !jobDetails) {
+  if (error) {
     return (
-      <Container maxW="container.xl" py={8}>
-        <VStack spacing={6} align="stretch">
-          <HStack>
-            <Button onClick={() => router.back()} variant="ghost">
-              ← Back to Jobs
-            </Button>
-          </HStack>
-          <Alert status="error">
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+          <Alert status="error" borderRadius="lg">
             <AlertIcon />
             <Box>
-              <AlertTitle>Error Loading Job!</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription fontSize={{ base: "sm", md: "md" }}>{error}</AlertDescription>
+              <Button mt={3} size={{ base: "sm", md: "md" }} onClick={loadJobDetails}>
+                Try Again
+              </Button>
             </Box>
           </Alert>
-          <Button onClick={fetchJobDetails} colorScheme="blue">
-            Try Again
-          </Button>
-        </VStack>
-      </Container>
+        </Container>
+      </Box>
     );
   }
 
-  const nextStep = getNextStep();
-  const completedSteps = jobDetails.assignment?.events?.length || 0;
-  const totalSteps = JOB_STEPS.length;
-  const progress = Math.min(completedSteps, totalSteps); // Ensure progress doesn't exceed total steps
-  const progressPercentage = (progress / totalSteps) * 100;
+  if (!jobDetails) {
+    return (
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="7xl" py={{ base: 6, md: 8 }}>
+          <Alert status="warning" borderRadius="lg">
+            <AlertIcon />
+            <AlertDescription fontSize={{ base: "sm", md: "md" }}>Job details not found.</AlertDescription>
+          </Alert>
+        </Container>
+      </Box>
+    );
+  }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={6} align="stretch">
-        {/* Header */}
-        <HStack justify="space-between" align="start">
-          <VStack align="start" spacing={2}>
-            <Button onClick={() => router.back()} variant="ghost" size="sm">
-              ← Back to Jobs
+    <Box minH="100vh" bg="gray.50" pb={isMobile ? "200px" : "0"}>
+      <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 2, md: 6 }}>
+        <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+          {/* Back Button */}
+          <Link href="/driver/jobs">
+            <Button
+              variant="ghost"
+              leftIcon={<FaArrowLeft />}
+              size="sm"
+              color="blue.600"
+              _hover={{ bg: "blue.50" }}
+            >
+              Back to Jobs
             </Button>
-            <Heading size="lg">{jobDetails.reference}</Heading>
-            <Badge colorScheme="green" size="lg">
-              {jobDetails.status}
-            </Badge>
-          </VStack>
-          <VStack align="end" spacing={2}>
-            <Text fontSize="2xl" fontWeight="bold" color="green.500">
-              {formatCurrency(jobDetails.driverPayout)}
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              Driver Payout
-            </Text>
-          </VStack>
-        </HStack>
+          </Link>
 
-        {/* Progress Bar */}
-        <Card>
-          <CardBody>
-            <VStack spacing={4}>
-              <HStack justify="space-between" w="full">
-                <Text fontWeight="medium">Job Progress</Text>
-                <Text fontSize="sm" color="gray.500">
-                  {progress} of {totalSteps} steps completed
-                </Text>
-              </HStack>
-              <Progress value={progressPercentage} w="full" colorScheme="green" />
-            </VStack>
-          </CardBody>
-        </Card>
-
-        {/* Job Steps */}
-        <Card>
-          <CardBody>
-            <VStack spacing={4}>
-              <Heading size="md">Job Steps</Heading>
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4} w="full">
-                {JOB_STEPS.map((step, index) => {
-                  const status = getStepStatus(step.id);
-                  const StepIcon = step.icon;
-                  
-                  return (
-                    <Card 
-                      key={step.id} 
-                      borderWidth="2px" 
-                      borderColor={
-                        status === 'completed' ? 'green.300' : 
-                        status === 'current' ? 'blue.300' : 'gray.200'
-                      }
-                      bg={
-                        status === 'completed' ? 'green.50' : 
-                        status === 'current' ? 'blue.50' : 'white'
-                      }
-                    >
-                      <CardBody>
-                        <VStack spacing={3}>
-                          <Icon 
-                            as={StepIcon} 
-                            color={
-                              status === 'completed' ? 'green.500' : 
-                              status === 'current' ? 'blue.500' : 'gray.400'
-                            }
-                            boxSize={6}
-                          />
-                          <Text 
-                            fontWeight={status === 'current' ? 'bold' : 'normal'}
-                            textAlign="center"
-                            fontSize="sm"
-                          >
-                            {step.label}
-                          </Text>
-                          {status === 'completed' && (
-                            <Icon as={FaCheckCircle} color="green.500" boxSize={4} />
-                          )}
-                        </VStack>
-                      </CardBody>
-                    </Card>
-                  );
-                })}
-              </SimpleGrid>
-
-              {/* Next Step Button */}
-              {nextStep && (
-                <Button
-                  colorScheme="blue"
-                  size="lg"
-                  leftIcon={<Icon as={nextStep.icon} />}
-                  onClick={onOpen}
-                  isLoading={updatingStep === nextStep.id}
-                  loadingText="Updating..."
-                >
-                  {nextStep.label}
-                </Button>
-              )}
-            </VStack>
-          </CardBody>
-        </Card>
-
-        {/* Job Information Grid */}
-        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-          {/* Customer Information */}
-          <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <Heading size="md">Customer Information</Heading>
-                <VStack spacing={2} align="stretch">
-                  <HStack>
-                    <Icon as={FaUser} color="blue.500" />
-                    <Text fontWeight="medium">{jobDetails.customer.name}</Text>
-                  </HStack>
-                  <HStack>
-                    <Icon as={FaPhone} color="blue.500" />
-                    <Text>{jobDetails.customer.phone}</Text>
-                  </HStack>
-                  <HStack>
-                    <Icon as={FaClock} color="blue.500" />
-                    <Text>{formatDate(jobDetails.scheduledAt)}</Text>
-                  </HStack>
-                </VStack>
-              </VStack>
-            </CardBody>
-          </Card>
-
-          {/* Job Summary */}
-          <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <Heading size="md">Job Summary</Heading>
-                <VStack spacing={2} align="stretch">
-                  <HStack justify="space-between">
-                    <Text>Distance:</Text>
-                    <Text fontWeight="medium">{jobDetails.distance} miles</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <Text>Duration:</Text>
-                    <Text fontWeight="medium">{jobDetails.estimatedDuration} mins</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <Text>Required Workers:</Text>
-                    <Text fontWeight="medium">{jobDetails.requiredWorkers}</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <Text>Crew Size:</Text>
-                    <Text fontWeight="medium">{jobDetails.crewSize}</Text>
-                  </HStack>
-                </VStack>
-              </VStack>
-            </CardBody>
-          </Card>
-
-          {/* Pickup Details */}
-          <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <Heading size="md" color="green.600">Pickup Location</Heading>
-                <VStack spacing={3} align="stretch">
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaMapMarkerAlt} color="green.500" />
-                      <Text fontWeight="medium">Address</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>{jobDetails.pickup.address}</Text>
-                    <Text fontSize="xs" color="gray.500" pl={6}>{jobDetails.pickup.postcode}</Text>
-                  </Box>
-
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaBuilding} color="blue.500" />
-                      <Text fontWeight="medium">Property Details</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>
-                      {jobDetails.pickup.property.type} • {jobDetails.pickup.property.accessType}
-                    </Text>
-                    <Text fontSize="sm" pl={6}>
-                      {getFloorInfo(jobDetails.pickup.property)}
-                    </Text>
-                    {jobDetails.pickup.property.flatNumber && (
-                      <Text fontSize="sm" pl={6}>Flat: {jobDetails.pickup.property.flatNumber}</Text>
+          {/* Job Header */}
+          <Card borderRadius={{ base: "lg", md: "xl" }} boxShadow="lg" overflow="hidden">
+            <CardHeader bg="blue.50" borderBottom="1px solid" borderColor="blue.100" p={{ base: 4, md: 6 }}>
+              <Flex 
+                justify="space-between" 
+                align={{ base: "start", md: "center" }} 
+                direction={{ base: "column", md: "row" }}
+                gap={4}
+              >
+                <VStack align="start" spacing={2} flex="1">
+                  <Heading size={{ base: "md", md: "lg" }} color="gray.800" noOfLines={2}>
+                    {jobDetails.reference || 'Job Reference Not Available'}
+                  </Heading>
+                  <HStack spacing={2} wrap="wrap">
+                    <Badge colorScheme="blue" size={{ base: "md", md: "lg" }} px={3} py={1}>
+                      {jobDetails.status?.toUpperCase() || 'UNKNOWN'}
+                    </Badge>
+                    {jobDetails.priority && (
+                      <Badge 
+                        colorScheme={jobDetails.priority === 'urgent' ? 'red' : jobDetails.priority === 'high' ? 'orange' : 'green'} 
+                        size={{ base: "md", md: "lg" }} 
+                        px={3} 
+                        py={1}
+                      >
+                        {jobDetails.priority?.toUpperCase() || 'NORMAL'}
+                      </Badge>
                     )}
-                    <Text fontSize="sm" pl={6}>
-                      Lift: {jobDetails.pickup.property.hasElevator ? 'Available' : 'Not available'}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaFlag} color="orange.500" />
-                      <Text fontWeight="medium">Zones & Charges</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>{getZoneInfo(jobDetails.pickup.zones)}</Text>
-                  </Box>
-
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaCar} color="purple.500" />
-                      <Text fontWeight="medium">Parking</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>{jobDetails.pickup.property.parkingDetails}</Text>
-                  </Box>
-
-                  {jobDetails.pickup.property.accessNotes && (
-                    <Box>
-                      <HStack mb={1}>
-                        <Icon as={FaInfoCircle} color="gray.500" />
-                        <Text fontWeight="medium">Access Notes</Text>
-                      </HStack>
-                      <Text fontSize="sm" pl={6}>{jobDetails.pickup.property.accessNotes}</Text>
-                    </Box>
-                  )}
+                  </HStack>
                 </VStack>
-              </VStack>
-            </CardBody>
-          </Card>
-
-          {/* Dropoff Details */}
-          <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <Heading size="md" color="red.600">Dropoff Location</Heading>
-                <VStack spacing={3} align="stretch">
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaMapMarkerAlt} color="red.500" />
-                      <Text fontWeight="medium">Address</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>{jobDetails.dropoff.address}</Text>
-                    <Text fontSize="xs" color="gray.500" pl={6}>{jobDetails.dropoff.postcode}</Text>
-                  </Box>
-
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaBuilding} color="blue.500" />
-                      <Text fontWeight="medium">Property Details</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>
-                      {jobDetails.dropoff.property.type} • {jobDetails.dropoff.property.accessType}
-                    </Text>
-                    <Text fontSize="sm" pl={6}>
-                      {getFloorInfo(jobDetails.dropoff.property)}
-                    </Text>
-                    {jobDetails.dropoff.property.flatNumber && (
-                      <Text fontSize="sm" pl={6}>Flat: {jobDetails.dropoff.property.flatNumber}</Text>
-                    )}
-                    <Text fontSize="sm" pl={6}>
-                      Lift: {jobDetails.dropoff.property.hasElevator ? 'Available' : 'Not available'}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaFlag} color="orange.500" />
-                      <Text fontWeight="medium">Zones & Charges</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>{getZoneInfo(jobDetails.dropoff.zones)}</Text>
-                  </Box>
-
-                  <Box>
-                    <HStack mb={1}>
-                      <Icon as={FaCar} color="purple.500" />
-                      <Text fontWeight="medium">Parking</Text>
-                    </HStack>
-                    <Text fontSize="sm" pl={6}>{jobDetails.dropoff.property.parkingDetails}</Text>
-                  </Box>
-
-                  {jobDetails.dropoff.property.accessNotes && (
-                    <Box>
-                      <HStack mb={1}>
-                        <Icon as={FaInfoCircle} color="gray.500" />
-                        <Text fontWeight="medium">Access Notes</Text>
-                      </HStack>
-                      <Text fontSize="sm" pl={6}>{jobDetails.dropoff.property.accessNotes}</Text>
-                    </Box>
-                  )}
+                <VStack align={{ base: "start", md: "end" }} spacing={1}>
+                  <Text fontSize={{ base: "2xl", md: "3xl" }} fontWeight="bold" color="green.600">
+                    £{isNaN(Number(jobDetails.estimatedEarnings)) ? '0.00' : Number(jobDetails.estimatedEarnings).toFixed(2)}
+                  </Text>
+                  <Text fontSize="sm" color="gray.600">
+                    Estimated Earnings
+                  </Text>
                 </VStack>
-              </VStack>
-            </CardBody>
-          </Card>
-        </SimpleGrid>
-
-        {/* Items */}
-        <Card>
-          <CardBody>
-            <VStack spacing={4} align="stretch">
-              <Heading size="md">Items to Move</Heading>
-              <List spacing={2}>
-                {jobDetails.items.map((item, index) => (
-                  <ListItem key={index}>
+              </Flex>
+            </CardHeader>
+            <CardBody p={6}>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                {/* Customer Information */}
+                <Box>
+                  <Heading size="md" mb={4} color="blue.600" display="flex" alignItems="center" gap={2}>
+                    <Icon as={FaUser} />
+                    Customer Information
+                  </Heading>
+                  <VStack align="stretch" spacing={3}>
                     <HStack>
-                      <ListIcon as={FaBox} color="blue.500" />
-                      <Text>
-                        {item.quantity}x {item.name}
-                        <Text as="span" color="gray.500" ml={2}>
-                          ({item.volumeM3}m³ each)
-                        </Text>
-                      </Text>
+                      <Icon as={FaUser} color="blue.500" boxSize={4} />
+                      <Text fontWeight="medium">{jobDetails.customer || 'Customer name not available'}</Text>
                     </HStack>
-                  </ListItem>
-                ))}
-              </List>
-            </VStack>
-          </CardBody>
-        </Card>
+                    <HStack>
+                      <Icon as={FaPhone} color="blue.500" boxSize={4} />
+                      <Text>{jobDetails.customerPhone || 'Phone not available'}</Text>
+                      <Tooltip label="Call Customer">
+                        <IconButton
+                          aria-label="Call customer"
+                          icon={<FaPhoneAlt />}
+                          size="sm"
+                          colorScheme="blue"
+                          variant="ghost"
+                          onClick={handleCallCustomer}
+                        />
+                      </Tooltip>
+                    </HStack>
+                    <HStack>
+                      <Icon as={FaUser} color="blue.500" boxSize={4} />
+                      <Text fontSize="sm" color="gray.600">{jobDetails.customerEmail || 'Email not available'}</Text>
+                    </HStack>
+                  </VStack>
+                </Box>
 
-        {/* Smart Suggestions */}
-        {jobDetails.smartSuggestions && jobDetails.smartSuggestions.length > 0 && (
-          <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <Heading size="md">Smart Suggestions</Heading>
-                <VStack spacing={2} align="stretch">
-                  {jobDetails.smartSuggestions.map((suggestion, index) => (
-                    <Alert 
-                      key={index} 
-                      status={suggestion.priority === 'high' ? 'warning' : 'info'}
-                    >
-                      <AlertIcon />
-                      <Box>
-                        <Text fontWeight="medium">{suggestion.title}</Text>
-                        <Text fontSize="sm">{suggestion.description}</Text>
-                      </Box>
-                    </Alert>
-                  ))}
-                </VStack>
-              </VStack>
+                {/* Job Schedule */}
+                <Box>
+                  <Heading size="md" mb={4} color="purple.600" display="flex" alignItems="center" gap={2}>
+                    <Icon as={FaCalendar} />
+                    Schedule
+                  </Heading>
+                  <VStack align="stretch" spacing={3}>
+                    <HStack>
+                      <Icon as={FaClock} color="purple.500" boxSize={4} />
+                      <Text>{jobDetails.date || 'Date not available'} at {jobDetails.time || 'Time not available'}</Text>
+                    </HStack>
+                    {jobDetails.duration && (
+                      <HStack>
+                        <Icon as={FaClock} color="purple.500" boxSize={4} />
+                        <Text>Duration: {jobDetails.duration || 'Not specified'}</Text>
+                      </HStack>
+                    )}
+                    {jobDetails.crew && (
+                      <HStack>
+                        <Icon as={FaUser} color="purple.500" boxSize={4} />
+                        <Text>Crew: {jobDetails.crew || 'Not specified'}</Text>
+                      </HStack>
+                    )}
+                  </VStack>
+                </Box>
+              </SimpleGrid>
             </CardBody>
           </Card>
-        )}
-      </VStack>
 
-      {/* Step Update Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Update Job Step: {nextStep?.label}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <VStack spacing={4} align="stretch">
-              <FormControl>
-                <FormLabel>Notes (Optional)</FormLabel>
-                <Textarea
-                  value={stepNotes}
-                  onChange={(e) => setStepNotes(e.target.value)}
-                  placeholder="Add any notes about this step..."
-                />
-              </FormControl>
+          {/* Locations */}
+          {!isMobile && (
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+              {/* Pickup Location */}
+              <Card borderRadius="xl" boxShadow="lg" overflow="hidden">
+                <CardHeader bg="green.50" borderBottom="1px solid" borderColor="green.100">
+                  <Heading size="md" color="green.600" display="flex" alignItems="center" gap={2}>
+                    <Icon as={FaMapMarkerAlt} />
+                    Pickup Location
+                  </Heading>
+                </CardHeader>
+                <CardBody p={6}>
+                <VStack align="stretch" spacing={4}>
+                  <Text fontWeight="medium" fontSize="lg">
+                    {jobDetails.from || 'Address not available'}
+                  </Text>
+                  <HStack spacing={2}>
+                    <Button
+                      size="sm"
+                      colorScheme="green"
+                      leftIcon={<FaMap />}
+                      onClick={() => handleOpenMap(jobDetails.from)}
+                    >
+                      View on Map
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorScheme="green"
+                      leftIcon={<FaDirections />}
+                      onClick={() => handleGetDirections("Current Location", jobDetails.from)}
+                    >
+                      Get Directions
+                    </Button>
+                  </HStack>
+                </VStack>
+              </CardBody>
+            </Card>
 
-              <FormControl>
-                <FormLabel>Photos (Optional)</FormLabel>
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
-                />
-              </FormControl>
+            {/* Dropoff Location */}
+            <Card borderRadius="xl" boxShadow="lg" overflow="hidden">
+              <CardHeader bg="red.50" borderBottom="1px solid" borderColor="red.100">
+                <Heading size="md" color="red.600" display="flex" alignItems="center" gap={2}>
+                  <Icon as={FaMapMarkerAlt} />
+                  Dropoff Location
+                </Heading>
+              </CardHeader>
+              <CardBody p={6}>
+                <VStack align="stretch" spacing={4}>
+                  <Text fontWeight="medium" fontSize="lg">
+                    {jobDetails.to || 'Address not available'}
+                  </Text>
+                  <HStack spacing={2}>
+                    <Button
+                      size="sm"
+                      colorScheme="red"
+                      leftIcon={<FaMap />}
+                      onClick={() => handleOpenMap(jobDetails.to)}
+                    >
+                      View on Map
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorScheme="red"
+                      leftIcon={<FaDirections />}
+                      onClick={() => handleGetDirections(jobDetails.from, jobDetails.to)}
+                    >
+                      Get Directions
+                    </Button>
+                  </HStack>
+                </VStack>
+              </CardBody>
+            </Card>
+            </SimpleGrid>
+          )}
 
-              <HStack justify="end" spacing={3}>
-                <Button onClick={onClose} variant="ghost">
-                  Cancel
-                </Button>
-                <Button
-                  colorScheme="blue"
-                  onClick={() => nextStep && updateJobStep(nextStep.id)}
-                  isLoading={updatingStep === nextStep?.id}
-                  loadingText="Updating..."
-                >
-                  Complete Step
-                </Button>
-              </HStack>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Container>
+          {/* Job Details */}
+          <Card borderRadius="xl" boxShadow="lg" overflow="hidden">
+            <CardHeader bg="purple.50" borderBottom="1px solid" borderColor="purple.100">
+              <Heading size="md" color="purple.600" display="flex" alignItems="center" gap={2}>
+                <Icon as={FaTruck} />
+                Job Details
+              </Heading>
+            </CardHeader>
+            <CardBody p={6}>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                <VStack align="stretch" spacing={4}>
+                  <HStack>
+                    <Icon as={FaTruck} color="purple.500" boxSize={4} />
+                    <Text>Vehicle: {jobDetails.vehicleType || 'Not specified'}</Text>
+                  </HStack>
+                  <HStack>
+                    <Icon as={FaBox} color="purple.500" boxSize={4} />
+                    <Text>Items: {jobDetails.items || 'Not specified'}</Text>
+                  </HStack>
+                  <HStack>
+                    <Icon as={FaMapMarkerAlt} color="purple.500" boxSize={4} />
+                    <Text>Distance: {jobDetails.distance || 'Not specified'}</Text>
+                  </HStack>
+                </VStack>
+                <VStack align="stretch" spacing={4}>
+                  {jobDetails.notes && (
+                    <Box>
+                      <Text fontWeight="medium" mb={2}>Notes:</Text>
+                      <Text fontSize="sm" color="gray.600">{jobDetails.notes || 'No notes available'}</Text>
+                    </Box>
+                  )}
+                  {jobDetails.specialInstructions && (
+                    <Box>
+                      <Text fontWeight="medium" mb={2}>Special Instructions:</Text>
+                      <Text fontSize="sm" color="gray.600">{jobDetails.specialInstructions || 'No special instructions'}</Text>
+                    </Box>
+                  )}
+                </VStack>
+              </SimpleGrid>
+            </CardBody>
+          </Card>
+
+          {/* Smart Notifications */}
+          {smartAlerts.length > 0 && (
+            <SmartNotifications
+              alerts={smartAlerts}
+              onActionClick={handleNotificationAction}
+              onDismiss={handleDismissNotification}
+              maxVisible={3}
+              compactMode={isMobile}
+            />
+          )}
+
+          {/* Mobile Job Progress Tracker */}
+          {isMobile && (
+            <MobileJobProgress
+              currentStep={currentStep}
+              jobId={params.id}
+              onStepUpdate={handleStepUpdate}
+              isCompact={false}
+              showEstimates={true}
+            />
+          )}
+          
+          {/* Debug info for development */}
+          {process.env.NODE_ENV === 'development' && (
+            <Card bg="gray.50" borderRadius="md" p={3}>
+              <Text fontSize="sm" color="gray.600">
+                Debug: Current Step = <strong>{currentStep}</strong> | Job Status = <strong>{jobDetails?.status}</strong>
+              </Text>
+            </Card>
+          )}
+
+          {/* Desktop Job Progress Tracker */}
+          {!isMobile && (
+            <JobProgressTracker
+              currentStep={currentStep}
+              onStepComplete={handleStepUpdate}
+              jobId={params.id}
+              completedSteps={[]} // Steps before currentStep are automatically marked as completed
+            />
+          )}
+
+          {/* Action Buttons */}
+          {jobDetails.status === 'available' && (
+            <Card borderRadius="xl" boxShadow="lg" overflow="hidden">
+              <CardBody p={6}>
+                <VStack spacing={4}>
+                  <Button
+                    colorScheme="green"
+                    size="xl"
+                    width="full"
+                    leftIcon={<FaCheckCircle />}
+                    onClick={handleAcceptJob}
+                    isLoading={isAccepting}
+                    loadingText="Accepting Job..."
+                    borderRadius="xl"
+                    fontWeight="bold"
+                    py={8}
+                    _hover={{
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'xl',
+                    }}
+                  >
+                    Accept This Job
+                  </Button>
+                  <Text fontSize="sm" color="gray.600" textAlign="center">
+                    By accepting this job, you agree to complete the delivery as scheduled.
+                  </Text>
+                </VStack>
+              </CardBody>
+            </Card>
+          )}
+        </VStack>
+      </Container>
+
+      {/* Mobile Job Actions - Fixed Bottom */}
+      {isMobile && jobDetails && (
+        <MobileJobActions
+          jobDetails={{
+            id: jobDetails.id,
+            reference: jobDetails.reference,
+            customer: jobDetails.customer,
+            customerPhone: jobDetails.customerPhone,
+            from: jobDetails.from,
+            to: jobDetails.to,
+            status: jobDetails.status,
+            estimatedEarnings: jobDetails.estimatedEarnings,
+          }}
+          onCallCustomer={handleCallCustomer}
+          onOpenMap={handleOpenMap}
+          onGetDirections={handleGetDirections}
+          isCompact={true}
+        />
+      )}
+    </Box>
   );
 }

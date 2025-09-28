@@ -161,20 +161,40 @@ export async function GET(
       if (booking.scheduledAt) {
         const now = new Date();
         const scheduledTime = new Date(booking.scheduledAt);
-        const timeDiff = scheduledTime.getTime() - now.getTime();
+        
+        // Validate dates
+        if (!isNaN(scheduledTime.getTime())) {
+          const timeDiff = scheduledTime.getTime() - now.getTime();
+          const minutesDiff = Math.round(timeDiff / (1000 * 60));
 
-        if (timeDiff > 0) {
+          if (timeDiff > 0 && !isNaN(minutesDiff)) {
+            eta = {
+              estimatedArrival: scheduledTime,
+              minutesRemaining: Math.max(0, minutesDiff), // Ensure non-negative
+              isOnTime: timeDiff > -15 * 60 * 1000, // 15 minutes grace period
+            };
+          } else if (timeDiff > -60 * 60 * 1000) {
+            // Within 1 hour of scheduled time
+            eta = {
+              estimatedArrival: new Date(now.getTime() + 30 * 60 * 1000), // 30 minutes from now
+              minutesRemaining: 30,
+              isOnTime: false,
+            };
+          } else {
+            // For past bookings or very late arrivals
+            eta = {
+              estimatedArrival: now,
+              minutesRemaining: 0,
+              isOnTime: false,
+            };
+          }
+        } else {
+          console.warn('⚠️ Invalid scheduledAt date:', booking.scheduledAt);
+          // Fallback ETA
           eta = {
-            estimatedArrival: scheduledTime,
-            minutesRemaining: Math.round(timeDiff / (1000 * 60)),
-            isOnTime: timeDiff > -15 * 60 * 1000, // 15 minutes grace period
-          };
-        } else if (timeDiff > -60 * 60 * 1000) {
-          // Within 1 hour of scheduled time
-          eta = {
-            estimatedArrival: new Date(now.getTime() + 30 * 60 * 1000), // 30 minutes from now
-            minutesRemaining: 30,
-            isOnTime: false,
+            estimatedArrival: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+            minutesRemaining: 60,
+            isOnTime: true,
           };
         }
       }
@@ -190,14 +210,37 @@ export async function GET(
           lng: booking.dropoffAddress.lng,
         };
 
-        // Simple distance calculation (Haversine would be better)
-        const distance =
-          Math.sqrt(
-            Math.pow(dropoffCoords.lat - pickupCoords.lat, 2) +
-              Math.pow(dropoffCoords.lng - pickupCoords.lng, 2)
-          ) * 111; // Rough km conversion
+        // Validate coordinates
+        if (isNaN(pickupCoords.lat) || isNaN(pickupCoords.lng) || 
+            isNaN(dropoffCoords.lat) || isNaN(dropoffCoords.lng) ||
+            pickupCoords.lat === 0 || pickupCoords.lng === 0 ||
+            dropoffCoords.lat === 0 || dropoffCoords.lng === 0) {
+          console.warn('⚠️ Invalid coordinates for ETA calculation:', { pickupCoords, dropoffCoords });
+          estimatedDuration = booking.estimatedDurationMinutes || 60; // Fallback to 1 hour
+        } else {
+          // Better distance calculation (Haversine formula)
+          const R = 6371; // Earth radius in km
+          const dLat = (dropoffCoords.lat - pickupCoords.lat) * Math.PI / 180;
+          const dLon = (dropoffCoords.lng - pickupCoords.lng) * Math.PI / 180;
+          const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(pickupCoords.lat * Math.PI / 180) * Math.cos(dropoffCoords.lat * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c; // Distance in km
 
-        estimatedDuration = Math.round(distance * 2); // 2 minutes per km
+          // Calculate estimated duration based on distance and traffic conditions
+          const baseSpeed = 25; // km/h average in urban areas
+          const estimatedHours = distance / baseSpeed;
+          const calculatedDuration = Math.round(estimatedHours * 60); // Convert to minutes
+          
+          // Ensure duration is valid
+          if (!isNaN(calculatedDuration) && calculatedDuration > 0) {
+            estimatedDuration = Math.min(calculatedDuration, 480); // Cap at 8 hours
+          } else {
+            estimatedDuration = booking.estimatedDurationMinutes || 60; // Fallback
+          }
+        }
       }
     }
 
@@ -259,8 +302,8 @@ export async function GET(
         : null,
       routeProgress,
       currentLocation,
-      eta,
-      estimatedDuration,
+      eta: eta && eta.minutesRemaining !== undefined && !isNaN(eta.minutesRemaining) ? eta : null,
+      estimatedDuration: estimatedDuration && !isNaN(estimatedDuration) ? estimatedDuration : null,
       lastEvent: booking.Assignment?.JobEvent?.[0] || null,
       jobTimeline,
       trackingChannel,

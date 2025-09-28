@@ -45,6 +45,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Create driver availability record - Default to online
+    await prisma.driverAvailability.create({
+      data: {
+        driverId: newDriver.id,
+        status: 'online',
+        locationConsent: false,
+      },
+    });
+
     console.log('✅ Driver record created for user:', userId, 'driverId:', newDriver.id);
 
     return NextResponse.json({

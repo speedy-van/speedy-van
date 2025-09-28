@@ -56,6 +56,7 @@ export async function GET(
       'loaded',
       'en_route_dropoff',
     ].includes(booking.status),
+    trackingUrl: `/tracking/${booking.reference}`,
   });
 }
 

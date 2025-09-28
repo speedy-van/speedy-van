@@ -345,14 +345,6 @@ export function useBookingForm() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const currentData = stepNumber === 1 ? formData.step1 : formData.step2;
-        console.log(`❌ Step ${stepNumber} validation failed:`, {
-          errors: error.issues.map(issue => ({
-            path: issue.path.join('.'),
-            message: issue.message,
-            code: issue.code
-          })),
-          data: currentData
-        });
       }
       return false;
     }

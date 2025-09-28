@@ -147,7 +147,38 @@ export default function EnhancedTrackingDashboard() {
   // Real-time tracking hook
   const { isConnected, connectionStatus } = useAdminRealTimeTracking({
     onUpdate: update => {
-      // Handle real-time updates
+      console.log('🔄 Admin dashboard received real-time update:', update);
+      
+      // Handle different types of updates
+      if (update.type === 'location') {
+        // Update booking location in real-time
+        setBookings(prevBookings => 
+          prevBookings.map(booking => {
+            if (booking.id === update.bookingId) {
+              return {
+                ...booking,
+                currentLocation: {
+                  lat: update.location.lat,
+                  lng: update.location.lng,
+                  timestamp: update.timestamp.toISOString(),
+                },
+                lastUpdated: update.timestamp.toISOString(),
+              };
+            }
+            return booking;
+          })
+        );
+
+        // Show toast for location updates (less frequent)
+        toast({
+          title: 'Driver Location Updated',
+          description: `Driver location updated for booking ${update.data.bookingReference}`,
+          status: 'info',
+          duration: 2000,
+          isClosable: true,
+        });
+      }
+      
       if (update.type === 'status') {
         toast({
           title: 'Status Update',
@@ -156,8 +187,27 @@ export default function EnhancedTrackingDashboard() {
           duration: 3000,
           isClosable: true,
         });
+        
+        // Refresh data for status changes
+        loadTrackingData();
+      }
+
+      if (update.type === 'progress') {
+        toast({
+          title: 'Progress Update',
+          description: `Job progress updated: ${update.data.stepLabel || update.data.step}`,
+          status: 'info',
+          duration: 3000,
+          isClosable: true,
+        });
+        
+        // Refresh data for progress changes
+        loadTrackingData();
       }
     },
+    onLocationUpdate: location => {
+      console.log('📍 Admin dashboard received location update:', location);
+    }
   });
 
   useEffect(() => {

@@ -81,10 +81,9 @@ export async function POST(
       );
     }
 
-    // Parse form data
-    const formData = await request.formData();
-    const step = formData.get('step') as string;
-    const notes = formData.get('notes') as string || '';
+    // Parse JSON body
+    const body = await request.json();
+    const { step, notes = '' } = body;
 
     if (!step) {
       return NextResponse.json(

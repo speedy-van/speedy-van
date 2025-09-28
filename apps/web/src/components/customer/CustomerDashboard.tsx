@@ -144,29 +144,54 @@ export default function CustomerDashboard({ userId }: CustomerDashboardProps) {
           {recentBookings.map((booking) => (
             <Card key={booking.id}>
               <CardBody>
-                <HStack justify="space-between">
-                  <VStack align="start" spacing={1}>
-                    <Text fontWeight="bold">{booking.reference}</Text>
-                    <Text fontSize="sm" color="gray.600">
-                      {booking.from} → {booking.to}
-                    </Text>
-                    <Text fontSize="sm" color="gray.500">
-                      {new Date(booking.date).toLocaleDateString()}
-                    </Text>
-                  </VStack>
+                <VStack spacing={3} align="stretch">
+                  <HStack justify="space-between">
+                    <VStack align="start" spacing={1}>
+                      <Text fontWeight="bold">{booking.reference}</Text>
+                      <Text fontSize="sm" color="gray.600">
+                        {booking.from} → {booking.to}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {new Date(booking.date).toLocaleDateString()}
+                      </Text>
+                    </VStack>
+                    
+                    <VStack align="end" spacing={2}>
+                      <Badge
+                        colorScheme={
+                          booking.status === 'completed' ? 'green' :
+                          booking.status === 'in_progress' ? 'blue' : 'gray'
+                        }
+                      >
+                        {booking.status.replace('_', ' ')}
+                      </Badge>
+                      <Text fontWeight="bold">£{booking.amount}</Text>
+                    </VStack>
+                  </HStack>
                   
-                  <VStack align="end" spacing={2}>
-                    <Badge
-                      colorScheme={
-                        booking.status === 'completed' ? 'green' :
-                        booking.status === 'in_progress' ? 'blue' : 'gray'
-                      }
+                  {/* Action Buttons */}
+                  <HStack spacing={2} justify="flex-end">
+                    <Button
+                      as="a"
+                      href={`/api/customer/orders/${booking.reference}`}
+                      size="sm"
+                      variant="outline"
                     >
-                      {booking.status.replace('_', ' ')}
-                    </Badge>
-                    <Text fontWeight="bold">£{booking.amount}</Text>
-                  </VStack>
-                </HStack>
+                      View Details
+                    </Button>
+                    {(booking.status === 'in_progress' || booking.status === 'assigned' || booking.status === 'confirmed') && (
+                      <Button
+                        as="a"
+                        href={`/tracking/${booking.reference}`}
+                        size="sm"
+                        colorScheme="blue"
+                        leftIcon={<span>🚚</span>}
+                      >
+                        Live Tracking
+                      </Button>
+                    )}
+                  </HStack>
+                </VStack>
               </CardBody>
             </Card>
           ))}

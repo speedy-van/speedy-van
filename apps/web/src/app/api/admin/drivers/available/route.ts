@@ -22,17 +22,35 @@ export async function GET(request: NextRequest) {
 
     console.log('🚗 Admin fetching available drivers:', { location, limit });
 
-    // Get online drivers who are available for new assignments
+    // First, let's check how many drivers we have in total
+    const totalDriversCount = await prisma.driver.count({
+      where: {
+        status: 'active',
+        onboardingStatus: 'approved',
+      }
+    });
+    
+    const driversWithAvailability = await prisma.driver.count({
+      where: {
+        status: 'active',
+        onboardingStatus: 'approved',
+        availability: { isNot: null }
+      }
+    });
+
+    console.log('📊 Driver statistics:', {
+      totalActive: totalDriversCount,
+      withAvailabilityRecord: driversWithAvailability,
+      missingAvailability: totalDriversCount - driversWithAvailability
+    });
+
+    // Get active drivers who are available for new assignments
     const availableDrivers = await prisma.driver.findMany({
       where: {
         status: 'active',
         onboardingStatus: 'approved',
-        availability: {
-          status: 'online',
-          locationConsent: true,
-        },
-        // Don't include drivers who are already assigned to this specific booking
-        // This will be handled in the frontend
+        // Removed strict availability requirements - include all approved active drivers
+        // The availability status will be checked in the response data
       },
       include: {
         user: {
@@ -75,11 +93,10 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: {
-        availability: {
-          lastSeenAt: 'desc'
-        }
-      },
+      orderBy: [
+        { rating: 'desc' },
+        { createdAt: 'asc' }
+      ],
       take: limit,
     });
 
@@ -89,20 +106,33 @@ export async function GET(request: NextRequest) {
         assignment.status === 'accepted' || assignment.status === 'claimed'
       );
 
+      // Determine availability based on multiple factors
+      const hasAvailabilityRecord = !!driver.availability;
+      const isOnline = driver.availability?.status === 'online';
+      const hasNoActiveJobs = activeJobs.length === 0;
+      const isRecentlyActive = driver.availability?.lastSeenAt 
+        ? new Date(driver.availability.lastSeenAt).getTime() > Date.now() - (24 * 60 * 60 * 1000) // Within 24 hours
+        : false;
+
+      // Driver is available if:
+      // 1. No active jobs AND (online OR recently active OR no availability record yet)
+      const isAvailableForAssignment = hasNoActiveJobs && (isOnline || isRecentlyActive || !hasAvailabilityRecord);
+
       return {
         id: driver.id,
-        name: driver.user.name,
+        name: driver.user.name || `Driver ${driver.id.slice(-4)}`,
         email: driver.user.email,
         // phone removed - not in schema
         status: driver.status,
         onboardingStatus: driver.onboardingStatus,
         availability: {
-          status: driver.availability?.status || 'offline',
+          status: driver.availability?.status || 'unknown',
           lastSeenAt: driver.availability?.lastSeenAt,
           location: driver.availability?.lastLat && driver.availability?.lastLng ? {
             lat: driver.availability.lastLat,
             lng: driver.availability.lastLng,
           } : null,
+          hasRecord: hasAvailabilityRecord,
         },
         activeJobs: activeJobs.map(assignment => ({
           id: assignment.id,
@@ -115,16 +145,34 @@ export async function GET(request: NextRequest) {
             postcode: assignment.Booking.pickupAddress?.postcode,
           }
         })),
-        isAvailable: activeJobs.length === 0, // Available if no active jobs
+        isAvailable: isAvailableForAssignment,
         totalActiveJobs: activeJobs.length,
+        availabilityReason: isAvailableForAssignment 
+          ? (isOnline ? 'Online' : isRecentlyActive ? 'Recently Active' : 'Ready for Assignment')
+          : activeJobs.length > 0 ? `${activeJobs.length} Active Job${activeJobs.length > 1 ? 's' : ''}` : 'Offline',
       };
     });
 
-    // Sort by availability (available drivers first, then by last seen)
+    // Sort by availability (available drivers first, then by rating)
     const sortedDrivers = transformedDrivers.sort((a, b) => {
       if (a.isAvailable && !b.isAvailable) return -1;
       if (!a.isAvailable && b.isAvailable) return 1;
       return new Date(b.availability.lastSeenAt || 0).getTime() - new Date(a.availability.lastSeenAt || 0).getTime();
+    });
+
+    console.log('✅ Available drivers summary:', {
+      totalDrivers: sortedDrivers.length,
+      availableCount: sortedDrivers.filter(d => d.isAvailable).length,
+      busyCount: sortedDrivers.filter(d => !d.isAvailable).length,
+      onlineCount: sortedDrivers.filter(d => d.availability.status === 'online').length,
+      unknownStatusCount: sortedDrivers.filter(d => d.availability.status === 'unknown').length,
+      sampleDrivers: sortedDrivers.slice(0, 3).map(d => ({
+        name: d.name,
+        isAvailable: d.isAvailable,
+        status: d.availability.status,
+        activeJobs: d.totalActiveJobs,
+        reason: d.availabilityReason
+      }))
     });
 
     return NextResponse.json({
@@ -134,6 +182,12 @@ export async function GET(request: NextRequest) {
         total: sortedDrivers.length,
         available: sortedDrivers.filter(d => d.isAvailable).length,
         busy: sortedDrivers.filter(d => !d.isAvailable).length,
+        online: sortedDrivers.filter(d => d.availability.status === 'online').length,
+        summary: {
+          totalActive: sortedDrivers.length,
+          readyForAssignment: sortedDrivers.filter(d => d.isAvailable).length,
+          currentlyBusy: sortedDrivers.filter(d => !d.isAvailable).length,
+        }
       }
     });
 

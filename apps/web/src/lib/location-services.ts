@@ -31,7 +31,7 @@ export interface GeolocationResult {
 }
 
 // Mapbox configuration
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiYWhtYWRhbHdha2FpIiwiYSI6ImNtZGNsZ3RsZDEzdGsya3F0ODFxeGRzbXoifQ.jfgGW0KNFTwATOShRDtQsg';
 const MAPBOX_GEOCODING_URL =
   'https://api.mapbox.com/geocoding/v5/mapbox.places';
 

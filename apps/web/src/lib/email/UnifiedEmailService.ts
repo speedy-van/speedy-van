@@ -134,6 +134,15 @@ async function sendViaZeptoMail(to: string, subject: string, html: string): Prom
       htmlbody: html
     };
 
+    console.log('📧 ===== ZEPTOMAIL API DEBUG =====');
+    console.log('📧 ZeptoMail payload:', {
+      to,
+      subject,
+      from: emailConfig.zeptomail.from,
+      apiUrl: emailConfig.zeptomail.apiUrl
+    });
+    console.log('📧 Full payload being sent:', JSON.stringify(payload, null, 2));
+
     const response = await fetch(emailConfig.zeptomail.apiUrl, {
       method: 'POST',
       headers: {
@@ -144,12 +153,26 @@ async function sendViaZeptoMail(to: string, subject: string, html: string): Prom
       body: JSON.stringify(payload)
     });
 
+    console.log('📧 ZeptoMail response status:', response.status);
+    console.log('📧 ZeptoMail response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorData = await response.text();
+      console.error('📧 ===== ZEPTOMAIL API ERROR =====');
+      console.error('📧 Status:', response.status);
+      console.error('📧 Status Text:', response.statusText);
+      console.error('📧 Error Data:', errorData);
+      console.error('📧 ===== END ZEPTOMAIL ERROR =====');
       throw new Error(`ZeptoMail API error: ${response.status} - ${errorData}`);
     }
 
     const result = await response.json();
+    console.log('📧 ===== ZEPTOMAIL SUCCESS RESULT =====');
+    console.log('📧 ZeptoMail success result:', result);
+    console.log('📧 Message ID:', result.data?.[0]?.message_id || 'No message ID');
+    console.log('📧 Request ID:', result.request_id);
+    console.log('📧 ===== END ZEPTOMAIL SUCCESS =====');
+    
     return {
       success: true,
       error: null,
@@ -166,8 +189,33 @@ async function sendViaZeptoMail(to: string, subject: string, html: string): Prom
 async function sendEmail(to: string, subject: string, html: string): Promise<EmailResult> {
   const errors: string[] = [];
 
-  // Try SendGrid first if configured
-  if (emailConfig.sendgrid.apiKey) {
+  // Try ZeptoMail first if configured (more reliable)
+  console.log('📧 Checking ZeptoMail configuration:', {
+    hasApiKey: !!emailConfig.zeptomail.apiKey,
+    keyLength: emailConfig.zeptomail.apiKey?.length || 0,
+    keyStart: emailConfig.zeptomail.apiKey?.substring(0, 20) || 'NOT_SET',
+    isDefaultKey: emailConfig.zeptomail.apiKey === 'Zoho-enczapikey-CHANGEME',
+    apiUrl: emailConfig.zeptomail.apiUrl,
+    from: emailConfig.zeptomail.from
+  });
+
+  if (emailConfig.zeptomail.apiKey && emailConfig.zeptomail.apiKey !== 'Zoho-enczapikey-CHANGEME') {
+    try {
+      console.log('📧 Attempting to send email via ZeptoMail...');
+      return await sendViaZeptoMail(to, subject, html);
+    } catch (error) {
+      const errorMsg = `ZeptoMail failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.warn('⚠️', errorMsg);
+      console.error('📧 ZeptoMail error details:', error);
+      errors.push(errorMsg);
+    }
+  } else {
+    console.log('📧 ZeptoMail not configured or using default key');
+    errors.push('ZeptoMail not configured or using default key');
+  }
+
+  // Try SendGrid as fallback if configured and not previously failed
+  if (false && emailConfig.sendgrid.apiKey && !errors.some(err => err.includes('Unauthorized'))) {
     try {
       console.log('📧 Attempting to send email via SendGrid...');
       return await sendViaSendGrid(to, subject, html);
@@ -180,18 +228,6 @@ async function sendEmail(to: string, subject: string, html: string): Promise<Ema
       if (error instanceof Error && error.message.includes('Unauthorized')) {
         console.warn('SendGrid auth failed, skipping SendGrid');
       }
-    }
-  }
-
-  // Try ZeptoMail as fallback if configured
-  if (emailConfig.zeptomail.apiKey && emailConfig.zeptomail.apiKey !== 'Zoho-enczapikey-CHANGEME') {
-    try {
-      console.log('📧 Attempting to send email via ZeptoMail...');
-      return await sendViaZeptoMail(to, subject, html);
-    } catch (error) {
-      const errorMsg = `ZeptoMail failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      console.warn('⚠️', errorMsg);
-      errors.push(errorMsg);
     }
   }
 
@@ -746,6 +782,26 @@ export const unifiedEmailService = {
       return await sendEmail(data.email, subject, html);
     } catch (error) {
       console.error('Password reset email failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        messageId: null,
+        provider: 'error'
+      };
+    }
+  },
+
+  async sendDriverPasswordReset(data: { email: string; resetUrl: string; driverName?: string; resetToken?: string }) {
+    try {
+      console.log('🚗 Sending driver password reset email to:', data.email);
+      const subject = `Password Reset - Speedy Van Driver Portal`;
+      const html = generatePasswordResetHTML({
+        ...data,
+        driverName: data.driverName || 'Driver'
+      });
+      return await sendEmail(data.email, subject, html);
+    } catch (error) {
+      console.error('Driver password reset email failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

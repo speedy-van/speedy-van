@@ -1,4 +1,4 @@
-import { ApiResponse, PaginatedResponse } from '../../../shared/dist/types/index';
+import { ApiResponse, PaginatedResponse } from '@speedy-van/shared';
 
 /**
  * Create a standardized API response

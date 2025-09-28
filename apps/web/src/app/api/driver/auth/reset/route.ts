@@ -21,13 +21,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('🔐 Driver password reset attempt with token:', token.substring(0, 8) + '...');
+
     // Find user by reset token
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
         resetTokenExpiry: { gt: new Date() },
         role: 'driver',
-        isActive: true, // Only allow password reset for active drivers
+        isActive: true,
       },
       include: {
         driver: true,
@@ -35,11 +37,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      console.log('❌ Invalid or expired reset token');
       return NextResponse.json(
         { error: 'Invalid or expired reset token' },
         { status: 400 }
       );
     }
+
+    console.log('✅ Valid reset token found for user:', user.id);
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -54,19 +59,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('✅ Password updated successfully for user:', user.id);
+
     // Log the password reset
-    await logAudit(user.id, 'driver_password_reset_completed', user.id, { targetType: 'auth', before: null, after: { email: user.email } });
+    await logAudit(user.id, 'driver_password_reset_completed', user.id, {
+      targetType: 'auth',
+      before: null,
+      after: { email: user.email }
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Password has been reset successfully',
     });
   } catch (error) {
-    console.error('Driver password reset error:', error);
+    console.error('❌ Driver password reset error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
-

@@ -32,7 +32,7 @@ export async function GET(
       createdBy: session.user.id,
     };
 
-    await logAudit(session.user.id, 'read_report', params.id, { targetType: 'analytics_report', before: null, after: { reportId: params.id } });
+    await logAudit((session.user as any).id, 'read_report', params.id, { targetType: 'analytics_report', before: null, after: { reportId: params.id } });
 
     return Response.json({ report: mockReport });
   } catch (error) {

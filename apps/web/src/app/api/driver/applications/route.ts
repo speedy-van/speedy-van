@@ -11,7 +11,6 @@ import {
   searchQuery,
 } from '@/lib/validation/schemas';
 import { prisma } from '@/lib/prisma';
-import { UnifiedEmailService } from '@/lib/email/UnifiedEmailService';
 
 // Function to send admin notification for new driver application
 async function sendDriverApplicationNotification(

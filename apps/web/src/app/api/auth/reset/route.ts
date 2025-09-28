@@ -1,45 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { logAudit } from '@/lib/audit';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
     const { token, password } = await request.json();
 
-    console.log('🔐 Customer password reset attempt with token');
-
     if (!token || !password) {
       return NextResponse.json(
-        { message: 'Token and password are required' },
+        { error: 'Token and new password are required' },
         { status: 400 }
       );
     }
 
     if (password.length < 8) {
       return NextResponse.json(
-        { message: 'Password must be at least 8 characters long' },
+        { error: 'Password must be at least 8 characters long' },
         { status: 400 }
       );
     }
 
-    // Find user with valid reset token
+    console.log('🔐 General password reset attempt with token:', token.substring(0, 8) + '...');
+
+    // Find user by reset token (any role)
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpiry: {
-          gt: new Date(), // Token must not be expired
-        },
-        role: 'customer',
+        resetTokenExpiry: { gt: new Date() },
+        isActive: true,
+      },
+      include: {
+        driver: true,
       },
     });
 
     if (!user) {
       console.log('❌ Invalid or expired reset token');
       return NextResponse.json(
-        { message: 'Invalid or expired reset token. Please request a new password reset.' },
+        { error: 'Invalid or expired reset token' },
         { status: 400 }
       );
     }
+
+    console.log('✅ Valid reset token found for user:', user.id, 'role:', user.role);
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -54,17 +58,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('✅ Customer password reset successful for:', user.email);
+    console.log('✅ Password updated successfully for user:', user.id);
+
+    // Log the password reset
+    await logAudit(user.id, 'password_reset_completed', user.id, {
+      targetType: 'auth',
+      before: null,
+      after: { email: user.email, role: user.role }
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Password has been reset successfully. You can now sign in with your new password.',
+      message: 'Password has been reset successfully',
     });
-
   } catch (error) {
-    console.error('❌ Customer password reset error:', error);
+    console.error('❌ General password reset error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

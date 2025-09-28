@@ -11,17 +11,109 @@ import {
 } from '@/lib/utils/currency';
 import { 
   BookingStep, 
-  BookingStatus,
-  Address
+  BookingStatus
 } from '@speedy-van/shared';
 import { enterprisePricingService } from '@/lib/services/enterprise-pricing-service';
 // import { postBookingService } from '@/lib/services/post-booking-service';
 // import { apiRateLimit } from '@/lib/rate-limit';
 import { createLuxuryBookingSchema } from '@/types/shared';
 import { PropertyType } from '@prisma/client';
+import Pusher from 'pusher';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Initialize Pusher for driver notifications
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
+  cluster: process.env.PUSHER_CLUSTER!,
+  useTLS: true,
+});
+
+// Function to notify available drivers about new jobs
+async function notifyAvailableDrivers(bookingData: {
+  bookingId: string;
+  reference: string;
+  customerName: string;
+  pickupAddress: string;
+  pickupPostcode: string;
+  dropoffAddress: string;
+  dropoffPostcode: string;
+  totalPrice: number;
+  scheduledAt: Date | null;
+}) {
+  try {
+    console.log('📢 Notifying available drivers about new job:', bookingData.reference);
+
+    // Get all available drivers
+    const availableDrivers = await prisma.driver.findMany({
+      where: {
+        availability: {
+          status: 'AVAILABLE',
+        },
+        user: {
+          isActive: true,
+        },
+      },
+      select: {
+        id: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    console.log(`📡 Found ${availableDrivers.length} available drivers to notify`);
+
+    // Create notification payload
+    const notification = {
+      type: 'new-job' as const,
+      data: {
+        bookingId: bookingData.bookingId,
+        jobType: 'نقل وتوصيل',
+        pickup: {
+          address: bookingData.pickupAddress,
+          postcode: bookingData.pickupPostcode,
+        },
+        delivery: {
+          address: bookingData.dropoffAddress,
+          postcode: bookingData.dropoffPostcode,
+        },
+        distance: 0, // Will be calculated later
+        estimatedDuration: 60, // Default estimate
+        price: bookingData.totalPrice,
+        priority: 'medium' as const,
+        customerName: bookingData.customerName,
+      },
+      timestamp: new Date().toISOString(),
+      urgent: false,
+    };
+
+    // Send notifications to all available drivers
+    const notificationPromises = availableDrivers.map(async (driver) => {
+      const channelName = `driver-${driver.id}`;
+      
+      try {
+        await pusher.trigger(channelName, 'new-job', notification);
+        console.log(`✅ Notification sent to driver ${driver.id} (${driver.user.name})`);
+      } catch (error) {
+        console.error(`❌ Failed to notify driver ${driver.id}:`, error);
+      }
+    });
+
+    await Promise.allSettled(notificationPromises);
+    
+    console.log(`📤 Job notifications sent to ${availableDrivers.length} drivers`);
+
+  } catch (error) {
+    console.error('❌ Error notifying available drivers:', error);
+    throw error;
+  }
+}
 
 // Frontend property type from form validation
 type FormPropertyType = 'house' | 'apartment' | 'office' | 'warehouse' | 'other';
@@ -171,22 +263,25 @@ export async function POST(request: NextRequest) {
     const reference = await createUniqueReference('booking');
 
     // Create pickup address - support both 'address' and 'line1' formats
+    // Use the raw data to get coordinates that might not be in the schema
+    const rawPickupAddress = rawData.pickupAddress as any;
     const pickupAddress = await prisma.bookingAddress.create({
       data: {
-        label: bookingData.pickupAddress.street || 'Pickup Address',
+        label: bookingData.pickupAddress.street || rawPickupAddress.address || 'Pickup Address',
         postcode: bookingData.pickupAddress.postcode || '',
-        lat: 0, // Will be filled by geocoding
-        lng: 0, // Will be filled by geocoding
+        lat: rawPickupAddress.coordinates?.lat || 0,
+        lng: rawPickupAddress.coordinates?.lng || 0,
       },
     });
 
     // Create dropoff address - support both 'address' and 'line1' formats
+    const rawDropoffAddress = rawData.dropoffAddress as any;
     const dropoffAddress = await prisma.bookingAddress.create({
       data: {
-        label: bookingData.dropoffAddress.street || 'Dropoff Address',
+        label: bookingData.dropoffAddress.street || rawDropoffAddress.address || 'Dropoff Address',
         postcode: bookingData.dropoffAddress.postcode || '',
-        lat: 0, // Will be filled by geocoding
-        lng: 0, // Will be filled by geocoding
+        lat: rawDropoffAddress.coordinates?.lat || 0,
+        lng: rawDropoffAddress.coordinates?.lng || 0,
       },
     });
 
@@ -428,8 +523,23 @@ export async function POST(request: NextRequest) {
     // Process post-booking activities (email, SMS, notifications)
     console.log('🚀 Starting post-booking processing...');
     
-    // TODO: Implement post-booking service
-    // For now, just log that the booking was created successfully
+    // Notify available drivers about new job
+    try {
+      await notifyAvailableDrivers({
+        bookingId: booking.id,
+        reference: booking.reference,
+        customerName: bookingData.customer.name,
+        pickupAddress: bookingData.pickupAddress.street,
+        pickupPostcode: bookingData.pickupAddress.postcode,
+        dropoffAddress: bookingData.dropoffAddress.street,
+        dropoffPostcode: bookingData.dropoffAddress.postcode,
+        totalPrice: calculatedTotal || 0,
+        scheduledAt: booking.scheduledAt,
+      });
+    } catch (notificationError) {
+      console.error('⚠️ Failed to notify drivers:', notificationError);
+      // Don't fail the booking if notification fails
+    }
 
     // Return the created booking with all details
     return NextResponse.json({
